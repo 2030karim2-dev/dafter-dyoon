@@ -25,7 +25,7 @@ function NotFoundComponent() {
   );
 }
 
-export const Route = createRootRoute({
+export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
     meta: [
       { charSet: "utf-8" },
@@ -73,16 +73,19 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
+  const { queryClient } = Route.useRouteContext();
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <PinLockGate>
-          <OnboardingGate>
-            <Outlet />
-          </OnboardingGate>
-        </PinLockGate>
-        <Toaster position="top-center" richColors />
-      </AuthProvider>
-    </ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <AuthProvider>
+          <PinLockGate>
+            <OnboardingGate>
+              <Outlet />
+            </OnboardingGate>
+          </PinLockGate>
+          <Toaster position="top-center" richColors />
+        </AuthProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 }
