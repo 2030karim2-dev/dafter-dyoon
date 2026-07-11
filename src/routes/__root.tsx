@@ -1,4 +1,6 @@
-import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import { Outlet, Link, createRootRouteWithContext, HeadContent, Scripts } from "@tanstack/react-router";
+import type { QueryClient } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import appCss from "../styles.css?url";
 import { AuthProvider } from "@/lib/auth";
 import { ThemeProvider } from "@/lib/theme";
@@ -23,7 +25,7 @@ function NotFoundComponent() {
   );
 }
 
-export const Route = createRootRoute({
+export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
     meta: [
       { charSet: "utf-8" },
@@ -71,16 +73,19 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
+  const { queryClient } = Route.useRouteContext();
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <PinLockGate>
-          <OnboardingGate>
-            <Outlet />
-          </OnboardingGate>
-        </PinLockGate>
-        <Toaster position="top-center" richColors />
-      </AuthProvider>
-    </ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <AuthProvider>
+          <PinLockGate>
+            <OnboardingGate>
+              <Outlet />
+            </OnboardingGate>
+          </PinLockGate>
+          <Toaster position="top-center" richColors />
+        </AuthProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 }

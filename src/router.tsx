@@ -1,5 +1,10 @@
 import { createRouter, useRouter } from "@tanstack/react-router";
+import { QueryClient } from "@tanstack/react-query";
 import { routeTree } from "./routeTree.gen";
+
+declare module "@tanstack/react-router" {
+  interface Register { router: ReturnType<typeof getRouter> }
+}
 
 function DefaultErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   const router = useRouter();
@@ -55,12 +60,17 @@ function DefaultErrorComponent({ error, reset }: { error: Error; reset: () => vo
 }
 
 export const getRouter = () => {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { staleTime: 30_000, gcTime: 5 * 60_000, refetchOnWindowFocus: false },
+    },
+  });
   const router = createRouter({
     routeTree,
-    context: {},
+    context: { queryClient },
     scrollRestoration: true,
     defaultPreload: "intent",
-    defaultPreloadStaleTime: 30_000,
+    defaultPreloadStaleTime: 0,
     defaultPreloadDelay: 30,
     defaultErrorComponent: DefaultErrorComponent,
   });
