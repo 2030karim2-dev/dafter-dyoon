@@ -12,7 +12,7 @@ import { Avatar } from "@/components/common/Avatar";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import {
   User, ShieldCheck, Bell, Palette, Database, Info,
-  Coins, Repeat, Archive, Wallet, LogOut, Moon, Sun,
+  Coins, Repeat, Archive, Wallet, LogOut, Moon, Sun, Radio,
 } from "lucide-react";
 
 export const Route = createFileRoute("/app/settings/")({ component: SettingsPage });
