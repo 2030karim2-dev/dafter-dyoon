@@ -85,7 +85,8 @@ export function smartMatch(query: string, target: SearchTarget): boolean {
     const digits = tok.replace(/\D/g, "");
     if (digits && digits.length === tok.length) {
       // pure number token: phone or amount
-      if (phones.some((p) => p.includes(digits))) return true;
+      const qVariants = phoneVariants(digits);
+      if (phones.some((p) => qVariants.some((v) => p.includes(v) || v.includes(p)))) return true;
       if (numbers.some((n) => n.includes(digits))) return true;
       if (squashed.includes(digits)) return true;
       return false;
