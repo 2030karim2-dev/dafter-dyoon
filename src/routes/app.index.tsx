@@ -15,6 +15,7 @@ import { DebtsHeader } from "@/features/debts/DebtsHeader";
 import { PersonRow } from "@/features/debts/PersonRow";
 import { PersonTable } from "@/features/debts/PersonTable";
 import { BalanceCard } from "@/components/common/BalanceCard";
+import { CurrencyScope } from "@/components/common/CurrencyScope";
 import { getDebtsHomeFn, archivePersonFn, deletePersonFn, type PersonWithBalances, type DebtsHomePayload } from "@/lib/home.functions";
 import { processRecurringFn } from "@/lib/jobs.functions";
 import { toast } from "sonner";
@@ -225,7 +226,7 @@ function DebtsHome() {
             <PersonRow
               key={p.person.id}
               person={p.person}
-              balance={{ net: p.net_base, count: p.txCount, lastDate: p.lastDate, lastAmount: p.lastAmount, lastDirection: p.lastDirection, totalCredit: p.totalCredit_base, totalDebit: p.totalDebit_base }}
+              balance={{ net: p.net, count: p.count, lastDate: p.lastDate, lastAmount: p.lastAmount, lastDirection: p.lastDirection, totalCredit: p.credit, totalDebit: p.debit, symbol: activeCurrency?.symbol }}
               index={i}
               onEdit={() => { setEditingPerson({ id: p.person.id, name: p.person.name, phone: p.person.phone, type: p.person.type, notes: p.person.notes ?? null, avatar_color: p.person.avatar_color, credit_limit: p.person.credit_limit ?? null }); setOpenPerson(true); }}
               onArchive={() => setArchivePerson(p.person)}
