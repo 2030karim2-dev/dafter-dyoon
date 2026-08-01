@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { TransactionTable } from "@/features/debts/TransactionTable";
 import { fmtMonthAr } from "@/lib/format";
 
-interface Currency { id: string; name: string; symbol: string; rate: number; is_base: boolean }
+interface Currency { id: string; name: string; symbol: string; is_base: boolean }
 interface Tx { id: string; person_id: string; amount: number; direction: string; currency_id: string; transaction_date: string; details: string | null; due_date: string | null; is_paid: boolean }
 
 interface Props {

@@ -11,7 +11,7 @@ export interface TxRow {
   currency_id: string;
 }
 
-export interface CurRow { id: string; name: string; symbol: string; rate: number; is_base?: boolean }
+export interface CurRow { id: string; name: string; symbol: string; is_base?: boolean }
 
 export interface CatRow { id: string; name: string }
 

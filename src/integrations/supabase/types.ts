@@ -239,7 +239,6 @@ export type Database = {
           id: string
           is_base: boolean
           name: string
-          rate: number
           symbol: string
           user_id: string
         }
@@ -248,7 +247,6 @@ export type Database = {
           id?: string
           is_base?: boolean
           name: string
-          rate?: number
           symbol?: string
           user_id: string
         }
@@ -257,7 +255,6 @@ export type Database = {
           id?: string
           is_base?: boolean
           name?: string
-          rate?: number
           symbol?: string
           user_id?: string
         }
@@ -297,47 +294,6 @@ export type Database = {
             columns: ["person_id"]
             isOneToOne: true
             referencedRelation: "people"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      exchange_rates: {
-        Row: {
-          created_at: string
-          created_by: string | null
-          currency_id: string
-          effective_date: string
-          id: string
-          note: string | null
-          rate_to_base: number
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          created_by?: string | null
-          currency_id: string
-          effective_date?: string
-          id?: string
-          note?: string | null
-          rate_to_base: number
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          created_by?: string | null
-          currency_id?: string
-          effective_date?: string
-          id?: string
-          note?: string | null
-          rate_to_base?: number
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "exchange_rates_currency_id_fkey"
-            columns: ["currency_id"]
-            isOneToOne: false
-            referencedRelation: "currencies"
             referencedColumns: ["id"]
           },
         ]
@@ -704,6 +660,48 @@ export type Database = {
         }
         Relationships: []
       }
+      person_accounts: {
+        Row: {
+          created_at: string
+          currency_id: string
+          id: string
+          person_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          currency_id: string
+          id?: string
+          person_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          currency_id?: string
+          id?: string
+          person_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "person_accounts_currency_id_fkey"
+            columns: ["currency_id"]
+            isOneToOne: false
+            referencedRelation: "currencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "person_accounts_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           backup_frequency: string
@@ -864,7 +862,6 @@ export type Database = {
           id: string
           is_paid: boolean
           person_id: string
-          rate_at_tx: number | null
           transaction_date: string
           user_id: string
         }
@@ -878,7 +875,6 @@ export type Database = {
           id?: string
           is_paid?: boolean
           person_id: string
-          rate_at_tx?: number | null
           transaction_date?: string
           user_id: string
         }
@@ -892,7 +888,6 @@ export type Database = {
           id?: string
           is_paid?: boolean
           person_id?: string
-          rate_at_tx?: number | null
           transaction_date?: string
           user_id?: string
         }

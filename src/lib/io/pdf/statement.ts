@@ -36,12 +36,14 @@ export async function exportPersonStatementPDF(opts: StatementPdfOpts) {
   if (used.length === 0 && currencies.length > 0) used.push(currencies[0]!);
   used.sort((a, b) => Number(b.is_base) - Number(a.is_base));
 
+  const headlineCurrencyId = (used.find((c) => c.is_base) ?? used[0])?.id;
   let totalCredit = 0;
   let totalDebit = 0;
   for (const t of filteredTxs) {
-    const rate = currencies.find((c) => c.id === t.currency_id)?.rate ?? 1;
-    if (t.direction === "credit") totalCredit += Number(t.amount) * rate;
-    else totalDebit += Number(t.amount) * rate;
+    // Totals belong to a single currency only (the headline currency).
+    if (t.currency_id !== headlineCurrencyId) continue;
+    if (t.direction === "credit") totalCredit += Number(t.amount);
+    else totalDebit += Number(t.amount);
   }
 
   const sections = used.map((cur) => renderCurrencySection(cur, filteredTxs, openings)).join("");

@@ -16,6 +16,7 @@ export interface PersonBalance {
   lastDirection?: string;
   totalCredit?: number;
   totalDebit?: number;
+  symbol?: string;
 }
 
 interface Props {
@@ -71,7 +72,7 @@ export function PersonRow({ person, balance, index = 0, onEdit, onArchive, onDel
           ) : (
             <>
               <div className={`font-black text-[13px] tabular-nums leading-tight ${isCredit ? "text-success" : "text-danger"}`}>
-                {isCredit ? "" : "-"}{fmtMoney(Math.abs(balance.net))}
+                {isCredit ? "" : "-"}{fmtMoney(Math.abs(balance.net))}{balance.symbol ? <span className="text-[9px] font-bold opacity-75"> {balance.symbol}</span> : null}
               </div>
               <div className="text-[8.5px] text-muted-foreground font-semibold uppercase mt-0.5">{isCredit ? "له" : "عليه"}</div>
             </>

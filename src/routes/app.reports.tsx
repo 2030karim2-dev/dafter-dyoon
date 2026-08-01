@@ -8,12 +8,13 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { BarChart3, Download, FileText, TrendingUp, TrendingDown } from "lucide-react";
 import { fmtMoney, fmtDate, monthRange } from "@/lib/format";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
+import { CurrencyScope } from "@/components/common/CurrencyScope";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
 
 export const Route = createFileRoute("/app/reports")({ component: ReportsPage });
 
-interface Cur { id: string; name: string; rate: number; is_base: boolean }
+interface Cur { id: string; name: string; symbol: string; is_base: boolean }
 interface Person { id: string; name: string }
 interface Tx { person_id: string; amount: number; direction: string; currency_id: string; transaction_date: string }
 
@@ -38,7 +39,15 @@ function ReportsPage() {
   }, [user]);
 
   const base = curs.find((c) => c.is_base) ?? curs[0];
-  const toBase = (a: number, cid: string) => Number(a) * (curs.find((x) => x.id === cid)?.rate ?? 1);
+  const [curId, setCurId] = useState<string>("");
+  useEffect(() => {
+    if (curs.length === 0 || curId) return;
+    const saved = (() => { try { return localStorage.getItem("scope_currency"); } catch { return null; } })();
+    setCurId((curs.find((c) => c.id === saved) ?? base)?.id ?? "");
+  }, [curs, base, curId]);
+  const activeCur = curs.find((c) => c.id === curId) ?? base;
+  // Reports are scoped to ONE currency — currencies are never mixed.
+  const scoped = useMemo(() => txs.filter((t) => t.currency_id === curId), [txs, curId]);
 
   /** Last 6 months debt movement (credit vs debit) in base currency. */
   const monthly = useMemo(() => {
@@ -48,10 +57,10 @@ function ReportsPage() {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const { start, end } = monthRange(d);
       let credit = 0, debit = 0;
-      for (const t of txs) {
+      for (const t of scoped) {
         const ts = new Date(t.transaction_date).getTime();
         if (ts < start.getTime() || ts >= end.getTime()) continue;
-        const v = toBase(t.amount, t.currency_id);
+        const v = Number(t.amount);
         if (t.direction === "credit") credit += v; else debit += v;
       }
       arr.push({
@@ -60,29 +69,29 @@ function ReportsPage() {
       });
     }
     return arr;
-  }, [txs, curs]);
+  }, [scoped]);
 
   const topPeople = useMemo(() => {
     const m = new Map<string, number>();
-    for (const t of txs) {
+    for (const t of scoped) {
       const sign = t.direction === "credit" ? 1 : -1;
-      m.set(t.person_id, (m.get(t.person_id) ?? 0) + toBase(t.amount, t.currency_id) * sign);
+      m.set(t.person_id, (m.get(t.person_id) ?? 0) + Number(t.amount) * sign);
     }
     return Array.from(m.entries())
       .map(([id, net]) => ({ id, name: people.find((p) => p.id === id)?.name ?? "—", net }))
       .filter((x) => Math.abs(x.net) > 0.01)
       .sort((a, b) => Math.abs(b.net) - Math.abs(a.net))
       .slice(0, 8);
-  }, [txs, people, curs]);
+  }, [scoped, people]);
 
   const totals = useMemo(() => {
     let owe = 0, owed = 0;
-    for (const t of txs) {
-      const v = toBase(t.amount, t.currency_id);
+    for (const t of scoped) {
+      const v = Number(t.amount);
       if (t.direction === "credit") owed += v; else owe += v;
     }
     return { owe, owed, net: owed - owe };
-  }, [txs, curs]);
+  }, [scoped]);
 
   const exportCSV = () => {
     const rows = [["نوع", "تاريخ", "المبلغ", "العملة", "العميل"]];
@@ -102,8 +111,8 @@ function ReportsPage() {
     const doc = new jsPDF();
     doc.setFontSize(18); doc.text("Daftarak Report", 14, 20);
     doc.setFontSize(10); doc.text(`Generated: ${new Date().toISOString().slice(0, 10)}`, 14, 28);
-    doc.setFontSize(12); doc.text(`Total Owed to you: ${fmtMoney(totals.owed)} ${base?.name ?? ""}`, 14, 42);
-    doc.text(`Total You owe: ${fmtMoney(totals.owe)} ${base?.name ?? ""}`, 14, 50);
+    doc.setFontSize(12); doc.text(`Total Owed to you: ${fmtMoney(totals.owed)} ${activeCur?.name ?? ""}`, 14, 42);
+    doc.text(`Total You owe: ${fmtMoney(totals.owe)} ${activeCur?.name ?? ""}`, 14, 50);
     doc.text(`Net: ${fmtMoney(totals.net)}`, 14, 58);
     doc.text("Top balances:", 14, 72);
     let y = 80;
@@ -122,9 +131,11 @@ function ReportsPage() {
         </div>
         <div>
           <h1 className="font-bold text-lg leading-tight">تقارير الديون</h1>
-          <p className="text-xs text-muted-foreground">نظرة شاملة بالـ {base?.name ?? "محلي"}</p>
+          <p className="text-xs text-muted-foreground">مسار {activeCur?.name ?? "العملة"} فقط</p>
         </div>
       </div>
+
+      <CurrencyScope currencies={curs} value={curId} onChange={setCurId} />
 
       <div className="grid grid-cols-3 gap-2">
         <Card className="p-3"><div className="text-[10px] text-muted-foreground flex items-center gap-1"><TrendingUp className="size-3 text-success" />لك</div><div className="font-bold text-success text-sm mt-1">{fmtMoney(totals.owed)}</div></Card>

@@ -22,7 +22,6 @@ import { Route as AppOutboxRouteImport } from './routes/app.outbox'
 import { Route as AppOpeningBalancesRouteImport } from './routes/app.opening-balances'
 import { Route as AppNotificationsRouteImport } from './routes/app.notifications'
 import { Route as AppFollowupRouteImport } from './routes/app.followup'
-import { Route as AppExchangeRatesRouteImport } from './routes/app.exchange-rates'
 import { Route as AppCurrenciesRouteImport } from './routes/app.currencies'
 import { Route as AppArchiveRouteImport } from './routes/app.archive'
 import { Route as AppActivityRouteImport } from './routes/app.activity'
@@ -102,11 +101,6 @@ const AppNotificationsRoute = AppNotificationsRouteImport.update({
 const AppFollowupRoute = AppFollowupRouteImport.update({
   id: '/followup',
   path: '/followup',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppExchangeRatesRoute = AppExchangeRatesRouteImport.update({
-  id: '/exchange-rates',
-  path: '/exchange-rates',
   getParentRoute: () => AppRoute,
 } as any)
 const AppCurrenciesRoute = AppCurrenciesRouteImport.update({
@@ -194,7 +188,6 @@ export interface FileRoutesByFullPath {
   '/app/activity': typeof AppActivityRoute
   '/app/archive': typeof AppArchiveRoute
   '/app/currencies': typeof AppCurrenciesRoute
-  '/app/exchange-rates': typeof AppExchangeRatesRoute
   '/app/followup': typeof AppFollowupRoute
   '/app/notifications': typeof AppNotificationsRoute
   '/app/opening-balances': typeof AppOpeningBalancesRoute
@@ -224,7 +217,6 @@ export interface FileRoutesByTo {
   '/app/activity': typeof AppActivityRoute
   '/app/archive': typeof AppArchiveRoute
   '/app/currencies': typeof AppCurrenciesRoute
-  '/app/exchange-rates': typeof AppExchangeRatesRoute
   '/app/followup': typeof AppFollowupRoute
   '/app/notifications': typeof AppNotificationsRoute
   '/app/opening-balances': typeof AppOpeningBalancesRoute
@@ -255,7 +247,6 @@ export interface FileRoutesById {
   '/app/activity': typeof AppActivityRoute
   '/app/archive': typeof AppArchiveRoute
   '/app/currencies': typeof AppCurrenciesRoute
-  '/app/exchange-rates': typeof AppExchangeRatesRoute
   '/app/followup': typeof AppFollowupRoute
   '/app/notifications': typeof AppNotificationsRoute
   '/app/opening-balances': typeof AppOpeningBalancesRoute
@@ -288,7 +279,6 @@ export interface FileRouteTypes {
     | '/app/activity'
     | '/app/archive'
     | '/app/currencies'
-    | '/app/exchange-rates'
     | '/app/followup'
     | '/app/notifications'
     | '/app/opening-balances'
@@ -318,7 +308,6 @@ export interface FileRouteTypes {
     | '/app/activity'
     | '/app/archive'
     | '/app/currencies'
-    | '/app/exchange-rates'
     | '/app/followup'
     | '/app/notifications'
     | '/app/opening-balances'
@@ -348,7 +337,6 @@ export interface FileRouteTypes {
     | '/app/activity'
     | '/app/archive'
     | '/app/currencies'
-    | '/app/exchange-rates'
     | '/app/followup'
     | '/app/notifications'
     | '/app/opening-balances'
@@ -472,13 +460,6 @@ declare module '@tanstack/react-router' {
       path: '/followup'
       fullPath: '/app/followup'
       preLoaderRoute: typeof AppFollowupRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/exchange-rates': {
-      id: '/app/exchange-rates'
-      path: '/exchange-rates'
-      fullPath: '/app/exchange-rates'
-      preLoaderRoute: typeof AppExchangeRatesRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/currencies': {
@@ -621,7 +602,6 @@ interface AppRouteChildren {
   AppActivityRoute: typeof AppActivityRoute
   AppArchiveRoute: typeof AppArchiveRoute
   AppCurrenciesRoute: typeof AppCurrenciesRoute
-  AppExchangeRatesRoute: typeof AppExchangeRatesRoute
   AppFollowupRoute: typeof AppFollowupRoute
   AppNotificationsRoute: typeof AppNotificationsRoute
   AppOpeningBalancesRoute: typeof AppOpeningBalancesRoute
@@ -639,7 +619,6 @@ const AppRouteChildren: AppRouteChildren = {
   AppActivityRoute: AppActivityRoute,
   AppArchiveRoute: AppArchiveRoute,
   AppCurrenciesRoute: AppCurrenciesRoute,
-  AppExchangeRatesRoute: AppExchangeRatesRoute,
   AppFollowupRoute: AppFollowupRoute,
   AppNotificationsRoute: AppNotificationsRoute,
   AppOpeningBalancesRoute: AppOpeningBalancesRoute,
@@ -665,13 +644,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

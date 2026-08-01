@@ -11,7 +11,7 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/currencies")({ component: CurrenciesPage });
 
-interface Currency { id: string; name: string; symbol: string; rate: number; is_base: boolean }
+interface Currency { id: string; name: string; symbol: string; is_base: boolean }
 
 function CurrenciesPage() {
   const { user } = useAuth();
@@ -19,7 +19,6 @@ function CurrenciesPage() {
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState("");
   const [symbol, setSymbol] = useState("");
-  const [rate, setRate] = useState("1");
   const [busy, setBusy] = useState(false);
 
   const load = async () => {
@@ -33,15 +32,13 @@ function CurrenciesPage() {
   const add = async () => {
     if (!user) return;
     if (!name.trim()) { toast.error("أدخل اسم العملة"); return; }
-    const r = parseFloat(rate);
-    if (!r || r <= 0) { toast.error("سعر التحويل غير صحيح"); return; }
     setBusy(true);
     const { error } = await supabase.from("currencies").insert({
-      user_id: user.id, name: name.trim(), symbol: symbol.trim(), rate: r, is_base: false,
+      user_id: user.id, name: name.trim(), symbol: symbol.trim(), is_base: false,
     });
     setBusy(false);
     if (error) { toast.error(error.message); return; }
-    setName(""); setSymbol(""); setRate("1");
+    setName(""); setSymbol("");
     toast.success("تمت إضافة العملة");
     load();
   };
@@ -58,7 +55,7 @@ function CurrenciesPage() {
   const setBase = async (id: string) => {
     if (!user) return;
     await supabase.from("currencies").update({ is_base: false }).eq("user_id", user.id);
-    await supabase.from("currencies").update({ is_base: true, rate: 1 }).eq("id", id);
+    await supabase.from("currencies").update({ is_base: true }).eq("id", id);
     toast.success("تم تعيين العملة الأساسية");
     load();
   };
@@ -71,7 +68,7 @@ function CurrenciesPage() {
         </div>
         <div>
           <h1 className="font-bold text-lg leading-tight">العملات</h1>
-          <p className="text-xs text-muted-foreground">حدّد عملتك الأساسية وأسعار التحويل</p>
+          <p className="text-xs text-muted-foreground">كل عملة مسار مستقل — لا تحويل بين العملات</p>
         </div>
       </div>
 
@@ -85,10 +82,6 @@ function CurrenciesPage() {
           <div className="space-y-1.5">
             <Label className="text-xs">الرمز</Label>
             <Input value={symbol} onChange={(e) => setSymbol(e.target.value)} placeholder="€" />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs">سعر التحويل للأساسية</Label>
-            <Input type="number" inputMode="decimal" dir="ltr" value={rate} onChange={(e) => setRate(e.target.value)} />
           </div>
         </div>
         <Button onClick={add} disabled={busy} className="w-full bg-gradient-primary text-primary-foreground">
@@ -110,7 +103,7 @@ function CurrenciesPage() {
                   {c.name} {c.symbol && <span className="text-xs text-muted-foreground">{c.symbol}</span>}
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  {c.is_base ? "العملة الأساسية" : `1 ${c.name} = ${c.rate} أساسي`}
+                  {c.is_base ? "العملة الافتراضية للعرض" : "مسار مستقل تماماً"}
                 </div>
               </div>
               {!c.is_base && (

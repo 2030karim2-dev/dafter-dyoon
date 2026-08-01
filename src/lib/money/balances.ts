@@ -1,13 +1,14 @@
 /**
  * Multi-currency balance calculation.
- * Each currency is kept STRICTLY SEPARATE — no mixing.
+ * Each currency is a completely independent ledger — there is no conversion
+ * rate anywhere in the system and amounts are NEVER mixed or summed across
+ * currencies.
  */
 
 export interface MoneyTx {
   amount: number;
   direction: string; // 'credit' | 'debit'
   currency_id: string;
-  rate_at_tx?: number | null;
 }
 
 export interface OpeningBalance {
@@ -20,7 +21,6 @@ export interface CurrencyLite {
   id: string;
   name: string;
   symbol: string;
-  rate: number;
   is_base: boolean;
 }
 
@@ -29,14 +29,17 @@ export interface PerCurrencyBalance {
   balance: number;   // signed: + means له عندك (credit), - means عليه (debit)
   txCount: number;
   opening: number;
-  baseEquivalent: number; // converted to base using CURRENT rate (display only)
+  credit: number;
+  debit: number;
 }
 
 /** Sign helper */
 const sign = (dir: string) => (dir === "credit" ? 1 : -1);
 
 /**
- * Compute one balance per currency, never mixing them.
+ * Compute one independent balance per currency.
+ * All currencies of the account are returned (every customer has an account
+ * per currency), sorted with the default currency first.
  */
 export function computeBalancesByCurrency(
   txs: MoneyTx[],
@@ -45,7 +48,7 @@ export function computeBalancesByCurrency(
 ): PerCurrencyBalance[] {
   const map = new Map<string, PerCurrencyBalance>();
   for (const c of currencies) {
-    map.set(c.id, { currency: c, balance: 0, txCount: 0, opening: 0, baseEquivalent: 0 });
+    map.set(c.id, { currency: c, balance: 0, txCount: 0, opening: 0, credit: 0, debit: 0 });
   }
   for (const o of openings) {
     const slot = map.get(o.currency_id);
@@ -53,19 +56,17 @@ export function computeBalancesByCurrency(
     const v = Number(o.amount) * sign(o.direction);
     slot.opening += v;
     slot.balance += v;
+    if (v >= 0) slot.credit += Math.abs(v); else slot.debit += Math.abs(v);
   }
   for (const t of txs) {
     const slot = map.get(t.currency_id);
     if (!slot) continue;
-    slot.balance += Number(t.amount) * sign(t.direction);
+    const amt = Number(t.amount);
+    slot.balance += amt * sign(t.direction);
+    if (t.direction === "credit") slot.credit += amt; else slot.debit += amt;
     slot.txCount += 1;
   }
-  for (const slot of map.values()) {
-    slot.baseEquivalent = slot.balance * (slot.currency.rate || 1);
-  }
-  // Only return currencies that have activity OR are the base
   return Array.from(map.values())
-    .filter((s) => s.txCount > 0 || s.opening !== 0 || s.currency.is_base)
     .sort((a, b) => Number(b.currency.is_base) - Number(a.currency.is_base));
 }
 
@@ -95,7 +96,7 @@ export function computeRunningByCurrency(
 }
 
 /**
- * Aggregate per-currency totals across many people (for global dashboard).
+ * Aggregate per-currency totals across many people (global dashboard).
  */
 export function aggregateOwedOwePerCurrency(
   txs: MoneyTx[],
@@ -114,6 +115,5 @@ export function aggregateOwedOwePerCurrency(
       const s = map.get(c.id)!;
       return { currency: c, owed: s.owed, owe: s.owe, net: s.owed - s.owe };
     })
-    .filter((r) => r.owed > 0 || r.owe > 0 || r.currency.is_base)
     .sort((a, b) => Number(b.currency.is_base) - Number(a.currency.is_base));
 }

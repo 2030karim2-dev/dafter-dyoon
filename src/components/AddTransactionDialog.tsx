@@ -17,7 +17,7 @@ import { evalExpr } from "@/lib/calc";
 import { AttachmentsManager } from "@/components/AttachmentsManager";
 
 interface Person { id: string; name: string }
-interface Currency { id: string; name: string; is_base: boolean; rate?: number }
+interface Currency { id: string; name: string; is_base: boolean }
 
 interface EditingTx {
   id: string;
@@ -111,8 +111,6 @@ export function AddTransactionDialog({ open, onOpenChange, people, currencies, o
         if (error) throw error;
         pid = data.id;
       }
-      const selectedCur = currencies.find((c) => c.id === currencyId);
-      const rateAtTx = selectedCur?.rate ?? 1;
       const payload = {
         user_id: user.id,
         person_id: pid,
@@ -122,7 +120,6 @@ export function AddTransactionDialog({ open, onOpenChange, people, currencies, o
         details: details.trim() || null,
         transaction_date: new Date(date).toISOString(),
         due_date: dueDate || null,
-        rate_at_tx: rateAtTx,
       };
       const { data: txData, error: te } = editing
         ? await supabase.from("transactions").update(payload).eq("id", editing.id).select("id").single()

@@ -12,7 +12,7 @@ export interface AiOpeningRow {
   notes: string;
 }
 
-interface CurrencyLite { id: string; name: string; symbol: string; is_base: boolean; rate: number }
+interface CurrencyLite { id: string; name: string; symbol: string; is_base: boolean }
 
 function normName(s: string) {
   return s.trim().replace(/\s+/g, " ").toLowerCase();
@@ -53,7 +53,7 @@ export async function commitOpeningBalances(
   };
 
   // Load currencies
-  const { data: curData } = await supabase.from("currencies").select("id,name,symbol,is_base,rate").eq("user_id", userId);
+  const { data: curData } = await supabase.from("currencies").select("id,name,symbol,is_base").eq("user_id", userId);
   const curs = (curData ?? []) as CurrencyLite[];
   const baseId = curs.find((c) => c.is_base)?.id ?? curs[0]?.id;
   if (!baseId) { res.errors.push("لا توجد عملات معرّفة"); return res; }
@@ -140,7 +140,7 @@ export async function commitOpeningBalances(
 
   // Build opening + payment payloads
   type OBIns = { user_id: string; person_id: string; currency_id: string; amount: number; direction: string; note: string; opening_date?: string };
-  type TxIns = { user_id: string; person_id: string; currency_id: string; amount: number; direction: string; details: string; transaction_date: string; rate_at_tx: number };
+  type TxIns = { user_id: string; person_id: string; currency_id: string; amount: number; direction: string; details: string; transaction_date: string };
   const obInsert: OBIns[] = [];
   const obUpdate: { id: string; amount: number; direction: string; note: string | null }[] = [];
   const payments: TxIns[] = [];
@@ -174,7 +174,6 @@ export async function commitOpeningBalances(
         direction: r.direction === "credit" ? "debit" : "credit", // payment reduces the balance
         details: "آخر دفعة (مستورد)",
         transaction_date: dt,
-        rate_at_tx: Number(curs.find((c) => c.id === curId)?.rate) || 1,
       });
     }
   });
