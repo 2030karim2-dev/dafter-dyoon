@@ -7,7 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
-import { UserPlus, Save } from "lucide-react";
+import { UserPlus, Save, BookUser } from "lucide-react";
+import { contactPickerSupported, pickContact } from "@/lib/contacts";
 
 export interface PersonEditing {
   id: string;
