@@ -11,7 +11,6 @@ import { AmountInput } from "@/components/AmountInput";
 import { evalExpr } from "@/lib/calc";
 
 interface Cur { id: string; name: string; is_base: boolean }
-interface Cat { id: string; name: string; color: string; icon: string }
 interface Person { id: string; name: string }
 
 interface Props {
@@ -19,17 +18,14 @@ interface Props {
   onOpenChange: (v: boolean) => void;
   userId: string;
   curs: Cur[];
-  cats: Cat[];
   people: Person[];
   onSaved: () => void;
 }
 
-export function RecurringFormDialog({ open, onOpenChange, userId, curs, cats, people, onSaved }: Props) {
-  const [kind, setKind] = useState<"expense" | "transaction">("expense");
+export function RecurringFormDialog({ open, onOpenChange, userId, curs, people, onSaved }: Props) {
   const [title, setTitle] = useState("");
   const [amount, setAmount] = useState("");
   const [currencyId, setCurrencyId] = useState("");
-  const [categoryId, setCategoryId] = useState("");
   const [personId, setPersonId] = useState("");
   const [direction, setDirection] = useState<"credit" | "debit">("credit");
   const [frequency, setFrequency] = useState<"daily" | "weekly" | "monthly" | "yearly">("monthly");
@@ -39,29 +35,28 @@ export function RecurringFormDialog({ open, onOpenChange, userId, curs, cats, pe
 
   useEffect(() => {
     if (!open) return;
-    setKind("expense"); setTitle(""); setAmount(""); setNote("");
-    setCategoryId(cats[0]?.id ?? "");
+    setTitle(""); setAmount(""); setNote("");
     setPersonId(""); setDirection("credit");
     setFrequency("monthly");
     const d = new Date(); d.setDate(d.getDate() + 1);
     setNextRun(d.toISOString().slice(0, 16));
     const base = curs.find((c) => c.is_base) ?? curs[0];
     setCurrencyId(base?.id ?? "");
-  }, [open, cats, curs]);
+  }, [open, curs]);
 
   const save = async () => {
     if (!title.trim()) return toast.error("أدخل العنوان");
     const amt = evalExpr(amount);
     if (!isFinite(amt) || amt <= 0) return toast.error("مبلغ غير صحيح");
     if (!currencyId) return toast.error("اختر العملة");
-    if (kind === "transaction" && !personId) return toast.error("اختر الشخص");
+    if (!personId) return toast.error("اختر العميل");
     setBusy(true);
     const { error } = await supabase.from("recurring_rules").insert({
-      user_id: userId, kind, title: title.trim(), amount: amt,
+      user_id: userId, kind: "transaction", title: title.trim(), amount: amt,
       currency_id: currencyId,
-      category_id: kind === "expense" ? (categoryId || null) : null,
-      person_id: kind === "transaction" ? personId : null,
-      direction: kind === "transaction" ? direction : null,
+      category_id: null,
+      person_id: personId,
+      direction,
       frequency, next_run: new Date(nextRun).toISOString(),
       note: note.trim() || null, is_active: true,
     });
@@ -80,11 +75,6 @@ export function RecurringFormDialog({ open, onOpenChange, userId, curs, cats, pe
       <DialogContent className="sm:max-w-md max-h-[90dvh] overflow-y-auto">
         <DialogHeader><DialogTitle className="text-right">دورية جديدة</DialogTitle></DialogHeader>
         <div className="space-y-3">
-          <div className="grid grid-cols-2 gap-2">
-            <button onClick={() => setKind("expense")} className={`p-2.5 rounded-xl border-2 text-sm font-semibold ${kind === "expense" ? "border-primary bg-secondary" : "border-border"}`}>مصروف</button>
-            <button onClick={() => setKind("transaction")} className={`p-2.5 rounded-xl border-2 text-sm font-semibold ${kind === "transaction" ? "border-primary bg-secondary" : "border-border"}`}>دين / استحقاق</button>
-          </div>
-
           <div className="space-y-1.5">
             <Label>العنوان</Label>
             <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="مثلاً: راتب، إيجار، اشتراك" maxLength={80} />
@@ -104,29 +94,17 @@ export function RecurringFormDialog({ open, onOpenChange, userId, curs, cats, pe
             </div>
           </div>
 
-          {kind === "expense" ? (
-            <div className="space-y-1.5">
-              <Label>التصنيف</Label>
-              <Select value={categoryId} onValueChange={setCategoryId}>
-                <SelectTrigger><SelectValue placeholder="اختر" /></SelectTrigger>
-                <SelectContent>{cats.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
-          ) : (
-            <>
-              <div className="space-y-1.5">
-                <Label>الشخص</Label>
-                <Select value={personId} onValueChange={setPersonId}>
-                  <SelectTrigger><SelectValue placeholder="اختر" /></SelectTrigger>
-                  <SelectContent>{people.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <button onClick={() => setDirection("credit")} className={`p-2 rounded-xl border-2 text-xs font-semibold ${direction === "credit" ? "border-success bg-success-soft text-success" : "border-border"}`}>له (دائن)</button>
-                <button onClick={() => setDirection("debit")} className={`p-2 rounded-xl border-2 text-xs font-semibold ${direction === "debit" ? "border-danger bg-danger-soft text-danger" : "border-border"}`}>عليه (مدين)</button>
-              </div>
-            </>
-          )}
+          <div className="space-y-1.5">
+            <Label>الشخص</Label>
+            <Select value={personId} onValueChange={setPersonId}>
+              <SelectTrigger><SelectValue placeholder="اختر" /></SelectTrigger>
+              <SelectContent>{people.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <button onClick={() => setDirection("credit")} className={`p-2 rounded-xl border-2 text-xs font-semibold ${direction === "credit" ? "border-success bg-success-soft text-success" : "border-border"}`}>له (دائن)</button>
+            <button onClick={() => setDirection("debit")} className={`p-2 rounded-xl border-2 text-xs font-semibold ${direction === "debit" ? "border-danger bg-danger-soft text-danger" : "border-border"}`}>عليه (مدين)</button>
+          </div>
 
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1.5">

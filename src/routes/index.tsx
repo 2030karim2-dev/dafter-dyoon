@@ -20,7 +20,7 @@ function Landing() {
         </nav>
         <div className="max-w-6xl mx-auto px-4 pt-10 pb-20 text-center">
           <h1 className="text-4xl sm:text-5xl font-black leading-tight">
-            إدارة الديون والمصاريف <br /> بطريقة احترافية
+            إدارة ومتابعة الديون <br /> بطريقة احترافية
           </h1>
           <p className="mt-4 text-white/85 text-base sm:text-lg max-w-xl mx-auto">
             تتبع كل ما لك وما عليك، نظّم عملاءك ومورديك، وراقب أرصدتك بدقة عالية في مكان واحد.

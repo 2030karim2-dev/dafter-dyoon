@@ -57,7 +57,7 @@ function DataPage() {
     toast.success("تم تنزيل النسخة");
   };
 
-  const exportCSV = async (kind: "transactions" | "expenses") => {
+  const exportCSV = async (kind: "transactions") => {
     const { data } = await supabase.from(kind).select("*");
     if (!data?.length) { toast.info("لا توجد بيانات"); return; }
     const headers = Object.keys(data[0]);
@@ -120,7 +120,7 @@ function DataPage() {
   const wipe = async () => {
     if (!user) return;
     setBusy(true);
-    const tables = ["transactions", "expenses", "reminders", "recurring_rules", "budgets", "people"];
+    const tables = ["transactions", "reminders", "recurring_rules", "people"];
     for (const t of tables) {
       await (supabase.from(t as never) as never as { delete: () => { eq: (k: string, v: string) => Promise<unknown> } }).delete().eq("user_id", user.id);
     }
@@ -142,11 +142,10 @@ function DataPage() {
       <BackupsList backups={backups} onRestore={setRestoreId} onDelete={removeBackup} />
 
       <SettingsGroup title="التصدير والاستيراد المحلي">
-        <SettingsRow icon={FileSpreadsheet} label="تصدير شامل إلى Excel" desc="أشخاص + معاملات + مصاريف" tone="success" onClick={async () => { if (!user) return; setBusy(true); await exportAllToExcel(user.id); setBusy(false); toast.success("تم التصدير"); }} />
+        <SettingsRow icon={FileSpreadsheet} label="تصدير شامل إلى Excel" desc="أشخاص + معاملات + كشوف" tone="success" onClick={async () => { if (!user) return; setBusy(true); await exportAllToExcel(user.id); setBusy(false); toast.success("تم التصدير"); }} />
         <SettingsRow icon={Upload} label="استيراد معاملات من Excel" desc=".xlsx أو .csv — مع معاينة" tone="accent" onClick={() => setImportOpen(true)} />
         <SettingsRow icon={Download} label="نسخة احتياطية كاملة (JSON)" desc="تحميل ملف على جهازك" tone="primary" onClick={exportJSON} />
         <SettingsRow icon={FileText} label="تصدير المعاملات (CSV)" desc="ديون فقط" onClick={() => exportCSV("transactions")} />
-        <SettingsRow icon={FileText} label="تصدير المصاريف (CSV)" desc="مصاريف فقط" onClick={() => exportCSV("expenses")} />
         <SettingsRow icon={Upload} label="استيراد من نسخة JSON" desc="استعادة من ملف نسخة احتياطية" onClick={() => fileRef.current?.click()} />
       </SettingsGroup>
 
@@ -159,7 +158,7 @@ function DataPage() {
       <ConfirmDialog
         open={confirmWipe} onOpenChange={setConfirmWipe}
         title="مسح كل البيانات؟"
-        description="سيتم حذف جميع الأشخاص والمعاملات والمصاريف. هذا الإجراء لا يمكن التراجع عنه."
+        description="سيتم حذف جميع العملاء والمعاملات والتذكيرات. هذا الإجراء لا يمكن التراجع عنه."
         confirmLabel={busy ? "جارٍ..." : "مسح كل شيء"} destructive onConfirm={wipe}
       />
       <ConfirmDialog

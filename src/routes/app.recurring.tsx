@@ -13,28 +13,24 @@ import { RecurringFormDialog } from "@/features/recurring/RecurringFormDialog";
 export const Route = createFileRoute("/app/recurring")({ component: RecurringPage });
 
 interface Cur { id: string; name: string; is_base: boolean }
-interface Cat { id: string; name: string; color: string; icon: string }
 interface Person { id: string; name: string }
 
 function RecurringPage() {
   const { user } = useAuth();
   const [items, setItems] = useState<Rule[]>([]);
   const [curs, setCurs] = useState<Cur[]>([]);
-  const [cats, setCats] = useState<Cat[]>([]);
   const [people, setPeople] = useState<Person[]>([]);
   const [open, setOpen] = useState(false);
 
   const load = async () => {
     if (!user) return;
-    const [{ data: r }, { data: c }, { data: ca }, { data: p }] = await Promise.all([
+    const [{ data: r }, { data: c }, { data: p }] = await Promise.all([
       supabase.from("recurring_rules").select("*").order("next_run"),
       supabase.from("currencies").select("id,name,is_base").order("is_base", { ascending: false }),
-      supabase.from("expense_categories").select("id,name,color,icon").order("sort_order"),
       supabase.from("people").select("id,name").eq("is_archived", false),
     ]);
     setItems((r ?? []) as Rule[]);
     setCurs((c ?? []) as Cur[]);
-    setCats((ca ?? []) as Cat[]);
     setPeople((p ?? []) as Person[]);
   };
   useEffect(() => { load(); }, [user]);
@@ -83,7 +79,6 @@ function RecurringPage() {
               onOpenChange={setOpen}
               userId={user.id}
               curs={curs}
-              cats={cats}
               people={people}
               onSaved={load}
             />

@@ -1,6 +1,6 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Users, Wallet, BarChart3, Settings, Tags, PieChart, BellRing, Coins } from "lucide-react";
+import { Users, BarChart3, Settings, BellRing } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { BadgeCount } from "@/components/common/BadgeCount";
@@ -17,18 +17,11 @@ const SETTINGS_PREFIXES = [
   "/app/settings", "/app/currencies", "/app/reminders", "/app/recurring",
 ];
 
-const debtsItems: NavItem[] = [
+const items: NavItem[] = [
   { to: "/app", label: "الديون", icon: Users, match: (p) => p === "/app" || p === "/app/" },
   { to: "/app/followup", label: "المتابعة", icon: BellRing, match: (p) => p.startsWith("/app/followup"), badgeKey: "reminders" },
   { to: "/app/reports", label: "التقارير", icon: BarChart3, match: (p) => p.startsWith("/app/reports") },
   { to: "/app/settings", label: "الإعدادات", icon: Settings, match: (p) => SETTINGS_PREFIXES.some((x) => p.startsWith(x)) },
-];
-
-const expensesItems: NavItem[] = [
-  { to: "/app/expenses", label: "المصاريف", icon: Wallet, match: (p) => p === "/app/expenses" || p === "/app/expenses/" },
-  { to: "/app/budgets", label: "الميزانيات", icon: Coins, match: (p) => p.startsWith("/app/budgets") },
-  { to: "/app/categories", label: "التصنيفات", icon: Tags, match: (p) => p.startsWith("/app/categories") },
-  { to: "/app/insights", label: "تحليلات", icon: PieChart, match: (p) => p.startsWith("/app/insights") },
 ];
 
 export function BottomNav() {
@@ -36,12 +29,6 @@ export function BottomNav() {
   const path = loc.pathname;
   const { user } = useAuth();
   const [pendingReminders, setPendingReminders] = useState(0);
-
-  const isExpensesArea =
-    path === "/app/expenses" || path.startsWith("/app/expenses/") ||
-    path.startsWith("/app/budgets") || path.startsWith("/app/categories") ||
-    path.startsWith("/app/insights");
-  const items = isExpensesArea ? expensesItems : debtsItems;
 
   useEffect(() => {
     if (!user) return;

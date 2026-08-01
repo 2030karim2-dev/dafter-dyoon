@@ -3,11 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 interface Rule {
   id: string;
   user_id: string;
-  kind: "expense" | "transaction";
+  kind: string;
   amount: number;
   currency_id: string;
   note: string | null;
-  category_id: string | null;
   person_id: string | null;
   direction: string | null;
   frequency: "daily" | "weekly" | "monthly" | "yearly";
@@ -44,17 +43,7 @@ export async function processDueRecurring(userId: string): Promise<number> {
       // Generate as many missed entries as needed (cap 24 to avoid runaways)
       let safety = 0;
       while (next <= now && safety < 24) {
-        if (r.kind === "expense") {
-          const { error } = await supabase.from("expenses").insert({
-            user_id: userId,
-            amount: r.amount,
-            currency_id: r.currency_id,
-            category_id: r.category_id,
-            note: r.note ?? r.title,
-            expense_date: next.toISOString(),
-          });
-          if (error) { console.error("recurring expense insert failed", error); break; }
-        } else if (r.kind === "transaction" && r.person_id && r.direction) {
+        if (r.person_id && r.direction) {
           const { error } = await supabase.from("transactions").insert({
             user_id: userId,
             person_id: r.person_id,

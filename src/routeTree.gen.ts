@@ -20,13 +20,9 @@ import { Route as AppRemindersRouteImport } from './routes/app.reminders'
 import { Route as AppRecurringRouteImport } from './routes/app.recurring'
 import { Route as AppOpeningBalancesRouteImport } from './routes/app.opening-balances'
 import { Route as AppNotificationsRouteImport } from './routes/app.notifications'
-import { Route as AppInsightsRouteImport } from './routes/app.insights'
 import { Route as AppFollowupRouteImport } from './routes/app.followup'
-import { Route as AppExpensesRouteImport } from './routes/app.expenses'
 import { Route as AppExchangeRatesRouteImport } from './routes/app.exchange-rates'
 import { Route as AppCurrenciesRouteImport } from './routes/app.currencies'
-import { Route as AppCategoriesRouteImport } from './routes/app.categories'
-import { Route as AppBudgetsRouteImport } from './routes/app.budgets'
 import { Route as AppArchiveRouteImport } from './routes/app.archive'
 import { Route as AppActivityRouteImport } from './routes/app.activity'
 import { Route as AppSettingsIndexRouteImport } from './routes/app.settings.index'
@@ -95,19 +91,9 @@ const AppNotificationsRoute = AppNotificationsRouteImport.update({
   path: '/notifications',
   getParentRoute: () => AppRoute,
 } as any)
-const AppInsightsRoute = AppInsightsRouteImport.update({
-  id: '/insights',
-  path: '/insights',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppFollowupRoute = AppFollowupRouteImport.update({
   id: '/followup',
   path: '/followup',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppExpensesRoute = AppExpensesRouteImport.update({
-  id: '/expenses',
-  path: '/expenses',
   getParentRoute: () => AppRoute,
 } as any)
 const AppExchangeRatesRoute = AppExchangeRatesRouteImport.update({
@@ -118,16 +104,6 @@ const AppExchangeRatesRoute = AppExchangeRatesRouteImport.update({
 const AppCurrenciesRoute = AppCurrenciesRouteImport.update({
   id: '/currencies',
   path: '/currencies',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppCategoriesRoute = AppCategoriesRouteImport.update({
-  id: '/categories',
-  path: '/categories',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppBudgetsRoute = AppBudgetsRouteImport.update({
-  id: '/budgets',
-  path: '/budgets',
   getParentRoute: () => AppRoute,
 } as any)
 const AppArchiveRoute = AppArchiveRouteImport.update({
@@ -198,13 +174,9 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/app/activity': typeof AppActivityRoute
   '/app/archive': typeof AppArchiveRoute
-  '/app/budgets': typeof AppBudgetsRoute
-  '/app/categories': typeof AppCategoriesRoute
   '/app/currencies': typeof AppCurrenciesRoute
   '/app/exchange-rates': typeof AppExchangeRatesRoute
-  '/app/expenses': typeof AppExpensesRoute
   '/app/followup': typeof AppFollowupRoute
-  '/app/insights': typeof AppInsightsRoute
   '/app/notifications': typeof AppNotificationsRoute
   '/app/opening-balances': typeof AppOpeningBalancesRoute
   '/app/recurring': typeof AppRecurringRoute
@@ -229,13 +201,9 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/app/activity': typeof AppActivityRoute
   '/app/archive': typeof AppArchiveRoute
-  '/app/budgets': typeof AppBudgetsRoute
-  '/app/categories': typeof AppCategoriesRoute
   '/app/currencies': typeof AppCurrenciesRoute
   '/app/exchange-rates': typeof AppExchangeRatesRoute
-  '/app/expenses': typeof AppExpensesRoute
   '/app/followup': typeof AppFollowupRoute
-  '/app/insights': typeof AppInsightsRoute
   '/app/notifications': typeof AppNotificationsRoute
   '/app/opening-balances': typeof AppOpeningBalancesRoute
   '/app/recurring': typeof AppRecurringRoute
@@ -261,13 +229,9 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/app/activity': typeof AppActivityRoute
   '/app/archive': typeof AppArchiveRoute
-  '/app/budgets': typeof AppBudgetsRoute
-  '/app/categories': typeof AppCategoriesRoute
   '/app/currencies': typeof AppCurrenciesRoute
   '/app/exchange-rates': typeof AppExchangeRatesRoute
-  '/app/expenses': typeof AppExpensesRoute
   '/app/followup': typeof AppFollowupRoute
-  '/app/insights': typeof AppInsightsRoute
   '/app/notifications': typeof AppNotificationsRoute
   '/app/opening-balances': typeof AppOpeningBalancesRoute
   '/app/recurring': typeof AppRecurringRoute
@@ -295,13 +259,9 @@ export interface FileRouteTypes {
     | '/auth'
     | '/app/activity'
     | '/app/archive'
-    | '/app/budgets'
-    | '/app/categories'
     | '/app/currencies'
     | '/app/exchange-rates'
-    | '/app/expenses'
     | '/app/followup'
-    | '/app/insights'
     | '/app/notifications'
     | '/app/opening-balances'
     | '/app/recurring'
@@ -326,13 +286,9 @@ export interface FileRouteTypes {
     | '/auth'
     | '/app/activity'
     | '/app/archive'
-    | '/app/budgets'
-    | '/app/categories'
     | '/app/currencies'
     | '/app/exchange-rates'
-    | '/app/expenses'
     | '/app/followup'
-    | '/app/insights'
     | '/app/notifications'
     | '/app/opening-balances'
     | '/app/recurring'
@@ -357,13 +313,9 @@ export interface FileRouteTypes {
     | '/auth'
     | '/app/activity'
     | '/app/archive'
-    | '/app/budgets'
-    | '/app/categories'
     | '/app/currencies'
     | '/app/exchange-rates'
-    | '/app/expenses'
     | '/app/followup'
-    | '/app/insights'
     | '/app/notifications'
     | '/app/opening-balances'
     | '/app/recurring'
@@ -470,25 +422,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppNotificationsRouteImport
       parentRoute: typeof AppRoute
     }
-    '/app/insights': {
-      id: '/app/insights'
-      path: '/insights'
-      fullPath: '/app/insights'
-      preLoaderRoute: typeof AppInsightsRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/app/followup': {
       id: '/app/followup'
       path: '/followup'
       fullPath: '/app/followup'
       preLoaderRoute: typeof AppFollowupRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/expenses': {
-      id: '/app/expenses'
-      path: '/expenses'
-      fullPath: '/app/expenses'
-      preLoaderRoute: typeof AppExpensesRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/exchange-rates': {
@@ -503,20 +441,6 @@ declare module '@tanstack/react-router' {
       path: '/currencies'
       fullPath: '/app/currencies'
       preLoaderRoute: typeof AppCurrenciesRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/categories': {
-      id: '/app/categories'
-      path: '/categories'
-      fullPath: '/app/categories'
-      preLoaderRoute: typeof AppCategoriesRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/budgets': {
-      id: '/app/budgets'
-      path: '/budgets'
-      fullPath: '/app/budgets'
-      preLoaderRoute: typeof AppBudgetsRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/archive': {
@@ -635,13 +559,9 @@ const AppSettingsRouteWithChildren = AppSettingsRoute._addFileChildren(
 interface AppRouteChildren {
   AppActivityRoute: typeof AppActivityRoute
   AppArchiveRoute: typeof AppArchiveRoute
-  AppBudgetsRoute: typeof AppBudgetsRoute
-  AppCategoriesRoute: typeof AppCategoriesRoute
   AppCurrenciesRoute: typeof AppCurrenciesRoute
   AppExchangeRatesRoute: typeof AppExchangeRatesRoute
-  AppExpensesRoute: typeof AppExpensesRoute
   AppFollowupRoute: typeof AppFollowupRoute
-  AppInsightsRoute: typeof AppInsightsRoute
   AppNotificationsRoute: typeof AppNotificationsRoute
   AppOpeningBalancesRoute: typeof AppOpeningBalancesRoute
   AppRecurringRoute: typeof AppRecurringRoute
@@ -656,13 +576,9 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppActivityRoute: AppActivityRoute,
   AppArchiveRoute: AppArchiveRoute,
-  AppBudgetsRoute: AppBudgetsRoute,
-  AppCategoriesRoute: AppCategoriesRoute,
   AppCurrenciesRoute: AppCurrenciesRoute,
   AppExchangeRatesRoute: AppExchangeRatesRoute,
-  AppExpensesRoute: AppExpensesRoute,
   AppFollowupRoute: AppFollowupRoute,
-  AppInsightsRoute: AppInsightsRoute,
   AppNotificationsRoute: AppNotificationsRoute,
   AppOpeningBalancesRoute: AppOpeningBalancesRoute,
   AppRecurringRoute: AppRecurringRoute,

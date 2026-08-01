@@ -9,12 +9,11 @@ export async function downloadBackup(path: string): Promise<BackupSnapshot | nul
 
 export async function restoreFromSnapshot(userId: string, snap: BackupSnapshot, mode: "merge" | "replace"): Promise<number> {
   if (mode === "replace") {
-    const tables = ["transactions", "expenses", "reminders", "recurring_rules", "budgets", "people"];
+    const tables = ["transactions", "reminders", "recurring_rules", "people"];
     for (const t of tables) await (supabase.from(t as never) as never as { delete: () => { eq: (k: string, v: string) => Promise<unknown> } }).delete().eq("user_id", userId);
   }
   const lookupMap: Array<[string, unknown[]]> = [
     ["currencies", snap.currencies],
-    ["expense_categories", snap.categories],
   ];
   for (const [table, rows] of lookupMap) {
     if (!Array.isArray(rows) || !rows.length) continue;
@@ -25,8 +24,8 @@ export async function restoreFromSnapshot(userId: string, snap: BackupSnapshot, 
 
   const map: Array<[string, unknown[]]> = [
     ["people", snap.people],
-    ["transactions", snap.transactions], ["expenses", snap.expenses],
-    ["budgets", snap.budgets], ["reminders", snap.reminders], ["recurring_rules", snap.recurring],
+    ["transactions", snap.transactions],
+    ["reminders", snap.reminders], ["recurring_rules", snap.recurring],
   ];
   let total = 0;
   for (const [table, rows] of map) {

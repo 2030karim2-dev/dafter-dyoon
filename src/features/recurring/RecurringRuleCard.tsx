@@ -7,7 +7,6 @@ export interface Rule {
   kind: string;
   amount: number;
   currency_id: string;
-  category_id: string | null;
   person_id: string | null;
   direction: string | null;
   frequency: string;
@@ -29,7 +28,7 @@ interface Props {
 export function RecurringRuleCard({ r, currencyName, onToggle, onDelete }: Props) {
   return (
     <Card className={`p-3 flex items-center gap-3 ${!r.is_active ? "opacity-60" : ""}`}>
-      <div className={`size-10 rounded-xl flex items-center justify-center shrink-0 ${r.kind === "expense" ? "bg-danger-soft text-danger" : r.direction === "credit" ? "bg-success-soft text-success" : "bg-primary/10 text-primary"}`}>
+      <div className={`size-10 rounded-xl flex items-center justify-center shrink-0 ${r.direction === "credit" ? "bg-success-soft text-success" : "bg-danger-soft text-danger"}`}>
         <Repeat className="size-5" />
       </div>
       <div className="flex-1 min-w-0">

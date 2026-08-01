@@ -3,7 +3,7 @@ import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Wallet, TrendingUp, Bell, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
+import { Wallet, TrendingUp, Bell, Users, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 
 interface Currency { id: string; name: string; symbol: string; is_base: boolean }
@@ -12,7 +12,7 @@ const SLIDES = [
   {
     icon: Wallet,
     title: "أهلاً بك في دفترك",
-    desc: "تطبيقك الشامل لإدارة الديون والمصاريف باحترافية تامة وأمان كامل.",
+    desc: "منصتك المتخصصة في متابعة الديون والعملاء والتذكير بالاستحقاقات.",
   },
   {
     icon: TrendingUp,
@@ -20,9 +20,9 @@ const SLIDES = [
     desc: "سجّل المعاملات بسهولة مع أكثر من عملة، واطّلع على رصيد كل شخص لحظياً.",
   },
   {
-    icon: Wallet,
-    title: "نظّم مصاريفك",
-    desc: "تصنيفات قابلة للتخصيص، ميزانية شهرية، وتقارير ذكية ترشد قراراتك.",
+    icon: Users,
+    title: "تابع عملاءك",
+    desc: "كشوف حسابات احترافية، تقييم للعملاء، ومشاركة فورية عبر واتساب.",
   },
   {
     icon: Bell,

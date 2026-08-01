@@ -4,12 +4,11 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { useNavigate } from "@tanstack/react-router";
-import { User, Receipt, Wallet, Loader2, Search } from "lucide-react";
+import { User, Wallet, Loader2, Search } from "lucide-react";
 import { fmtMoney, fmtDate } from "@/lib/format";
 
 interface Person { id: string; name: string; phone: string | null }
 interface Tx { id: string; person_id: string; amount: number; direction: string; details: string | null; transaction_date: string }
-interface Exp { id: string; amount: number; note: string | null; expense_date: string; category_id: string | null }
 
 interface Props { open: boolean; onOpenChange: (v: boolean) => void }
 
@@ -24,20 +23,17 @@ export function GlobalSearchDialog({ open, onOpenChange }: Props) {
   const [loading, setLoading] = useState(false);
   const [people, setPeople] = useState<Person[]>([]);
   const [txs, setTxs] = useState<Tx[]>([]);
-  const [exps, setExps] = useState<Exp[]>([]);
 
   useEffect(() => {
     if (!open || !user) return;
     setLoading(true);
     (async () => {
-      const [{ data: p }, { data: t }, { data: e }] = await Promise.all([
+      const [{ data: p }, { data: t }] = await Promise.all([
         supabase.from("people").select("id,name,phone").eq("is_archived", false).limit(500),
         supabase.from("transactions").select("id,person_id,amount,direction,details,transaction_date").order("transaction_date", { ascending: false }).limit(500),
-        supabase.from("expenses").select("id,amount,note,expense_date,category_id").order("expense_date", { ascending: false }).limit(300),
       ]);
       setPeople((p ?? []) as Person[]);
       setTxs((t ?? []) as Tx[]);
-      setExps((e ?? []) as Exp[]);
       setLoading(false);
     })();
   }, [open, user]);
@@ -46,16 +42,14 @@ export function GlobalSearchDialog({ open, onOpenChange }: Props) {
 
   const nq = normalize(q);
   const results = useMemo(() => {
-    if (!nq) return { people: people.slice(0, 6), txs: [] as Tx[], exps: [] as Exp[] };
+    if (!nq) return { people: people.slice(0, 6), txs: [] as Tx[] };
     const fp = people.filter((p) => normalize(p.name).includes(nq) || (p.phone ?? "").includes(q)).slice(0, 6);
     const ft = txs.filter((t) => normalize(t.details ?? "").includes(nq) || String(t.amount).includes(nq)).slice(0, 8);
-    const fe = exps.filter((e) => normalize(e.note ?? "").includes(nq) || String(e.amount).includes(nq)).slice(0, 6);
-    return { people: fp, txs: ft, exps: fe };
-  }, [nq, q, people, txs, exps]);
+    return { people: fp, txs: ft };
+  }, [nq, q, people, txs]);
 
   const goPerson = (id: string) => { onOpenChange(false); nav({ to: "/app/person/$id", params: { id } }); };
   const goTx = (t: Tx) => goPerson(t.person_id);
-  const goExp = () => { onOpenChange(false); nav({ to: "/app/expenses" }); };
 
   const personName = (id: string) => people.find((p) => p.id === id)?.name ?? "—";
 
@@ -94,17 +88,8 @@ export function GlobalSearchDialog({ open, onOpenChange }: Props) {
             </Section>
           )}
 
-          {results.exps.length > 0 && (
-            <Section title="المصاريف" icon={Receipt}>
-              {results.exps.map((e) => (
-                <Row key={e.id} onClick={goExp} icon={<Receipt className="size-3.5 text-amber-600" />}
-                  title={`${fmtMoney(Number(e.amount))}${e.note ? " — " + e.note : ""}`}
-                  subtitle={fmtDate(e.expense_date)} />
-              ))}
-            </Section>
-          )}
 
-          {!loading && nq && results.people.length + results.txs.length + results.exps.length === 0 && (
+          {!loading && nq && results.people.length + results.txs.length === 0 && (
             <div className="text-center py-8 text-xs text-muted-foreground">لا توجد نتائج لـ "{q}"</div>
           )}
           {!nq && !loading && (

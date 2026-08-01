@@ -62,7 +62,7 @@ function AuthPage() {
             <Wallet className="size-8 text-white" />
           </div>
           <h1 className="text-2xl font-bold text-white">مرحباً بك في دفترك</h1>
-          <p className="text-white/80 text-sm mt-1">إدارة ديونك ومصاريفك بكل احترافية</p>
+          <p className="text-white/80 text-sm mt-1">إدارة ومتابعة ديونك بكل احترافية</p>
         </div>
 
         <Card className="p-6 shadow-elevated">

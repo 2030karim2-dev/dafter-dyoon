@@ -4,7 +4,6 @@ import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Wallet, Loader2, Bell, Search, Moon, Sun } from "lucide-react";
 import { BottomNav } from "@/components/BottomNav";
-import { ModuleTabs } from "@/components/common/ModuleTabs";
 import { BadgeCount } from "@/components/common/BadgeCount";
 import { GlobalSearchDialog } from "@/components/GlobalSearchDialog";
 import { useTheme } from "@/lib/theme";
@@ -89,7 +88,6 @@ function AppLayout() {
       </header>
 
       <main className="max-w-3xl mx-auto px-2.5 py-2.5">
-        <ModuleTabs />
         <Outlet />
       </main>
 

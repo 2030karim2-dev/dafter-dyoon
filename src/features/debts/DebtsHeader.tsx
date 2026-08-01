@@ -18,8 +18,8 @@ export function DebtsHeader({ owed, owe, baseName, peopleCount, txCount, filter,
     <div className="bg-gradient-primary text-primary-foreground rounded-xl p-2.5 shadow-elevated">
       <div className="flex items-center justify-between text-[10px] opacity-85 mb-1">
         <span>إجمالي الأرصدة ({baseName})</span>
-        <Link to="/app/insights" className="flex items-center gap-1 bg-white/15 backdrop-blur px-1.5 py-0.5 rounded-full hover:bg-white/25 transition-colors text-[9px]">
-          <Sparkles className="size-2.5" /> ذكاء
+        <Link to="/app/followup" className="flex items-center gap-1 bg-white/15 backdrop-blur px-1.5 py-0.5 rounded-full hover:bg-white/25 transition-colors text-[9px]">
+          <Sparkles className="size-2.5" /> المتابعة
         </Link>
       </div>
       <div className="grid grid-cols-2 gap-1.5">

@@ -11,14 +11,6 @@ export interface TxRow {
   currency_id: string;
 }
 
-export interface ExpRow {
-  amount: number;
-  expense_date: string;
-  note: string | null;
-  category_id: string;
-  currency_id: string;
-}
-
 export interface CurRow { id: string; name: string; symbol: string; rate: number; is_base?: boolean }
 
 export interface CatRow { id: string; name: string }
