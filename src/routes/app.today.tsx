@@ -17,6 +17,7 @@ import { MessageSheet } from "@/features/followup/MessageSheet";
 import { EMPTY_TODAY, useToday } from "@/features/today/useToday";
 import type { TodayTask } from "@/lib/today.functions";
 import { buildMessageFn, markSentFn, sendOutboxFn } from "@/lib/messaging.functions";
+import { smartMatch } from "@/lib/search/match";
 
 export const Route = createFileRoute("/app/today")({
   component: TodayPage,
@@ -53,13 +54,21 @@ function TodayPage() {
   const sendOutbox = useServerFn(sendOutboxFn);
 
   const rows = useMemo(() => {
-    const term = q.trim();
-    return payload.tasks.filter(
-      (t) =>
-        (tab === "all" || t.kind === tab) &&
-        (!term || t.person_name.includes(term) || (t.phone ?? "").includes(term)),
-    );
+    return payload.tasks.filter((t) => {
+      const tabOk =
+        tab === "all" ? true
+        : tab === "pending" ? !t.reminded
+        : tab === "reminded" ? t.reminded
+        : t.kind === tab;
+      if (!tabOk) return false;
+      return smartMatch(q, {
+        text: [t.person_name, t.note, t.currency_name],
+        phones: [t.phone],
+        numbers: [t.amount],
+      });
+    });
   }, [payload.tasks, tab, q]);
+
 
   const invalidate = () => {
     void qc.invalidateQueries({ queryKey: ["today-board"] });
@@ -133,7 +142,7 @@ function TodayPage() {
 
       <TodaySummary payload={payload} />
       <TodayTabs tab={tab} counts={payload.counts} onChange={setTab} />
-      <SearchBar value={q} onChange={setQ} placeholder="ابحث باسم العميل أو رقمه..." />
+      <SearchBar value={q} onChange={setQ} placeholder="ابحث باسم متقطع، رقم هاتف، أو مبلغ..." />
 
       {isLoading ? (
         <div className="flex justify-center py-10"><Loader2 className="size-5 animate-spin text-primary" /></div>
@@ -146,7 +155,9 @@ function TodayPage() {
               key={t.id}
               task={t}
               onOpen={() => navigate({ to: "/app/person/$id", params: { id: t.person_id } })}
+              canAuto={payload.availability.whatsapp_auto}
               onMessage={() => build.mutate(t)}
+              onAutoSend={() => autoSend.mutate(t)}
               onPay={() => setSheet({ type: "pay", task: t })}
               onPromise={() => setSheet({ type: "promise", task: t })}
               onRetry={() => retry.mutate(t)}
@@ -187,7 +198,7 @@ function TodayPage() {
           body={sheet.body}
           loading={build.isPending}
           phone={sheet.task.phone}
-          canAuto={false}
+          canAuto={payload.availability.whatsapp_auto}
           onBodyChange={(v) => setSheet({ ...sheet, body: v })}
           onQueue={() => queueOne.mutate(sheet.task)}
           onAutoSend={() => autoSend.mutate(sheet.task)}

@@ -1,6 +1,8 @@
 import type { FollowupTab } from "./useBoard";
 
 const META: Record<FollowupTab, { label: string; cls: string }> = {
+  pending: { label: "بحاجة تذكير", cls: "bg-danger text-danger-foreground" },
+  reminded: { label: "تم تذكيرهم", cls: "bg-success text-success-foreground" },
   all: { label: "الكل", cls: "bg-primary text-primary-foreground" },
   critical: { label: "حرج", cls: "bg-danger text-danger-foreground" },
   late: { label: "متأخر", cls: "bg-danger-soft text-danger" },
@@ -11,6 +13,8 @@ const META: Record<FollowupTab, { label: string; cls: string }> = {
   soon: { label: "قريب", cls: "bg-secondary text-primary" },
 };
 
+const ORDER: FollowupTab[] = ["pending", "reminded", "all", "critical", "late", "due", "soon"];
+
 interface Props {
   tab: FollowupTab;
   counts: Record<FollowupTab, number>;
@@ -19,8 +23,8 @@ interface Props {
 
 export function FollowupTabs({ tab, counts, onChange }: Props) {
   return (
-    <div className="grid grid-cols-5 gap-1">
-      {(["all", "critical", "late", "due", "soon"] as const).map((t) => {
+    <div className="grid grid-cols-4 gap-1">
+      {ORDER.map((t) => {
         const active = tab === t;
         return (
           <button

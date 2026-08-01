@@ -1,7 +1,7 @@
 import { Avatar } from "@/components/common/Avatar";
 import { Button } from "@/components/ui/button";
 import { fmtMoney } from "@/lib/format";
-import { MessageCircle, Clock, Phone, History } from "lucide-react";
+import { MessageCircle, Clock, Phone, History, Send, CheckCheck } from "lucide-react";
 import type { BoardBucket, Severity } from "@/lib/followup.functions";
 
 const SEV: Record<Severity, { label: string; cls: string }> = {
@@ -18,15 +18,22 @@ const SEV: Record<Severity, { label: string; cls: string }> = {
 interface Props {
   bucket: BoardBucket;
   selected: boolean;
+  canAuto: boolean;
   onSelect: () => void;
   onMessage: () => void;
+  onAutoSend: () => void;
 }
 
-export function FollowupCard({ bucket: b, selected, onSelect, onMessage }: Props) {
+const fmtDay = (iso: string | null) =>
+  iso ? new Date(iso).toLocaleDateString("ar", { day: "2-digit", month: "2-digit" }) : "—";
+
+export function FollowupCard({
+  bucket: b, selected, canAuto, onSelect, onMessage, onAutoSend,
+}: Props) {
   const sev = SEV[b.severity];
   return (
     <div
-      className={`rounded-lg border bg-card p-2 space-y-1.5 transition ${selected ? "ring-2 ring-primary border-transparent" : ""}`}
+      className={`rounded-lg border bg-card p-2 space-y-1.5 transition border-s-2 ${b.reminded ? "border-s-success" : "border-s-danger"} ${selected ? "ring-2 ring-primary border-transparent" : ""}`}
     >
       <div className="flex items-center gap-2">
         <input
@@ -43,6 +50,15 @@ export function FollowupCard({ bucket: b, selected, onSelect, onMessage }: Props
             <span className={`text-[9.5px] px-1 py-px rounded font-bold ${sev.cls}`}>
               {sev.label}
             </span>
+            {b.reminded ? (
+              <span className="text-[9.5px] px-1 py-px rounded font-bold bg-success/15 text-success flex items-center gap-0.5">
+                <CheckCheck className="size-2.5" /> تم التذكير {fmtDay(b.last_contact_at)}
+              </span>
+            ) : (
+              <span className="text-[9.5px] px-1 py-px rounded font-bold bg-danger/12 text-danger">
+                لم يُذكَّر
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
             {b.days_overdue > 0 && (
@@ -78,13 +94,26 @@ export function FollowupCard({ bucket: b, selected, onSelect, onMessage }: Props
         </ul>
       )}
 
-      <Button
-        size="sm"
-        className="w-full h-7 text-[11px] bg-success text-success-foreground hover:bg-success/90"
-        onClick={onMessage}
-      >
-        <MessageCircle className="size-3" /> تجهيز رسالة تذكير
-      </Button>
+      {b.reminded && b.next_reminder_at && (
+        <div className="text-[9.5px] text-muted-foreground">
+          التنبيه القادم: {fmtDay(b.next_reminder_at)}
+        </div>
+      )}
+
+      <div className="grid grid-cols-2 gap-1">
+        <Button size="sm" variant="outline" className="h-7 text-[11px]" onClick={onMessage}>
+          <MessageCircle className="size-3" /> تذكير يدوي
+        </Button>
+        <Button
+          size="sm"
+          className="h-7 text-[11px] bg-success text-success-foreground hover:bg-success/90"
+          onClick={onAutoSend}
+          disabled={!canAuto}
+          title={canAuto ? "إرسال تلقائي فوري" : "الإرسال التلقائي غير مفعّل في الإعدادات"}
+        >
+          <Send className="size-3" /> إرسال تلقائي
+        </Button>
+      </div>
     </div>
   );
 }

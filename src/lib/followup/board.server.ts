@@ -49,6 +49,9 @@ export interface BoardBucket {
   last_contact_at: string | null;
   contact_count: number;
   transaction_id: string | null;
+  /** True when a reminder was already sent and we are waiting for the next cycle. */
+  reminded: boolean;
+  next_reminder_at: string | null;
 }
 
 export interface BoardCounts {
@@ -57,6 +60,8 @@ export interface BoardCounts {
   late: number;
   due: number;
   soon: number;
+  pending: number;
+  reminded: number;
 }
 
 export interface BoardTotal {
@@ -170,6 +175,10 @@ export function buildBoard(input: {
   channels: ChannelRow | null;
 }): FollowupBoard {
   const daysBefore = input.policy?.days_before ?? DEFAULT_POLICY.days_before;
+  const everyDays = Math.max(
+    1,
+    input.policy?.overdue_every_days ?? DEFAULT_POLICY.overdue_every_days,
+  );
   const peopleMap = new Map(input.people.map((p) => [p.id, p]));
   const curMap = new Map(input.currencies.map((c) => [c.id, c]));
 
@@ -241,16 +250,23 @@ export function buildBoard(input: {
       last_contact_at: contact?.last ?? null,
       contact_count: contact?.count ?? 0,
       transaction_id: acc.txId,
+      reminded: contact
+        ? new Date(contact.last).getTime() + everyDays * 86400000 > Date.now()
+        : false,
+      next_reminder_at: contact
+        ? new Date(new Date(contact.last).getTime() + everyDays * 86400000).toISOString()
+        : null,
     };
     bucket.advice = adviceFor(bucket);
     buckets.push(bucket);
   });
 
-  buckets.sort((a, b) =>
-    ORDER[a.severity] !== ORDER[b.severity]
-      ? ORDER[a.severity] - ORDER[b.severity]
-      : b.net - a.net,
-  );
+  // Customers who have not been reminded yet always surface first.
+  buckets.sort((a, b) => {
+    if (a.reminded !== b.reminded) return a.reminded ? 1 : -1;
+    if (ORDER[a.severity] !== ORDER[b.severity]) return ORDER[a.severity] - ORDER[b.severity];
+    return b.net - a.net;
+  });
 
   const counts: BoardCounts = {
     all: buckets.length,
@@ -258,6 +274,8 @@ export function buildBoard(input: {
     late: buckets.filter((b) => b.severity === "late").length,
     due: buckets.filter((b) => b.severity === "due").length,
     soon: buckets.filter((b) => b.severity === "soon").length,
+    pending: buckets.filter((b) => !b.reminded).length,
+    reminded: buckets.filter((b) => b.reminded).length,
   };
 
   const totalsMap = new Map<string, number>();

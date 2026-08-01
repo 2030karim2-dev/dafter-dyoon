@@ -59,7 +59,7 @@ function FollowupPage() {
   const { data, isLoading, refetch, isFetching } = useBoard();
   const board = data ?? EMPTY_BOARD;
 
-  const [tab, setTab] = useState<FollowupTab>("all");
+  const [tab, setTab] = useState<FollowupTab>("pending");
   const [q, setQ] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [draft, setDraft] = useState<Draft | null>(null);
@@ -183,7 +183,7 @@ function FollowupPage() {
 
       <AtRiskBanner totals={board.totals} />
       <FollowupTabs tab={tab} counts={board.counts} onChange={setTab} />
-      <SearchBar value={q} onChange={setQ} placeholder="ابحث باسم العميل أو رقمه..." />
+      <SearchBar value={q} onChange={setQ} placeholder="ابحث باسم متقطع، رقم هاتف، أو مبلغ..." />
 
       {selected.size > 0 && (
         <div className="rounded-lg border bg-secondary p-2 flex items-center gap-2">
@@ -221,8 +221,12 @@ function FollowupPage() {
               key={keyOf(b)}
               bucket={b}
               selected={selected.has(keyOf(b))}
+              canAuto={board.availability.whatsapp_auto}
               onSelect={() => toggle(b)}
               onMessage={() => build.mutate(b)}
+              onAutoSend={() =>
+                autoSend.mutate({ bucket: b, body: "", outboxId: null })
+              }
             />
           ))}
         </div>

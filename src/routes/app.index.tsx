@@ -10,6 +10,7 @@ import { PersonFormDialog, type PersonEditing } from "@/components/PersonFormDia
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { EmptyState } from "@/components/EmptyState";
 import { SearchBar } from "@/components/common/SearchBar";
+import { smartMatch } from "@/lib/search/match";
 import { FabButton } from "@/components/common/FabButton";
 import { DebtsHeader } from "@/features/debts/DebtsHeader";
 import { PersonRow } from "@/features/debts/PersonRow";
@@ -117,7 +118,7 @@ function DebtsHome() {
 
   const filtered = useMemo(() => {
     const list = rowsForCurrency.filter((r) => {
-      if (q && !r.person.name.toLowerCase().includes(q.toLowerCase())) return false;
+      if (q && !smartMatch(q, { text: [r.person.name], phones: [r.person.phone], numbers: [Math.round(r.net)] })) return false;
       if (filter === "credit") return r.net > 0.001;
       if (filter === "debit") return r.net < -0.001;
       return true;
@@ -166,7 +167,7 @@ function DebtsHome() {
 
 
       <div className="flex items-center gap-1.5">
-        <div className="flex-1"><SearchBar value={q} onChange={setQ} placeholder="ابحث عن شخص..." /></div>
+        <div className="flex-1"><SearchBar value={q} onChange={setQ} placeholder="ابحث باسم متقطع أو رقم هاتف..." /></div>
         <select
           value={sort}
           onChange={(e) => setSort(e.target.value as Sort)}

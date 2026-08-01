@@ -1,8 +1,18 @@
 import type { TodayCounts } from "@/lib/today.functions";
 
-export type TodayTab = "all" | "overdue" | "due_today" | "promise_due" | "promise_broken" | "failed_message";
+export type TodayTab =
+  | "all"
+  | "pending"
+  | "reminded"
+  | "overdue"
+  | "due_today"
+  | "promise_due"
+  | "promise_broken"
+  | "failed_message";
 
 const TABS: { key: TodayTab; label: string }[] = [
+  { key: "pending", label: "بحاجة تذكير" },
+  { key: "reminded", label: "تم تذكيرهم" },
   { key: "all", label: "الكل" },
   { key: "overdue", label: "متأخر" },
   { key: "due_today", label: "اليوم" },
