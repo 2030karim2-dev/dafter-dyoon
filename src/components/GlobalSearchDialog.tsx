@@ -6,15 +6,12 @@ import { useAuth } from "@/lib/auth";
 import { useNavigate } from "@tanstack/react-router";
 import { User, Wallet, Loader2, Search } from "lucide-react";
 import { fmtMoney, fmtDate } from "@/lib/format";
+import { smartMatch } from "@/lib/search/match";
 
 interface Person { id: string; name: string; phone: string | null }
 interface Tx { id: string; person_id: string; amount: number; direction: string; details: string | null; transaction_date: string }
 
 interface Props { open: boolean; onOpenChange: (v: boolean) => void }
-
-function normalize(s: string) {
-  return s.toLowerCase().replace(/[\u064B-\u065F\u0670]/g, "").replace(/[إأآ]/g, "ا").replace(/ى/g, "ي").replace(/ة/g, "ه").trim();
-}
 
 export function GlobalSearchDialog({ open, onOpenChange }: Props) {
   const { user } = useAuth();
@@ -40,13 +37,23 @@ export function GlobalSearchDialog({ open, onOpenChange }: Props) {
 
   useEffect(() => { if (!open) setQ(""); }, [open]);
 
-  const nq = normalize(q);
+  const nq = q.trim();
   const results = useMemo(() => {
     if (!nq) return { people: people.slice(0, 6), txs: [] as Tx[] };
-    const fp = people.filter((p) => normalize(p.name).includes(nq) || (p.phone ?? "").includes(q)).slice(0, 6);
-    const ft = txs.filter((t) => normalize(t.details ?? "").includes(nq) || String(t.amount).includes(nq)).slice(0, 8);
+    const fp = people
+      .filter((p) => smartMatch(nq, { text: [p.name], phones: [p.phone] }))
+      .slice(0, 8);
+    const nameOf = new Map(people.map((p) => [p.id, p.name]));
+    const ft = txs
+      .filter((t) =>
+        smartMatch(nq, {
+          text: [t.details, nameOf.get(t.person_id)],
+          numbers: [t.amount],
+        }),
+      )
+      .slice(0, 10);
     return { people: fp, txs: ft };
-  }, [nq, q, people, txs]);
+  }, [nq, people, txs]);
 
   const goPerson = (id: string) => { onOpenChange(false); nav({ to: "/app/person/$id", params: { id } }); };
   const goTx = (t: Tx) => goPerson(t.person_id);
@@ -60,7 +67,7 @@ export function GlobalSearchDialog({ open, onOpenChange }: Props) {
           <Search className="size-4 text-muted-foreground shrink-0" />
           <Input
             autoFocus value={q} onChange={(e) => setQ(e.target.value)}
-            placeholder="ابحث عن شخص، مبلغ، أو وصف..."
+            placeholder="ابحث باسم متقطع، رقم هاتف، أو مبلغ..."
             className="border-0 shadow-none focus-visible:ring-0 px-0 h-8 text-sm"
           />
           {loading && <Loader2 className="size-3.5 animate-spin text-muted-foreground" />}

@@ -6,6 +6,7 @@ import { Search, User, ArrowLeftRight } from "lucide-react";
 import { PageHeader } from "@/components/common/PageHeader";
 import { SearchBar } from "@/components/common/SearchBar";
 import { fmtMoney, fmtDate } from "@/lib/format";
+import { smartMatch } from "@/lib/search/match";
 
 export const Route = createFileRoute("/app/search")({ component: SearchPage });
 
@@ -32,14 +33,26 @@ function SearchPage() {
 
   const pMap = useMemo(() => new Map(people.map((p) => [p.id, p])), [people]);
 
-  const term = q.trim().toLowerCase();
-  const peopleHits = term ? people.filter((p) => p.name.toLowerCase().includes(term) || (p.phone ?? "").includes(term)).slice(0, 20) : [];
-  const txHits = term ? txs.filter((t) => (t.details ?? "").toLowerCase().includes(term) || pMap.get(t.person_id)?.name.toLowerCase().includes(term) || String(t.amount).includes(term)).slice(0, 30) : [];
+  const term = q.trim();
+  const peopleHits = term
+    ? people.filter((p) => smartMatch(term, { text: [p.name], phones: [p.phone] })).slice(0, 30)
+    : [];
+  const txHits = term
+    ? txs
+        .filter((t) =>
+          smartMatch(term, {
+            text: [t.details, pMap.get(t.person_id)?.name],
+            phones: [pMap.get(t.person_id)?.phone],
+            numbers: [t.amount],
+          }),
+        )
+        .slice(0, 40)
+    : [];
 
   return (
     <div className="space-y-3">
       <PageHeader icon={Search} title="بحث شامل" subtitle="ابحث في العملاء والمعاملات" />
-      <SearchBar value={q} onChange={setQ} placeholder="اكتب اسم، مبلغ، تفاصيل..." />
+      <SearchBar value={q} onChange={setQ} placeholder="اسم متقطع، رقم هاتف، مبلغ، تفاصيل..." />
 
       {!term ? (
         <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
