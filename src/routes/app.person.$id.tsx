@@ -23,6 +23,7 @@ import { PersonAnalytics } from "@/features/debts/person/PersonAnalytics";
 import { CustomerAttachments } from "@/features/attachments/CustomerAttachments";
 import { computeBalancesByCurrency, computeRunningByCurrency, type OpeningBalance } from "@/lib/money/balances";
 import { ClipboardList, Paperclip, BarChart3 } from "lucide-react";
+import { CurrencyScope } from "@/components/common/CurrencyScope";
 
 export const Route = createFileRoute("/app/person/$id")({ component: PersonPage });
 
@@ -82,13 +83,25 @@ function PersonPage() {
     [txs, currencies, openings],
   );
 
-  // Used by AI reminder dialog — pick base currency balance (or first available)
-  const primaryBalance = balancesByCurrency.find((b) => b.currency.is_base) ?? balancesByCurrency[0];
+  // Each currency is an INDEPENDENT account for this customer.
+  const [curId, setCurId] = useState<string>("");
+  useEffect(() => {
+    if (currencies.length === 0) return;
+    if (curId && currencies.some((c) => c.id === curId)) return;
+    const saved = (() => { try { return localStorage.getItem("scope_currency"); } catch { return null; } })();
+    const next = currencies.find((c) => c.id === saved) ?? currencies.find((c) => c.is_base) ?? currencies[0];
+    if (next) setCurId(next.id);
+  }, [currencies, curId]);
+  useEffect(() => { if (curId) { try { localStorage.setItem("scope_currency", curId); } catch { /* ignore */ } } }, [curId]);
+
+  const scopedTxs = useMemo(() => txs.filter((t) => t.currency_id === curId), [txs, curId]);
+  const scopedOpenings = useMemo(() => openings.filter((o) => o.currency_id === curId), [openings, curId]);
+  const primaryBalance = balancesByCurrency.find((b) => b.currency.id === curId) ?? balancesByCurrency[0];
   const balanceForActions = primaryBalance?.balance ?? 0;
 
   const running = useMemo(
-    () => computeRunningByCurrency(txs, openings),
-    [txs, openings],
+    () => computeRunningByCurrency(scopedTxs, scopedOpenings),
+    [scopedTxs, scopedOpenings],
   );
 
 
@@ -146,21 +159,18 @@ function PersonPage() {
     lines.push(`الأستاذ/ ${name} المحترم`);
     lines.push("تحية طيبة وبعد،");
     lines.push("");
-    lines.push(`نرفق لكم كشف حسابكم لدى *${companyName}* حتى تاريخ ${today}:`);
+    lines.push(`نرفق لكم كشف حساب ${primaryBalance?.currency.name ?? ""} لدى *${companyName}* حتى تاريخ ${today}:`);
     lines.push("");
     // Per-currency summary lines — each currency shown SEPARATELY.
-    const nonZero = balancesByCurrency.filter((b) => Math.abs(b.balance) > 0.009 || b.txCount > 0);
-    if (nonZero.length === 0) {
+    if (!primaryBalance) {
       lines.push("• لا توجد حركات مسجلة حالياً.");
     } else {
-      for (const b of nonZero) {
-        const tag = b.balance >= 0 ? "له" : "عليه";
-        const amt = Math.abs(b.balance).toLocaleString("ar-EG", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        lines.push(`• ${b.currency.name}: ${amt} ${b.currency.symbol} (${tag})`);
-      }
+      const tag = primaryBalance.balance >= 0 ? "له" : "عليه";
+      const amt = Math.abs(primaryBalance.balance).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      lines.push(`• حساب ${primaryBalance.currency.name}: ${amt} ${primaryBalance.currency.symbol} (${tag})`);
     }
     lines.push("");
-    lines.push(`عدد الحركات: ${txs.length}`);
+    lines.push(`عدد الحركات: ${scopedTxs.length}`);
     lines.push("");
     lines.push("نرجو مراجعة الكشف، والتواصل معنا في حال وجود أي استفسار أو ملاحظة.");
     lines.push("");
@@ -187,7 +197,7 @@ function PersonPage() {
   return (
     <div className="space-y-3 animate-in fade-in duration-300">
       <PersonActionsBar
-        onPdf={() => exportPersonStatementPDF({ personName: name, phone, txs, currencies, openings, balance: balanceForActions })}
+        onPdf={() => exportPersonStatementPDF({ personName: name, phone, txs: scopedTxs, currencies: primaryBalance ? [primaryBalance.currency] : currencies, openings: scopedOpenings, balance: balanceForActions })}
         onExcel={() => exportPersonToExcel(id, name)}
         onShare={share}
         onWhatsApp={shareWhatsApp}
@@ -196,6 +206,8 @@ function PersonPage() {
         onArchive={() => setConfirmArchive(true)}
         onDelete={() => setConfirmDelPerson(true)}
       />
+
+      <CurrencyScope currencies={currencies} value={curId} onChange={setCurId} />
 
       <PersonBalancesByCurrency name={name} phone={phone} balances={balancesByCurrency} totalTxCount={txs.length} txs={txs} />
 
@@ -225,11 +237,11 @@ function PersonPage() {
       {tab === "timeline" && (
         loading ? (
           <ListSkeleton rows={4} />
-        ) : txs.length === 0 ? (
-          <EmptyState icon={Plus} title="لا توجد معاملات بعد" description="أضف أول معاملة لهذا الشخص." variant="compact" />
+        ) : scopedTxs.length === 0 ? (
+          <EmptyState icon={Plus} title={`لا توجد معاملات بـ${primaryBalance?.currency.name ?? "هذه العملة"}`} description="كل عملة لها مسار مستقل — أضف أول معاملة بهذا المسار." variant="compact" />
         ) : (
           <PersonTimeline
-            txs={txs} currencies={currencies} running={running}
+            txs={scopedTxs} currencies={currencies} running={running}
             onEdit={(t) => { setEditingTx(t); setOpenAdd(true); }}
             onDelete={(id) => setDelTxId(id)}
             onTogglePaid={togglePaid}
@@ -244,7 +256,7 @@ function PersonPage() {
       {tab === "insights" && (
         <div className="space-y-3">
           <CustomerHealthCard personId={id} />
-          <PersonAnalytics txs={txs} />
+          <PersonAnalytics txs={scopedTxs} />
         </div>
       )}
 
