@@ -36,7 +36,7 @@ export function FollowupCard({ bucket: b, selected, onSelect, onMessage }: Props
           className="size-3.5 accent-[hsl(var(--primary))]"
           aria-label={`تحديد ${b.name}`}
         />
-        <Avatar name={b.name} color={b.avatar_color} className="size-7" />
+        <Avatar name={b.name} color={b.avatar_color} size="sm" />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
             <span className="font-bold text-[12px] truncate">{b.name}</span>
