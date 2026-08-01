@@ -55,6 +55,8 @@ function SettingsPage() {
         <SettingsRow to="/app/settings/company" icon={Wallet} label="بيانات المنشأة" desc="الشعار والعنوان للكشوف" tone="accent" />
         <SettingsRow to="/app/settings/security" icon={ShieldCheck} label="الأمان والخصوصية" desc="قفل التطبيق والبصمة" tone="success" />
         <SettingsRow to="/app/settings/notifications" icon={Bell} label="الإشعارات" desc="تذكيرات الاستحقاقات والديون" tone="warning" />
+        <SettingsRow to="/app/settings/channels" icon={Radio} label="قنوات التذكير" desc="واتساب، تليجرام، SMS وسياسة المتابعة" tone="success" />
+
       </SettingsGroup>
 
       {/* Appearance */}
