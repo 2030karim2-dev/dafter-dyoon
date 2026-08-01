@@ -1,6 +1,6 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Users, BarChart3, Settings, BellRing } from "lucide-react";
+import { Users, BarChart3, Settings, BellRing, Sun } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { BadgeCount } from "@/components/common/BadgeCount";
@@ -19,6 +19,7 @@ const SETTINGS_PREFIXES = [
 
 const items: NavItem[] = [
   { to: "/app", label: "الديون", icon: Users, match: (p) => p === "/app" || p === "/app/" },
+  { to: "/app/today", label: "اليوم", icon: Sun, match: (p) => p.startsWith("/app/today") },
   { to: "/app/followup", label: "المتابعة", icon: BellRing, match: (p) => p.startsWith("/app/followup"), badgeKey: "reminders" },
   { to: "/app/reports", label: "التقارير", icon: BarChart3, match: (p) => p.startsWith("/app/reports") },
   { to: "/app/settings", label: "الإعدادات", icon: Settings, match: (p) => SETTINGS_PREFIXES.some((x) => p.startsWith(x)) },
@@ -42,7 +43,7 @@ export function BottomNav() {
 
   return (
     <nav className="fixed bottom-0 inset-x-0 bg-card/95 backdrop-blur border-t z-30 pb-[env(safe-area-inset-bottom)]" aria-label="التنقل الرئيسي">
-      <div className="max-w-3xl mx-auto grid grid-cols-4 h-12">
+      <div className="max-w-3xl mx-auto grid grid-cols-5 h-12">
         {items.map((it) => {
           const active = it.match(path);
           const Icon = it.icon;

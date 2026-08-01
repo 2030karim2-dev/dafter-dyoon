@@ -13,6 +13,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as AppTodayRouteImport } from './routes/app.today'
 import { Route as AppSettingsRouteImport } from './routes/app.settings'
 import { Route as AppSearchRouteImport } from './routes/app.search'
 import { Route as AppReportsRouteImport } from './routes/app.reports'
@@ -56,6 +57,11 @@ const IndexRoute = IndexRouteImport.update({
 const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTodayRoute = AppTodayRouteImport.update({
+  id: '/today',
+  path: '/today',
   getParentRoute: () => AppRoute,
 } as any)
 const AppSettingsRoute = AppSettingsRouteImport.update({
@@ -197,6 +203,7 @@ export interface FileRoutesByFullPath {
   '/app/reports': typeof AppReportsRoute
   '/app/search': typeof AppSearchRoute
   '/app/settings': typeof AppSettingsRouteWithChildren
+  '/app/today': typeof AppTodayRoute
   '/app/': typeof AppIndexRoute
   '/app/person/$id': typeof AppPersonIdRoute
   '/app/settings/about': typeof AppSettingsAboutRoute
@@ -225,6 +232,7 @@ export interface FileRoutesByTo {
   '/app/reminders': typeof AppRemindersRoute
   '/app/reports': typeof AppReportsRoute
   '/app/search': typeof AppSearchRoute
+  '/app/today': typeof AppTodayRoute
   '/app': typeof AppIndexRoute
   '/app/person/$id': typeof AppPersonIdRoute
   '/app/settings/about': typeof AppSettingsAboutRoute
@@ -256,6 +264,7 @@ export interface FileRoutesById {
   '/app/reports': typeof AppReportsRoute
   '/app/search': typeof AppSearchRoute
   '/app/settings': typeof AppSettingsRouteWithChildren
+  '/app/today': typeof AppTodayRoute
   '/app/': typeof AppIndexRoute
   '/app/person/$id': typeof AppPersonIdRoute
   '/app/settings/about': typeof AppSettingsAboutRoute
@@ -288,6 +297,7 @@ export interface FileRouteTypes {
     | '/app/reports'
     | '/app/search'
     | '/app/settings'
+    | '/app/today'
     | '/app/'
     | '/app/person/$id'
     | '/app/settings/about'
@@ -316,6 +326,7 @@ export interface FileRouteTypes {
     | '/app/reminders'
     | '/app/reports'
     | '/app/search'
+    | '/app/today'
     | '/app'
     | '/app/person/$id'
     | '/app/settings/about'
@@ -346,6 +357,7 @@ export interface FileRouteTypes {
     | '/app/reports'
     | '/app/search'
     | '/app/settings'
+    | '/app/today'
     | '/app/'
     | '/app/person/$id'
     | '/app/settings/about'
@@ -397,6 +409,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/app/'
       preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/today': {
+      id: '/app/today'
+      path: '/today'
+      fullPath: '/app/today'
+      preLoaderRoute: typeof AppTodayRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/settings': {
@@ -611,6 +630,7 @@ interface AppRouteChildren {
   AppReportsRoute: typeof AppReportsRoute
   AppSearchRoute: typeof AppSearchRoute
   AppSettingsRoute: typeof AppSettingsRouteWithChildren
+  AppTodayRoute: typeof AppTodayRoute
   AppIndexRoute: typeof AppIndexRoute
   AppPersonIdRoute: typeof AppPersonIdRoute
 }
@@ -628,6 +648,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppReportsRoute: AppReportsRoute,
   AppSearchRoute: AppSearchRoute,
   AppSettingsRoute: AppSettingsRouteWithChildren,
+  AppTodayRoute: AppTodayRoute,
   AppIndexRoute: AppIndexRoute,
   AppPersonIdRoute: AppPersonIdRoute,
 }
@@ -644,13 +665,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
