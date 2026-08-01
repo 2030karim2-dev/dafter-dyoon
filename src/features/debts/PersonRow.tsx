@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { Phone, Clock, TrendingUp, TrendingDown } from "lucide-react";
 import { fmtMoney, fmtDate } from "@/lib/format";
 import { RowActions } from "@/components/common/RowActions";
+import { OtherCurrencyChips, type OtherCurrencyBalance } from "./OtherCurrencyChips";
 
 interface Person {
   id: string;
@@ -17,6 +18,8 @@ export interface PersonBalance {
   totalCredit?: number;
   totalDebit?: number;
   symbol?: string;
+  /** Balances in the non-active currencies (kept visible to avoid switching). */
+  others?: OtherCurrencyBalance[];
 }
 
 interface Props {
