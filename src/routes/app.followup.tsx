@@ -1,87 +1,254 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
 import { PageHeader } from "@/components/common/PageHeader";
-import { ListSkeleton } from "@/components/Skeleton";
+import { SearchBar } from "@/components/common/SearchBar";
 import { EmptyState } from "@/components/EmptyState";
-import { BellRing, CheckCircle2 } from "lucide-react";
-import { useFollowup } from "@/features/followup/useFollowup";
-import {
-  useReminderDraft,
-  openWhatsApp,
-  quickReminderText,
-} from "@/features/followup/useReminderDraft";
-import { FollowupTabs } from "@/features/followup/FollowupTabs";
+import { Button } from "@/components/ui/button";
+import { Loader2, RefreshCw, Send, Target, Inbox } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { AtRiskBanner } from "@/features/followup/AtRiskBanner";
 import { FollowupCard } from "@/features/followup/FollowupCard";
-import { AiDraftSheet } from "@/features/followup/AiDraftSheet";
+import { FollowupTabs } from "@/features/followup/FollowupTabs";
+import { MessageSheet } from "@/features/followup/MessageSheet";
+import {
+  EMPTY_BOARD,
+  filterBuckets,
+  useBoard,
+  type FollowupTab,
+} from "@/features/followup/useBoard";
+import { runFollowupCycleFn } from "@/lib/followup.functions";
+import {
+  buildMessageFn,
+  enqueueMessagesFn,
+  markSentFn,
+  sendOutboxFn,
+} from "@/lib/messaging.functions";
+import type { BoardBucket } from "@/lib/followup.functions";
 
 export const Route = createFileRoute("/app/followup")({
+  component: FollowupPage,
   head: () => ({
     meta: [
-      { title: "المتابعة الذكية — دفترك" },
+      { title: "متابعة العملاء والديون | دفترك" },
       {
         name: "description",
-        content: "متابعة الديون المتأخرة وتذكير العملاء بمساعدة الذكاء الاصطناعي.",
+        content: "لوحة متابعة احترافية للديون المستحقة والمتأخرة مع تذكيرات تلقائية عبر واتساب وتليجرام.",
       },
-      { property: "og:title", content: "المتابعة الذكية — دفترك" },
+      { property: "og:title", content: "متابعة العملاء والديون | دفترك" },
       {
         property: "og:description",
-        content: "متابعة الديون المتأخرة وتذكير العملاء بمساعدة الذكاء الاصطناعي.",
+        content: "تابع العملاء المتأخرين وأرسل تذكيرات منظمة تلقائياً من دفترك.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: FollowupPage,
 });
 
+interface Draft {
+  bucket: BoardBucket;
+  body: string;
+  outboxId: string | null;
+}
+
 function FollowupPage() {
-  const { loading, filtered, counts, totalAtRisk, tab, setTab } = useFollowup();
-  const draft = useReminderDraft();
+  const qc = useQueryClient();
+  const { data, isLoading, refetch, isFetching } = useBoard();
+  const board = data ?? EMPTY_BOARD;
+
+  const [tab, setTab] = useState<FollowupTab>("all");
+  const [q, setQ] = useState("");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [draft, setDraft] = useState<Draft | null>(null);
+
+  const buildMessage = useServerFn(buildMessageFn);
+  const enqueueMessages = useServerFn(enqueueMessagesFn);
+  const markSent = useServerFn(markSentFn);
+  const sendOutbox = useServerFn(sendOutboxFn);
+  const runCycle = useServerFn(runFollowupCycleFn);
+
+  const rows = useMemo(() => filterBuckets(board.buckets, tab, q), [board.buckets, tab, q]);
+  const keyOf = (b: BoardBucket) => `${b.person_id}:${b.currency_id}`;
+
+  const build = useMutation({
+    mutationFn: (b: BoardBucket) =>
+      buildMessage({ data: { person_id: b.person_id, currency_id: b.currency_id } }),
+    onSuccess: (res, b) => setDraft({ bucket: b, body: res.body, outboxId: null }),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const queueOne = useMutation({
+    mutationFn: (d: Draft) =>
+      buildMessage({
+        data: { person_id: d.bucket.person_id, currency_id: d.bucket.currency_id, enqueue: true },
+      }),
+    onSuccess: async (res) => {
+      if (res.outbox_id) await markSent({ data: { id: res.outbox_id } });
+      toast.success("تم تسجيل التذكير في سجل المتابعة");
+      setDraft(null);
+      void qc.invalidateQueries({ queryKey: ["followup-board"] });
+      void qc.invalidateQueries({ queryKey: ["outbox"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const autoSend = useMutation({
+    mutationFn: async (d: Draft) => {
+      const res = await buildMessage({
+        data: { person_id: d.bucket.person_id, currency_id: d.bucket.currency_id, enqueue: true },
+      });
+      if (!res.outbox_id) throw new Error("تعذّر تجهيز الرسالة");
+      return sendOutbox({ data: { id: res.outbox_id } });
+    },
+    onSuccess: (res) => {
+      if (res.ok) {
+        toast.success("تم الإرسال");
+        setDraft(null);
+      } else {
+        toast.error(res.error ?? "فشل الإرسال");
+      }
+      void qc.invalidateQueries({ queryKey: ["followup-board"] });
+      void qc.invalidateQueries({ queryKey: ["outbox"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const bulk = useMutation({
+    mutationFn: () => {
+      const targets = board.buckets
+        .filter((b) => selected.has(keyOf(b)))
+        .map((b) => ({ person_id: b.person_id, currency_id: b.currency_id }));
+      return enqueueMessages({ data: { targets, channel: "whatsapp" } });
+    },
+    onSuccess: (res) => {
+      toast.success(`تم إضافة ${res.queued} رسالة إلى الصادر`);
+      setSelected(new Set());
+      void qc.invalidateQueries({ queryKey: ["outbox"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const cycle = useMutation({
+    mutationFn: () => runCycle(),
+    onSuccess: (s: { queued: number; sent: number }) => {
+      toast.success(`تم الفحص: ${s.queued} رسالة جديدة، ${s.sent} مُرسلة`);
+      void qc.invalidateQueries({ queryKey: ["followup-board"] });
+      void qc.invalidateQueries({ queryKey: ["outbox"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const toggle = (b: BoardBucket) => {
+    const k = keyOf(b);
+    setSelected((prev) => {
+      const next = new Set(prev);
+      next.has(k) ? next.delete(k) : next.add(k);
+      return next;
+    });
+  };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2.5">
       <PageHeader
-        icon={BellRing}
-        title="المتابعة الذكية"
-        subtitle="تذكير وإدارة الديون المتأخرة بمساعدة الذكاء الاصطناعي"
+        icon={Target}
+        title="متابعة العملاء"
+        subtitle="لوحة محسوبة بالكامل في الواجهة الخلفية"
+        back="/app"
       />
 
-      <FollowupTabs tab={tab} counts={counts} onChange={setTab} />
-      <AtRiskBanner totals={totalAtRisk} />
+      <div className="flex items-center gap-1.5">
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-7 text-[11px] flex-1"
+          onClick={() => cycle.mutate()}
+          disabled={cycle.isPending}
+        >
+          {cycle.isPending ? (
+            <Loader2 className="size-3 animate-spin" />
+          ) : (
+            <RefreshCw className="size-3" />
+          )}
+          فحص وتجهيز التذكيرات
+        </Button>
+        <Button asChild size="sm" variant="outline" className="h-7 text-[11px]">
+          <Link to="/app/outbox">
+            <Inbox className="size-3" /> الصادر
+          </Link>
+        </Button>
+      </div>
 
-      {loading ? (
-        <ListSkeleton rows={4} />
-      ) : filtered.length === 0 ? (
+      <AtRiskBanner totals={board.totals} />
+      <FollowupTabs tab={tab} counts={board.counts} onChange={setTab} />
+      <SearchBar value={q} onChange={setQ} placeholder="ابحث باسم العميل أو رقمه..." />
+
+      {selected.size > 0 && (
+        <div className="rounded-lg border bg-secondary p-2 flex items-center gap-2">
+          <span className="text-[11px] font-bold flex-1">تم تحديد {selected.size} عميل</span>
+          <Button
+            size="sm"
+            className="h-7 text-[11px]"
+            onClick={() => bulk.mutate()}
+            disabled={bulk.isPending}
+          >
+            {bulk.isPending ? (
+              <Loader2 className="size-3 animate-spin" />
+            ) : (
+              <Send className="size-3" />
+            )}
+            تجهيز رسائل جماعية
+          </Button>
+        </div>
+      )}
+
+      {isLoading || isFetching ? (
+        <div className="flex justify-center py-10">
+          <Loader2 className="size-5 animate-spin text-primary" />
+        </div>
+      ) : rows.length === 0 ? (
         <EmptyState
-          icon={CheckCircle2}
-          title="لا يوجد ما يستوجب المتابعة"
-          description="جميع العملاء ضمن الحدود الآمنة. أحسنت!"
+          icon={Target}
+          title="لا يوجد عملاء بحاجة للمتابعة"
+          description="كل الأرصدة منتظمة حالياً."
         />
       ) : (
-        <div className="space-y-2">
-          {filtered.map((b) => (
+        <div className="space-y-1.5">
+          {rows.map((b) => (
             <FollowupCard
-              key={`${b.person.id}-${b.currency}`}
+              key={keyOf(b)}
               bucket={b}
-              onDraft={(x) => void draft.generate(x, "polite")}
-              onQuickWhatsApp={(x) => openWhatsApp(x, quickReminderText(x))}
+              selected={selected.has(keyOf(b))}
+              onSelect={() => toggle(b)}
+              onMessage={() => build.mutate(b)}
             />
           ))}
         </div>
       )}
 
-      {draft.draftFor && (
-        <AiDraftSheet
-          bucket={draft.draftFor}
-          text={draft.text}
-          loading={draft.loading}
-          onTextChange={draft.setText}
-          onTone={(t) => void draft.generate(draft.draftFor!, t)}
-          onSend={() => {
-            openWhatsApp(draft.draftFor!, draft.text);
-            draft.close();
-          }}
-          onClose={draft.close}
+      {draft && (
+        <MessageSheet
+          name={draft.bucket.name}
+          body={draft.body}
+          loading={build.isPending}
+          phone={draft.bucket.phone}
+          canAuto={board.availability.whatsapp_auto}
+          onBodyChange={(v) => setDraft({ ...draft, body: v })}
+          onQueue={() => queueOne.mutate(draft)}
+          onAutoSend={() => autoSend.mutate(draft)}
+          onClose={() => setDraft(null)}
         />
       )}
+
+      <p className="text-[10px] text-muted-foreground text-center">
+        آخر تحديث للوحة: {board.generated_at ? new Date(board.generated_at).toLocaleString("ar") : "—"}
+        {" · "}
+        <button className="underline" onClick={() => void refetch()}>
+          تحديث
+        </button>
+      </p>
     </div>
   );
 }
