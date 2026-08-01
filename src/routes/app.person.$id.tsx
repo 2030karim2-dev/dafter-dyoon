@@ -22,7 +22,7 @@ import { CustomerHealthCard } from "@/components/CustomerHealthCard";
 import { PersonAnalytics } from "@/features/debts/person/PersonAnalytics";
 import { CustomerAttachments } from "@/features/attachments/CustomerAttachments";
 import { computeBalancesByCurrency, computeRunningByCurrency, type OpeningBalance } from "@/lib/money/balances";
-import { ClipboardList, Paperclip, BarChart3, History, CalendarClock, HandCoins } from "lucide-react";
+import { ClipboardList, Paperclip, BarChart3, History, CalendarClock, HandCoins, Activity } from "lucide-react";
 import { CurrencyScope } from "@/components/common/CurrencyScope";
 import { PersonFeed } from "@/features/person/PersonFeed";
 import { PersonPromises } from "@/features/person/PersonPromises";
@@ -229,10 +229,11 @@ function PersonPage() {
       </div>
 
       {/* Tabs */}
-      <div className="grid grid-cols-5 gap-1 rounded-xl bg-secondary/60 p-1 ring-1 ring-border">
+      <div className="grid grid-cols-6 gap-1 rounded-xl bg-secondary/60 p-1 ring-1 ring-border">
         {[
           { v: "timeline" as const,    label: "المعاملات",  icon: ClipboardList },
           { v: "feed" as const,        label: "السجل",      icon: History },
+          { v: "activity" as const,    label: "النشاط",     icon: Activity },
           { v: "promises" as const,    label: "الوعود",     icon: CalendarClock },
           { v: "attachments" as const, label: "المرفقات",   icon: Paperclip },
           { v: "insights" as const,    label: "تحليلات",    icon: BarChart3 },
@@ -269,6 +270,8 @@ function PersonPage() {
       )}
 
       {tab === "feed" && <PersonFeed personId={id} currencyId={curId || null} />}
+
+      {tab === "activity" && <PersonActivity personId={id} />}
 
       {tab === "promises" && <PersonPromises personId={id} currencyId={curId || null} />}
 
