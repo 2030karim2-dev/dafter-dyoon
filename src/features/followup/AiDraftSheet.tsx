@@ -20,9 +20,20 @@ const TONES: { v: Tone; label: string }[] = [
   { v: "firm", label: "حازمة" },
 ];
 
-export function AiDraftSheet({ bucket, text, loading, onTextChange, onTone, onSend, onClose }: Props) {
+export function AiDraftSheet({
+  bucket,
+  text,
+  loading,
+  onTextChange,
+  onTone,
+  onSend,
+  onClose,
+}: Props) {
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center p-3" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center p-3"
+      onClick={onClose}
+    >
       <div
         className="bg-card rounded-xl border shadow-elevated w-full max-w-md p-3 space-y-2.5 animate-in slide-in-from-bottom-4"
         onClick={(e) => e.stopPropagation()}
@@ -31,7 +42,9 @@ export function AiDraftSheet({ bucket, text, loading, onTextChange, onTone, onSe
           <div className="font-bold text-sm flex items-center gap-1.5">
             <Sparkles className="size-4 text-primary" /> رسالة لـ {bucket.person.name}
           </div>
-          <button onClick={onClose} className="text-muted-foreground text-xs">✕</button>
+          <button onClick={onClose} className="text-muted-foreground text-xs">
+            ✕
+          </button>
         </div>
 
         <div className="flex gap-1">
@@ -66,7 +79,10 @@ export function AiDraftSheet({ bucket, text, loading, onTextChange, onTone, onSe
             size="sm"
             variant="outline"
             className="flex-1 h-8"
-            onClick={() => { void navigator.clipboard.writeText(text); toast.success("تم النسخ"); }}
+            onClick={() => {
+              void navigator.clipboard.writeText(text);
+              toast.success("تم النسخ");
+            }}
           >
             نسخ
           </Button>

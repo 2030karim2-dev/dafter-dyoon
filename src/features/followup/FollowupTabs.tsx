@@ -4,7 +4,10 @@ const META: Record<FollowupTab, { label: string; cls: string }> = {
   all: { label: "الكل", cls: "bg-primary text-primary-foreground" },
   critical: { label: "حرج", cls: "bg-danger text-danger-foreground" },
   late: { label: "متأخر", cls: "bg-danger-soft text-danger" },
-  soon: { label: "قريب", cls: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300" },
+  soon: {
+    label: "قريب",
+    cls: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
+  },
 };
 
 interface Props {

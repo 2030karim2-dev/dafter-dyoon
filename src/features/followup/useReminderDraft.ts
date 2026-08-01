@@ -8,7 +8,10 @@ export type Tone = "polite" | "firm" | "friendly";
 
 /** Open a customer's WhatsApp chat with a prefilled message. */
 export function openWhatsApp(b: Bucket, text: string) {
-  if (!b.person.phone) { toast.error("لا يوجد رقم هاتف لهذا العميل"); return; }
+  if (!b.person.phone) {
+    toast.error("لا يوجد رقم هاتف لهذا العميل");
+    return;
+  }
   const phone = b.person.phone.replace(/[^\d]/g, "");
   window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, "_blank");
 }

@@ -10,7 +10,10 @@ export function AtRiskBanner({ totals }: { totals: [string, number][] }) {
         <div className="font-bold text-danger mb-0.5">إجمالي المبالغ المعرضة للخطر:</div>
         <div className="flex flex-wrap gap-1.5">
           {totals.map(([cur, amt]) => (
-            <span key={cur} className="bg-card border rounded px-1.5 py-0.5 font-black tabular-nums text-danger">
+            <span
+              key={cur}
+              className="bg-card border rounded px-1.5 py-0.5 font-black tabular-nums text-danger"
+            >
               {fmtMoney(amt)} {cur}
             </span>
           ))}

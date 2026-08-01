@@ -3,8 +3,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { ensureNotificationPermission, notify } from "@/lib/push";
 import {
-  atRiskTotals, buildBuckets,
-  type Bucket, type FollowupPerson, type UnpaidTx,
+  atRiskTotals,
+  buildBuckets,
+  type Bucket,
+  type FollowupPerson,
+  type UnpaidTx,
 } from "@/lib/followup/severity";
 
 export type FollowupTab = "all" | "critical" | "late" | "soon";
@@ -30,7 +33,9 @@ export function useFollowup() {
     setLoading(false);
   }, [user]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   // Local notification for critical/late buckets, once per day.
   useEffect(() => {
@@ -52,12 +57,15 @@ export function useFollowup() {
     });
   }, [loading, buckets]);
 
-  const counts = useMemo(() => ({
-    all: buckets.length,
-    critical: buckets.filter((b) => b.severity === "critical").length,
-    late: buckets.filter((b) => b.severity === "late").length,
-    soon: buckets.filter((b) => b.severity === "soon").length,
-  }), [buckets]);
+  const counts = useMemo(
+    () => ({
+      all: buckets.length,
+      critical: buckets.filter((b) => b.severity === "critical").length,
+      late: buckets.filter((b) => b.severity === "late").length,
+      soon: buckets.filter((b) => b.severity === "soon").length,
+    }),
+    [buckets],
+  );
 
   const filtered = useMemo(
     () => (tab === "all" ? buckets : buckets.filter((b) => b.severity === tab)),

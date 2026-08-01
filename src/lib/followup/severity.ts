@@ -1,6 +1,11 @@
 /** Pure follow-up domain logic: severity scoring, grouping and advice. */
 
-export interface FollowupPerson { id: string; name: string; phone: string | null; credit_limit: number | null }
+export interface FollowupPerson {
+  id: string;
+  name: string;
+  phone: string | null;
+  credit_limit: number | null;
+}
 
 export interface UnpaidTx {
   id: string;
@@ -32,7 +37,11 @@ export function severityFor(days: number, amount: number, limit: number | null):
 
 export const severityMeta: Record<Severity, { label: string; cls: string; ring: string }> = {
   ok: { label: "ضمن المهلة", cls: "bg-success-soft text-success", ring: "ring-success/30" },
-  soon: { label: "قريباً", cls: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300", ring: "ring-amber-400/40" },
+  soon: {
+    label: "قريباً",
+    cls: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
+    ring: "ring-amber-400/40",
+  },
   late: { label: "متأخر", cls: "bg-danger-soft text-danger", ring: "ring-danger/30" },
   critical: { label: "حرج", cls: "bg-danger text-danger-foreground", ring: "ring-danger/50" },
 };
@@ -42,10 +51,17 @@ const ORDER = { critical: 0, late: 1, soon: 2, ok: 3 } as const;
 /** Group unpaid transactions per (person, currency) and score each bucket. */
 export function buildBuckets(txs: UnpaidTx[], people: FollowupPerson[]): Bucket[] {
   const peopleMap = new Map(people.map((p) => [p.id, p]));
-  const grouped = new Map<string, {
-    person: FollowupPerson; net: number; currency: string;
-    oldestDue: string | null; daysOverdue: number; count: number;
-  }>();
+  const grouped = new Map<
+    string,
+    {
+      person: FollowupPerson;
+      net: number;
+      currency: string;
+      oldestDue: string | null;
+      daysOverdue: number;
+      count: number;
+    }
+  >();
   const today = Date.now();
 
   for (const t of txs) {
@@ -54,13 +70,21 @@ export function buildBuckets(txs: UnpaidTx[], people: FollowupPerson[]): Bucket[
     const key = `${t.person_id}|${t.currency_code}`;
     const sign = t.direction === "credit" ? 1 : -1; // credit = he owes me
     const entry = grouped.get(key) ?? {
-      person, net: 0, currency: t.currency_code, oldestDue: null, daysOverdue: -9999, count: 0,
+      person,
+      net: 0,
+      currency: t.currency_code,
+      oldestDue: null,
+      daysOverdue: -9999,
+      count: 0,
     };
     entry.net += sign * Number(t.amount);
     entry.count += 1;
     if (t.due_date) {
       const days = Math.floor((today - new Date(t.due_date).getTime()) / 86400000);
-      if (days > entry.daysOverdue) { entry.daysOverdue = days; entry.oldestDue = t.due_date; }
+      if (days > entry.daysOverdue) {
+        entry.daysOverdue = days;
+        entry.oldestDue = t.due_date;
+      }
     }
     grouped.set(key, entry);
   }
@@ -109,8 +133,8 @@ export function suggestionsFor(b: Bucket): string[] {
 /** Total exposure grouped by currency, ignoring safe buckets. */
 export function atRiskTotals(buckets: Bucket[]): [string, number][] {
   const map = new Map<string, number>();
-  buckets.filter((b) => b.severity !== "ok").forEach((b) =>
-    map.set(b.currency, (map.get(b.currency) ?? 0) + b.net),
-  );
+  buckets
+    .filter((b) => b.severity !== "ok")
+    .forEach((b) => map.set(b.currency, (map.get(b.currency) ?? 0) + b.net));
   return [...map.entries()];
 }
