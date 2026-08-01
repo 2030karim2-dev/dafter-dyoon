@@ -18,6 +18,7 @@ import { Route as AppSearchRouteImport } from './routes/app.search'
 import { Route as AppReportsRouteImport } from './routes/app.reports'
 import { Route as AppRemindersRouteImport } from './routes/app.reminders'
 import { Route as AppRecurringRouteImport } from './routes/app.recurring'
+import { Route as AppOutboxRouteImport } from './routes/app.outbox'
 import { Route as AppOpeningBalancesRouteImport } from './routes/app.opening-balances'
 import { Route as AppNotificationsRouteImport } from './routes/app.notifications'
 import { Route as AppFollowupRouteImport } from './routes/app.followup'
@@ -31,9 +32,11 @@ import { Route as AppSettingsProfileRouteImport } from './routes/app.settings.pr
 import { Route as AppSettingsNotificationsRouteImport } from './routes/app.settings.notifications'
 import { Route as AppSettingsDataRouteImport } from './routes/app.settings.data'
 import { Route as AppSettingsCompanyRouteImport } from './routes/app.settings.company'
+import { Route as AppSettingsChannelsRouteImport } from './routes/app.settings.channels'
 import { Route as AppSettingsAppearanceRouteImport } from './routes/app.settings.appearance'
 import { Route as AppSettingsAboutRouteImport } from './routes/app.settings.about'
 import { Route as AppPersonIdRouteImport } from './routes/app.person.$id'
+import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
 import { Route as ApiPublicCronProcessRouteImport } from './routes/api/public/cron/process'
 
 const AuthRoute = AuthRouteImport.update({
@@ -79,6 +82,11 @@ const AppRemindersRoute = AppRemindersRouteImport.update({
 const AppRecurringRoute = AppRecurringRouteImport.update({
   id: '/recurring',
   path: '/recurring',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppOutboxRoute = AppOutboxRouteImport.update({
+  id: '/outbox',
+  path: '/outbox',
   getParentRoute: () => AppRoute,
 } as any)
 const AppOpeningBalancesRoute = AppOpeningBalancesRouteImport.update({
@@ -147,6 +155,11 @@ const AppSettingsCompanyRoute = AppSettingsCompanyRouteImport.update({
   path: '/company',
   getParentRoute: () => AppSettingsRoute,
 } as any)
+const AppSettingsChannelsRoute = AppSettingsChannelsRouteImport.update({
+  id: '/channels',
+  path: '/channels',
+  getParentRoute: () => AppSettingsRoute,
+} as any)
 const AppSettingsAppearanceRoute = AppSettingsAppearanceRouteImport.update({
   id: '/appearance',
   path: '/appearance',
@@ -162,6 +175,12 @@ const AppPersonIdRoute = AppPersonIdRouteImport.update({
   path: '/person/$id',
   getParentRoute: () => AppRoute,
 } as any)
+const ApiPublicTelegramWebhookRoute =
+  ApiPublicTelegramWebhookRouteImport.update({
+    id: '/api/public/telegram/webhook',
+    path: '/api/public/telegram/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicCronProcessRoute = ApiPublicCronProcessRouteImport.update({
   id: '/api/public/cron/process',
   path: '/api/public/cron/process',
@@ -179,6 +198,7 @@ export interface FileRoutesByFullPath {
   '/app/followup': typeof AppFollowupRoute
   '/app/notifications': typeof AppNotificationsRoute
   '/app/opening-balances': typeof AppOpeningBalancesRoute
+  '/app/outbox': typeof AppOutboxRoute
   '/app/recurring': typeof AppRecurringRoute
   '/app/reminders': typeof AppRemindersRoute
   '/app/reports': typeof AppReportsRoute
@@ -188,6 +208,7 @@ export interface FileRoutesByFullPath {
   '/app/person/$id': typeof AppPersonIdRoute
   '/app/settings/about': typeof AppSettingsAboutRoute
   '/app/settings/appearance': typeof AppSettingsAppearanceRoute
+  '/app/settings/channels': typeof AppSettingsChannelsRoute
   '/app/settings/company': typeof AppSettingsCompanyRoute
   '/app/settings/data': typeof AppSettingsDataRoute
   '/app/settings/notifications': typeof AppSettingsNotificationsRoute
@@ -195,6 +216,7 @@ export interface FileRoutesByFullPath {
   '/app/settings/security': typeof AppSettingsSecurityRoute
   '/app/settings/': typeof AppSettingsIndexRoute
   '/api/public/cron/process': typeof ApiPublicCronProcessRoute
+  '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -206,6 +228,7 @@ export interface FileRoutesByTo {
   '/app/followup': typeof AppFollowupRoute
   '/app/notifications': typeof AppNotificationsRoute
   '/app/opening-balances': typeof AppOpeningBalancesRoute
+  '/app/outbox': typeof AppOutboxRoute
   '/app/recurring': typeof AppRecurringRoute
   '/app/reminders': typeof AppRemindersRoute
   '/app/reports': typeof AppReportsRoute
@@ -214,6 +237,7 @@ export interface FileRoutesByTo {
   '/app/person/$id': typeof AppPersonIdRoute
   '/app/settings/about': typeof AppSettingsAboutRoute
   '/app/settings/appearance': typeof AppSettingsAppearanceRoute
+  '/app/settings/channels': typeof AppSettingsChannelsRoute
   '/app/settings/company': typeof AppSettingsCompanyRoute
   '/app/settings/data': typeof AppSettingsDataRoute
   '/app/settings/notifications': typeof AppSettingsNotificationsRoute
@@ -221,6 +245,7 @@ export interface FileRoutesByTo {
   '/app/settings/security': typeof AppSettingsSecurityRoute
   '/app/settings': typeof AppSettingsIndexRoute
   '/api/public/cron/process': typeof ApiPublicCronProcessRoute
+  '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -234,6 +259,7 @@ export interface FileRoutesById {
   '/app/followup': typeof AppFollowupRoute
   '/app/notifications': typeof AppNotificationsRoute
   '/app/opening-balances': typeof AppOpeningBalancesRoute
+  '/app/outbox': typeof AppOutboxRoute
   '/app/recurring': typeof AppRecurringRoute
   '/app/reminders': typeof AppRemindersRoute
   '/app/reports': typeof AppReportsRoute
@@ -243,6 +269,7 @@ export interface FileRoutesById {
   '/app/person/$id': typeof AppPersonIdRoute
   '/app/settings/about': typeof AppSettingsAboutRoute
   '/app/settings/appearance': typeof AppSettingsAppearanceRoute
+  '/app/settings/channels': typeof AppSettingsChannelsRoute
   '/app/settings/company': typeof AppSettingsCompanyRoute
   '/app/settings/data': typeof AppSettingsDataRoute
   '/app/settings/notifications': typeof AppSettingsNotificationsRoute
@@ -250,6 +277,7 @@ export interface FileRoutesById {
   '/app/settings/security': typeof AppSettingsSecurityRoute
   '/app/settings/': typeof AppSettingsIndexRoute
   '/api/public/cron/process': typeof ApiPublicCronProcessRoute
+  '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -264,6 +292,7 @@ export interface FileRouteTypes {
     | '/app/followup'
     | '/app/notifications'
     | '/app/opening-balances'
+    | '/app/outbox'
     | '/app/recurring'
     | '/app/reminders'
     | '/app/reports'
@@ -273,6 +302,7 @@ export interface FileRouteTypes {
     | '/app/person/$id'
     | '/app/settings/about'
     | '/app/settings/appearance'
+    | '/app/settings/channels'
     | '/app/settings/company'
     | '/app/settings/data'
     | '/app/settings/notifications'
@@ -280,6 +310,7 @@ export interface FileRouteTypes {
     | '/app/settings/security'
     | '/app/settings/'
     | '/api/public/cron/process'
+    | '/api/public/telegram/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -291,6 +322,7 @@ export interface FileRouteTypes {
     | '/app/followup'
     | '/app/notifications'
     | '/app/opening-balances'
+    | '/app/outbox'
     | '/app/recurring'
     | '/app/reminders'
     | '/app/reports'
@@ -299,6 +331,7 @@ export interface FileRouteTypes {
     | '/app/person/$id'
     | '/app/settings/about'
     | '/app/settings/appearance'
+    | '/app/settings/channels'
     | '/app/settings/company'
     | '/app/settings/data'
     | '/app/settings/notifications'
@@ -306,6 +339,7 @@ export interface FileRouteTypes {
     | '/app/settings/security'
     | '/app/settings'
     | '/api/public/cron/process'
+    | '/api/public/telegram/webhook'
   id:
     | '__root__'
     | '/'
@@ -318,6 +352,7 @@ export interface FileRouteTypes {
     | '/app/followup'
     | '/app/notifications'
     | '/app/opening-balances'
+    | '/app/outbox'
     | '/app/recurring'
     | '/app/reminders'
     | '/app/reports'
@@ -327,6 +362,7 @@ export interface FileRouteTypes {
     | '/app/person/$id'
     | '/app/settings/about'
     | '/app/settings/appearance'
+    | '/app/settings/channels'
     | '/app/settings/company'
     | '/app/settings/data'
     | '/app/settings/notifications'
@@ -334,6 +370,7 @@ export interface FileRouteTypes {
     | '/app/settings/security'
     | '/app/settings/'
     | '/api/public/cron/process'
+    | '/api/public/telegram/webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -341,6 +378,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   AuthRoute: typeof AuthRoute
   ApiPublicCronProcessRoute: typeof ApiPublicCronProcessRoute
+  ApiPublicTelegramWebhookRoute: typeof ApiPublicTelegramWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -406,6 +444,13 @@ declare module '@tanstack/react-router' {
       path: '/recurring'
       fullPath: '/app/recurring'
       preLoaderRoute: typeof AppRecurringRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/outbox': {
+      id: '/app/outbox'
+      path: '/outbox'
+      fullPath: '/app/outbox'
+      preLoaderRoute: typeof AppOutboxRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/opening-balances': {
@@ -499,6 +544,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSettingsCompanyRouteImport
       parentRoute: typeof AppSettingsRoute
     }
+    '/app/settings/channels': {
+      id: '/app/settings/channels'
+      path: '/channels'
+      fullPath: '/app/settings/channels'
+      preLoaderRoute: typeof AppSettingsChannelsRouteImport
+      parentRoute: typeof AppSettingsRoute
+    }
     '/app/settings/appearance': {
       id: '/app/settings/appearance'
       path: '/appearance'
@@ -520,6 +572,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPersonIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/api/public/telegram/webhook': {
+      id: '/api/public/telegram/webhook'
+      path: '/api/public/telegram/webhook'
+      fullPath: '/api/public/telegram/webhook'
+      preLoaderRoute: typeof ApiPublicTelegramWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/cron/process': {
       id: '/api/public/cron/process'
       path: '/api/public/cron/process'
@@ -533,6 +592,7 @@ declare module '@tanstack/react-router' {
 interface AppSettingsRouteChildren {
   AppSettingsAboutRoute: typeof AppSettingsAboutRoute
   AppSettingsAppearanceRoute: typeof AppSettingsAppearanceRoute
+  AppSettingsChannelsRoute: typeof AppSettingsChannelsRoute
   AppSettingsCompanyRoute: typeof AppSettingsCompanyRoute
   AppSettingsDataRoute: typeof AppSettingsDataRoute
   AppSettingsNotificationsRoute: typeof AppSettingsNotificationsRoute
@@ -544,6 +604,7 @@ interface AppSettingsRouteChildren {
 const AppSettingsRouteChildren: AppSettingsRouteChildren = {
   AppSettingsAboutRoute: AppSettingsAboutRoute,
   AppSettingsAppearanceRoute: AppSettingsAppearanceRoute,
+  AppSettingsChannelsRoute: AppSettingsChannelsRoute,
   AppSettingsCompanyRoute: AppSettingsCompanyRoute,
   AppSettingsDataRoute: AppSettingsDataRoute,
   AppSettingsNotificationsRoute: AppSettingsNotificationsRoute,
@@ -564,6 +625,7 @@ interface AppRouteChildren {
   AppFollowupRoute: typeof AppFollowupRoute
   AppNotificationsRoute: typeof AppNotificationsRoute
   AppOpeningBalancesRoute: typeof AppOpeningBalancesRoute
+  AppOutboxRoute: typeof AppOutboxRoute
   AppRecurringRoute: typeof AppRecurringRoute
   AppRemindersRoute: typeof AppRemindersRoute
   AppReportsRoute: typeof AppReportsRoute
@@ -581,6 +643,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppFollowupRoute: AppFollowupRoute,
   AppNotificationsRoute: AppNotificationsRoute,
   AppOpeningBalancesRoute: AppOpeningBalancesRoute,
+  AppOutboxRoute: AppOutboxRoute,
   AppRecurringRoute: AppRecurringRoute,
   AppRemindersRoute: AppRemindersRoute,
   AppReportsRoute: AppReportsRoute,
@@ -597,17 +660,8 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   AuthRoute: AuthRoute,
   ApiPublicCronProcessRoute: ApiPublicCronProcessRoute,
+  ApiPublicTelegramWebhookRoute: ApiPublicTelegramWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
