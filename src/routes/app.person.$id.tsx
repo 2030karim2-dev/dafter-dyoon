@@ -22,8 +22,12 @@ import { CustomerHealthCard } from "@/components/CustomerHealthCard";
 import { PersonAnalytics } from "@/features/debts/person/PersonAnalytics";
 import { CustomerAttachments } from "@/features/attachments/CustomerAttachments";
 import { computeBalancesByCurrency, computeRunningByCurrency, type OpeningBalance } from "@/lib/money/balances";
-import { ClipboardList, Paperclip, BarChart3 } from "lucide-react";
+import { ClipboardList, Paperclip, BarChart3, History, CalendarClock, HandCoins } from "lucide-react";
 import { CurrencyScope } from "@/components/common/CurrencyScope";
+import { PersonFeed } from "@/features/person/PersonFeed";
+import { PersonPromises } from "@/features/person/PersonPromises";
+import { PaymentDialog } from "@/features/today/PaymentDialog";
+import { PromiseDialog } from "@/features/today/PromiseDialog";
 
 export const Route = createFileRoute("/app/person/$id")({ component: PersonPage });
 
