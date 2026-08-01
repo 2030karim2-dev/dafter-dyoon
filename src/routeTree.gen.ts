@@ -18,6 +18,7 @@ import { Route as AppSearchRouteImport } from './routes/app.search'
 import { Route as AppReportsRouteImport } from './routes/app.reports'
 import { Route as AppRemindersRouteImport } from './routes/app.reminders'
 import { Route as AppRecurringRouteImport } from './routes/app.recurring'
+import { Route as AppOutboxRouteImport } from './routes/app.outbox'
 import { Route as AppOpeningBalancesRouteImport } from './routes/app.opening-balances'
 import { Route as AppNotificationsRouteImport } from './routes/app.notifications'
 import { Route as AppFollowupRouteImport } from './routes/app.followup'
@@ -80,6 +81,11 @@ const AppRemindersRoute = AppRemindersRouteImport.update({
 const AppRecurringRoute = AppRecurringRouteImport.update({
   id: '/recurring',
   path: '/recurring',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppOutboxRoute = AppOutboxRouteImport.update({
+  id: '/outbox',
+  path: '/outbox',
   getParentRoute: () => AppRoute,
 } as any)
 const AppOpeningBalancesRoute = AppOpeningBalancesRouteImport.update({
@@ -186,6 +192,7 @@ export interface FileRoutesByFullPath {
   '/app/followup': typeof AppFollowupRoute
   '/app/notifications': typeof AppNotificationsRoute
   '/app/opening-balances': typeof AppOpeningBalancesRoute
+  '/app/outbox': typeof AppOutboxRoute
   '/app/recurring': typeof AppRecurringRoute
   '/app/reminders': typeof AppRemindersRoute
   '/app/reports': typeof AppReportsRoute
@@ -214,6 +221,7 @@ export interface FileRoutesByTo {
   '/app/followup': typeof AppFollowupRoute
   '/app/notifications': typeof AppNotificationsRoute
   '/app/opening-balances': typeof AppOpeningBalancesRoute
+  '/app/outbox': typeof AppOutboxRoute
   '/app/recurring': typeof AppRecurringRoute
   '/app/reminders': typeof AppRemindersRoute
   '/app/reports': typeof AppReportsRoute
@@ -243,6 +251,7 @@ export interface FileRoutesById {
   '/app/followup': typeof AppFollowupRoute
   '/app/notifications': typeof AppNotificationsRoute
   '/app/opening-balances': typeof AppOpeningBalancesRoute
+  '/app/outbox': typeof AppOutboxRoute
   '/app/recurring': typeof AppRecurringRoute
   '/app/reminders': typeof AppRemindersRoute
   '/app/reports': typeof AppReportsRoute
@@ -274,6 +283,7 @@ export interface FileRouteTypes {
     | '/app/followup'
     | '/app/notifications'
     | '/app/opening-balances'
+    | '/app/outbox'
     | '/app/recurring'
     | '/app/reminders'
     | '/app/reports'
@@ -302,6 +312,7 @@ export interface FileRouteTypes {
     | '/app/followup'
     | '/app/notifications'
     | '/app/opening-balances'
+    | '/app/outbox'
     | '/app/recurring'
     | '/app/reminders'
     | '/app/reports'
@@ -330,6 +341,7 @@ export interface FileRouteTypes {
     | '/app/followup'
     | '/app/notifications'
     | '/app/opening-balances'
+    | '/app/outbox'
     | '/app/recurring'
     | '/app/reminders'
     | '/app/reports'
@@ -420,6 +432,13 @@ declare module '@tanstack/react-router' {
       path: '/recurring'
       fullPath: '/app/recurring'
       preLoaderRoute: typeof AppRecurringRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/outbox': {
+      id: '/app/outbox'
+      path: '/outbox'
+      fullPath: '/app/outbox'
+      preLoaderRoute: typeof AppOutboxRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/opening-balances': {
@@ -585,6 +604,7 @@ interface AppRouteChildren {
   AppFollowupRoute: typeof AppFollowupRoute
   AppNotificationsRoute: typeof AppNotificationsRoute
   AppOpeningBalancesRoute: typeof AppOpeningBalancesRoute
+  AppOutboxRoute: typeof AppOutboxRoute
   AppRecurringRoute: typeof AppRecurringRoute
   AppRemindersRoute: typeof AppRemindersRoute
   AppReportsRoute: typeof AppReportsRoute
@@ -602,6 +622,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppFollowupRoute: AppFollowupRoute,
   AppNotificationsRoute: AppNotificationsRoute,
   AppOpeningBalancesRoute: AppOpeningBalancesRoute,
+  AppOutboxRoute: AppOutboxRoute,
   AppRecurringRoute: AppRecurringRoute,
   AppRemindersRoute: AppRemindersRoute,
   AppReportsRoute: AppReportsRoute,
