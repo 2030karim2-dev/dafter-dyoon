@@ -28,15 +28,17 @@ const homeQO = queryOptions({
   queryFn: () => getDebtsHomeFn(),
 });
 
+// Auth is client-side (see src/routes/app.tsx), so this protected data is
+// fetched after hydration — a loader would 401 during SSR/prerender.
 export const Route = createFileRoute("/app/")({
-  loader: ({ context }) => context.queryClient.ensureQueryData(homeQO),
   component: DebtsHome,
 });
 
 function DebtsHome() {
   const qc = useQueryClient();
-  const { data } = useSuspenseQuery(homeQO);
+  const { data } = useQuery({ ...homeQO, enabled: typeof window !== "undefined" });
   const invalidate = () => qc.invalidateQueries({ queryKey: ["debts-home"] });
+
 
   // Idle-time backend housekeeping (recurring generation).
   const runRecurring = useServerFn(processRecurringFn);
