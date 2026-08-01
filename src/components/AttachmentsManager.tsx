@@ -13,7 +13,7 @@ interface Attachment {
 }
 
 interface Props {
-  entityType: "transaction" | "expense" | "person";
+  entityType: "transaction" | "person";
   entityId: string;
   compact?: boolean;
 }

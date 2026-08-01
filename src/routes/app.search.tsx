@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
-import { Search, User, ArrowLeftRight, Receipt } from "lucide-react";
+import { Search, User, ArrowLeftRight } from "lucide-react";
 import { PageHeader } from "@/components/common/PageHeader";
 import { SearchBar } from "@/components/common/SearchBar";
 import { fmtMoney, fmtDate } from "@/lib/format";
@@ -11,44 +11,34 @@ export const Route = createFileRoute("/app/search")({ component: SearchPage });
 
 interface Person { id: string; name: string; phone: string | null }
 interface Tx { id: string; person_id: string; amount: number; direction: string; transaction_date: string; details: string | null }
-interface Expense { id: string; amount: number; expense_date: string; note: string | null; category_id: string }
-interface Cat { id: string; name: string }
 
 function SearchPage() {
   const { user } = useAuth();
   const [q, setQ] = useState("");
   const [people, setPeople] = useState<Person[]>([]);
   const [txs, setTxs] = useState<Tx[]>([]);
-  const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [cats, setCats] = useState<Cat[]>([]);
 
   useEffect(() => {
     if (!user) return;
     (async () => {
-      const [{ data: p }, { data: t }, { data: e }, { data: c }] = await Promise.all([
+      const [{ data: p }, { data: t }] = await Promise.all([
         supabase.from("people").select("id,name,phone").eq("user_id", user.id),
         supabase.from("transactions").select("id,person_id,amount,direction,transaction_date,details").eq("user_id", user.id).order("transaction_date", { ascending: false }).limit(500),
-        supabase.from("expenses").select("id,amount,expense_date,note,category_id").eq("user_id", user.id).order("expense_date", { ascending: false }).limit(500),
-        supabase.from("expense_categories").select("id,name").eq("user_id", user.id),
       ]);
       setPeople((p ?? []) as Person[]);
       setTxs((t ?? []) as Tx[]);
-      setExpenses((e ?? []) as Expense[]);
-      setCats((c ?? []) as Cat[]);
     })();
   }, [user]);
 
   const pMap = useMemo(() => new Map(people.map((p) => [p.id, p])), [people]);
-  const catMap = useMemo(() => new Map(cats.map((c) => [c.id, c])), [cats]);
 
   const term = q.trim().toLowerCase();
   const peopleHits = term ? people.filter((p) => p.name.toLowerCase().includes(term) || (p.phone ?? "").includes(term)).slice(0, 20) : [];
   const txHits = term ? txs.filter((t) => (t.details ?? "").toLowerCase().includes(term) || pMap.get(t.person_id)?.name.toLowerCase().includes(term) || String(t.amount).includes(term)).slice(0, 30) : [];
-  const expHits = term ? expenses.filter((e) => (e.note ?? "").toLowerCase().includes(term) || catMap.get(e.category_id)?.name.toLowerCase().includes(term) || String(e.amount).includes(term)).slice(0, 30) : [];
 
   return (
     <div className="space-y-3">
-      <PageHeader icon={Search} title="بحث شامل" subtitle="ابحث في الأشخاص والمعاملات والمصاريف" />
+      <PageHeader icon={Search} title="بحث شامل" subtitle="ابحث في العملاء والمعاملات" />
       <SearchBar value={q} onChange={setQ} placeholder="اكتب اسم، مبلغ، تفاصيل..." />
 
       {!term ? (
@@ -91,24 +81,8 @@ function SearchPage() {
             </Section>
           )}
 
-          {expHits.length > 0 && (
-            <Section icon={Receipt} title={`المصاريف (${expHits.length})`}>
-              {expHits.map((e) => (
-                <div key={e.id} className="bg-card border rounded-lg p-2">
-                  <div className="flex justify-between items-start gap-2">
-                    <div className="min-w-0">
-                      <div className="text-[12px] font-semibold truncate">{catMap.get(e.category_id)?.name ?? "—"}</div>
-                      {e.note && <div className="text-[10px] text-muted-foreground truncate">{e.note}</div>}
-                      <div className="text-[10px] text-muted-foreground">{fmtDate(e.expense_date)}</div>
-                    </div>
-                    <div className="font-bold text-[12px] tabular-nums text-danger">-{fmtMoney(Number(e.amount))}</div>
-                  </div>
-                </div>
-              ))}
-            </Section>
-          )}
 
-          {peopleHits.length === 0 && txHits.length === 0 && expHits.length === 0 && (
+          {peopleHits.length === 0 && txHits.length === 0 && (
             <div className="text-center py-10 text-muted-foreground text-[12px]">لا توجد نتائج لـ "{q}"</div>
           )}
         </div>

@@ -14,58 +14,54 @@ import jsPDF from "jspdf";
 export const Route = createFileRoute("/app/reports")({ component: ReportsPage });
 
 interface Cur { id: string; name: string; rate: number; is_base: boolean }
-interface Cat { id: string; name: string; color: string }
 interface Person { id: string; name: string }
 interface Tx { person_id: string; amount: number; direction: string; currency_id: string; transaction_date: string }
-interface Exp { amount: number; category_id: string | null; currency_id: string; expense_date: string; note: string | null }
 
 function ReportsPage() {
   const { user } = useAuth();
   const [curs, setCurs] = useState<Cur[]>([]);
-  const [cats, setCats] = useState<Cat[]>([]);
   const [people, setPeople] = useState<Person[]>([]);
   const [txs, setTxs] = useState<Tx[]>([]);
-  const [expenses, setExpenses] = useState<Exp[]>([]);
 
   useEffect(() => {
     if (!user) return;
     (async () => {
-      const sixMonthsAgo = new Date(); sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5); sixMonthsAgo.setDate(1);
-      const [{ data: c }, { data: ca }, { data: p }, { data: t }, { data: e }] = await Promise.all([
+      const [{ data: c }, { data: p }, { data: t }] = await Promise.all([
         supabase.from("currencies").select("*").order("is_base", { ascending: false }),
-        supabase.from("expense_categories").select("*"),
         supabase.from("people").select("id,name"),
         supabase.from("transactions").select("*"),
-        supabase.from("expenses").select("*").gte("expense_date", sixMonthsAgo.toISOString()),
       ]);
       setCurs((c ?? []) as Cur[]);
-      setCats((ca ?? []) as Cat[]);
       setPeople((p ?? []) as Person[]);
       setTxs((t ?? []) as Tx[]);
-      setExpenses((e ?? []) as Exp[]);
     })();
   }, [user]);
 
   const base = curs.find((c) => c.is_base) ?? curs[0];
   const toBase = (a: number, cid: string) => Number(a) * (curs.find((x) => x.id === cid)?.rate ?? 1);
 
-  // Last 6 months expenses bar chart
-  const monthlyExpenses = useMemo(() => {
-    const arr: { month: string; total: number }[] = [];
+  /** Last 6 months debt movement (credit vs debit) in base currency. */
+  const monthly = useMemo(() => {
+    const arr: { month: string; credit: number; debit: number; net: number }[] = [];
     const now = new Date();
     for (let i = 5; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const { start, end } = monthRange(d);
-      const total = expenses.filter((e) => {
-        const t = new Date(e.expense_date).getTime();
-        return t >= start.getTime() && t < end.getTime();
-      }).reduce((s, e) => s + toBase(e.amount, e.currency_id), 0);
-      arr.push({ month: `${d.getMonth() + 1}/${String(d.getFullYear()).slice(2)}`, total: Math.round(total) });
+      let credit = 0, debit = 0;
+      for (const t of txs) {
+        const ts = new Date(t.transaction_date).getTime();
+        if (ts < start.getTime() || ts >= end.getTime()) continue;
+        const v = toBase(t.amount, t.currency_id);
+        if (t.direction === "credit") credit += v; else debit += v;
+      }
+      arr.push({
+        month: `${d.getMonth() + 1}/${String(d.getFullYear()).slice(2)}`,
+        credit: Math.round(credit), debit: Math.round(debit), net: Math.round(credit - debit),
+      });
     }
     return arr;
-  }, [expenses, curs]);
+  }, [txs, curs]);
 
-  // Top debtors
   const topPeople = useMemo(() => {
     const m = new Map<string, number>();
     for (const t of txs) {
@@ -89,16 +85,11 @@ function ReportsPage() {
   }, [txs, curs]);
 
   const exportCSV = () => {
-    const rows = [["نوع","تاريخ","المبلغ","العملة","شخص/تصنيف","ملاحظة"]];
+    const rows = [["نوع", "تاريخ", "المبلغ", "العملة", "العميل"]];
     for (const t of txs) {
       const cur = curs.find((c) => c.id === t.currency_id)?.name ?? "";
       const person = people.find((p) => p.id === t.person_id)?.name ?? "";
-      rows.push([t.direction === "credit" ? "له" : "عليه", fmtDate(t.transaction_date), String(t.amount), cur, person, ""]);
-    }
-    for (const e of expenses) {
-      const cur = curs.find((c) => c.id === e.currency_id)?.name ?? "";
-      const cat = cats.find((c) => c.id === e.category_id)?.name ?? "";
-      rows.push(["مصروف", fmtDate(e.expense_date), String(e.amount), cur, cat, e.note ?? ""]);
+      rows.push([t.direction === "credit" ? "له" : "عليه", fmtDate(t.transaction_date), String(t.amount), cur, person]);
     }
     const csv = "\uFEFF" + rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
@@ -130,7 +121,7 @@ function ReportsPage() {
           <BarChart3 className="size-5" />
         </div>
         <div>
-          <h1 className="font-bold text-lg leading-tight">التقارير والتحليلات</h1>
+          <h1 className="font-bold text-lg leading-tight">تقارير الديون</h1>
           <p className="text-xs text-muted-foreground">نظرة شاملة بالـ {base?.name ?? "محلي"}</p>
         </div>
       </div>
@@ -141,38 +132,39 @@ function ReportsPage() {
         <Card className="p-3"><div className="text-[10px] text-muted-foreground">الصافي</div><div className={`font-bold text-sm mt-1 ${totals.net >= 0 ? "text-success" : "text-danger"}`}>{fmtMoney(totals.net)}</div></Card>
       </div>
 
-      <Tabs defaultValue="expenses">
+      <Tabs defaultValue="movement">
         <TabsList className="grid grid-cols-2 w-full">
-          <TabsTrigger value="expenses">المصاريف</TabsTrigger>
-          <TabsTrigger value="people">الأشخاص</TabsTrigger>
+          <TabsTrigger value="movement">حركة الديون</TabsTrigger>
+          <TabsTrigger value="people">العملاء</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="expenses" className="space-y-3 mt-3">
+        <TabsContent value="movement" className="space-y-3 mt-3">
           <Card className="p-4">
-            <h3 className="font-semibold text-sm mb-3">آخر 6 أشهر</h3>
+            <h3 className="font-semibold text-sm mb-3">آخر 6 أشهر (له / عليه)</h3>
             <div className="h-48">
               <ResponsiveContainer>
-                <BarChart data={monthlyExpenses}>
+                <BarChart data={monthly}>
                   <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
                   <XAxis dataKey="month" fontSize={11} />
                   <YAxis fontSize={11} />
-                  <Tooltip formatter={(v: any) => fmtMoney(Number(v))} />
-                  <Bar dataKey="total" fill="var(--primary)" radius={[8, 8, 0, 0]} />
+                  <Tooltip formatter={(v: unknown) => fmtMoney(Number(v ?? 0))} />
+                  <Bar dataKey="credit" name="له" fill="var(--success)" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="debit" name="عليه" fill="var(--danger)" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           </Card>
 
           <Card className="p-4">
-            <h3 className="font-semibold text-sm mb-3">اتجاه المصاريف</h3>
+            <h3 className="font-semibold text-sm mb-3">اتجاه صافي الديون</h3>
             <div className="h-40">
               <ResponsiveContainer>
-                <LineChart data={monthlyExpenses}>
+                <LineChart data={monthly}>
                   <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
                   <XAxis dataKey="month" fontSize={11} />
                   <YAxis fontSize={11} />
-                  <Tooltip formatter={(v: any) => fmtMoney(Number(v))} />
-                  <Line type="monotone" dataKey="total" stroke="var(--primary)" strokeWidth={2.5} dot={{ r: 4 }} />
+                  <Tooltip formatter={(v: unknown) => fmtMoney(Number(v ?? 0))} />
+                  <Line type="monotone" dataKey="net" name="الصافي" stroke="var(--primary)" strokeWidth={2.5} dot={{ r: 4 }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>

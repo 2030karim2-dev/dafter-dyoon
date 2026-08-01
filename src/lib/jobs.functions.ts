@@ -81,17 +81,7 @@ export const processRecurringFn = createServerFn({ method: "POST" })
         let next = new Date(r.next_run);
         let safety = 0;
         while (next <= now && safety < 24) {
-          if (r.kind === "expense") {
-            const { error } = await supabase.from("expenses").insert({
-              user_id: userId,
-              amount: r.amount,
-              currency_id: r.currency_id,
-              category_id: r.category_id,
-              note: r.note ?? r.title,
-              expense_date: next.toISOString(),
-            });
-            if (error) break;
-          } else if (r.kind === "transaction" && r.person_id && r.direction) {
+          if (r.person_id && r.direction) {
             const { error } = await supabase.from("transactions").insert({
               user_id: userId,
               person_id: r.person_id,
@@ -123,13 +113,10 @@ export const createBackupFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
-    const [people, txs, expenses, currencies, categories, budgets, reminders, recurring] = await Promise.all([
+    const [people, txs, currencies, reminders, recurring] = await Promise.all([
       supabase.from("people").select("*"),
       supabase.from("transactions").select("*"),
-      supabase.from("expenses").select("*"),
       supabase.from("currencies").select("*"),
-      supabase.from("expense_categories").select("*"),
-      supabase.from("budgets").select("*"),
       supabase.from("reminders").select("*"),
       supabase.from("recurring_rules").select("*"),
     ]);
@@ -139,10 +126,7 @@ export const createBackupFn = createServerFn({ method: "POST" })
       user_id: userId,
       people: people.data ?? [],
       transactions: txs.data ?? [],
-      expenses: expenses.data ?? [],
       currencies: currencies.data ?? [],
-      categories: categories.data ?? [],
-      budgets: budgets.data ?? [],
       reminders: reminders.data ?? [],
       recurring: recurring.data ?? [],
     };

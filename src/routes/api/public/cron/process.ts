@@ -60,13 +60,7 @@ async function runForUser(supabaseAdmin: any, userId: string) {
     let next = new Date(r.next_run);
     let safety = 0;
     while (next <= now && safety < 24) {
-      if (r.kind === "expense") {
-        const { error } = await supabaseAdmin.from("expenses").insert({
-          user_id: userId, amount: r.amount, currency_id: r.currency_id,
-          category_id: r.category_id, note: r.note ?? r.title, expense_date: next.toISOString(),
-        });
-        if (error) break;
-      } else if (r.kind === "transaction" && r.person_id && r.direction) {
+      if (r.person_id && r.direction) {
         const { error } = await supabaseAdmin.from("transactions").insert({
           user_id: userId, person_id: r.person_id, amount: r.amount, currency_id: r.currency_id,
           direction: r.direction, details: r.note ?? r.title, transaction_date: next.toISOString(),
@@ -95,21 +89,17 @@ async function runForUser(supabaseAdmin: any, userId: string) {
     const need = freq === "daily" ? day : freq === "weekly" ? 7 * day : 30 * day;
     const lastMs = lastBackup ? new Date(lastBackup.created_at).getTime() : 0;
     if (Date.now() - lastMs >= need) {
-      const [people, txs, expenses, currencies, categories, budgets, reminders, recurring] = await Promise.all([
+      const [people, txs, currencies, reminders, recurring] = await Promise.all([
         supabaseAdmin.from("people").select("*").eq("user_id", userId),
         supabaseAdmin.from("transactions").select("*").eq("user_id", userId),
-        supabaseAdmin.from("expenses").select("*").eq("user_id", userId),
         supabaseAdmin.from("currencies").select("*").eq("user_id", userId),
-        supabaseAdmin.from("expense_categories").select("*").eq("user_id", userId),
-        supabaseAdmin.from("budgets").select("*").eq("user_id", userId),
         supabaseAdmin.from("reminders").select("*").eq("user_id", userId),
         supabaseAdmin.from("recurring_rules").select("*").eq("user_id", userId),
       ]);
       const snap = {
         version: 1, exportedAt: new Date().toISOString(), user_id: userId,
-        people: people.data ?? [], transactions: txs.data ?? [], expenses: expenses.data ?? [],
-        currencies: currencies.data ?? [], categories: categories.data ?? [],
-        budgets: budgets.data ?? [], reminders: reminders.data ?? [], recurring: recurring.data ?? [],
+        people: people.data ?? [], transactions: txs.data ?? [],
+        currencies: currencies.data ?? [], reminders: reminders.data ?? [], recurring: recurring.data ?? [],
       };
       const json = JSON.stringify(snap);
       const path = `${userId}/auto-${Date.now()}.json`;

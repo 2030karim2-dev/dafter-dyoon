@@ -12,7 +12,7 @@ import { Avatar } from "@/components/common/Avatar";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import {
   User, ShieldCheck, Bell, Palette, Database, Info,
-  Coins, Tags, Repeat, Archive, Wallet, LogOut, Moon, Sun,
+  Coins, Repeat, Archive, Wallet, LogOut, Moon, Sun,
 } from "lucide-react";
 
 export const Route = createFileRoute("/app/settings/")({ component: SettingsPage });
@@ -54,7 +54,7 @@ function SettingsPage() {
         <SettingsRow to="/app/settings/profile" icon={User} label="الملف الشخصي" desc="الاسم والصورة" tone="primary" />
         <SettingsRow to="/app/settings/company" icon={Wallet} label="بيانات المنشأة" desc="الشعار والعنوان للكشوف" tone="accent" />
         <SettingsRow to="/app/settings/security" icon={ShieldCheck} label="الأمان والخصوصية" desc="قفل التطبيق والبصمة" tone="success" />
-        <SettingsRow to="/app/settings/notifications" icon={Bell} label="الإشعارات" desc="تذكيرات الديون والمصاريف" tone="warning" />
+        <SettingsRow to="/app/settings/notifications" icon={Bell} label="الإشعارات" desc="تذكيرات الاستحقاقات والديون" tone="warning" />
       </SettingsGroup>
 
       {/* Appearance */}
@@ -88,12 +88,6 @@ function SettingsPage() {
         <SettingsRow to="/app/reminders" icon={Bell} label="التذكيرات" desc="مواعيد الاسترداد" tone="warning" />
         <SettingsRow to="/app/recurring" icon={Repeat} label="المعاملات المتكررة" desc="رواتب، إيجارات، اشتراكات" tone="success" />
         <SettingsRow to="/app/archive" icon={Archive} label="الأرشيف" desc="الأشخاص المؤرشفون" tone="muted" />
-      </SettingsGroup>
-
-      {/* Expenses module */}
-      <SettingsGroup title="المصاريف">
-        <SettingsRow to="/app/categories" icon={Tags} label="تصنيفات المصاريف" desc="إضافة وتعديل التصنيفات" tone="accent" />
-        <SettingsRow to="/app/budgets" icon={Wallet} label="الميزانية الشهرية" desc="حدّد سقف لكل تصنيف" tone="primary" />
       </SettingsGroup>
 
       {/* Data */}

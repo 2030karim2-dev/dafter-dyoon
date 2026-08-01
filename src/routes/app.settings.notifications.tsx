@@ -47,7 +47,7 @@ function NotificationsPage() {
 
   return (
     <div className="space-y-2.5">
-      <PageHeader icon={Bell} title="الإشعارات" subtitle="تذكيرات الديون والمصاريف" back="/app/settings" />
+      <PageHeader icon={Bell} title="الإشعارات" subtitle="تذكيرات الاستحقاقات والديون" back="/app/settings" />
 
       <Card className="p-2.5 space-y-2.5">
         <div className="flex items-center gap-2">
