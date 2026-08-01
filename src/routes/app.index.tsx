@@ -15,7 +15,7 @@ import { DebtsHeader } from "@/features/debts/DebtsHeader";
 import { PersonRow } from "@/features/debts/PersonRow";
 import { PersonTable } from "@/features/debts/PersonTable";
 import { BalanceCard } from "@/components/common/BalanceCard";
-import { getDebtsHomeFn, archivePersonFn, deletePersonFn, type PersonWithBalances } from "@/lib/home.functions";
+import { getDebtsHomeFn, archivePersonFn, deletePersonFn, type PersonWithBalances, type DebtsHomePayload } from "@/lib/home.functions";
 import { processRecurringFn } from "@/lib/jobs.functions";
 import { toast } from "sonner";
 
@@ -28,6 +28,10 @@ const homeQO = queryOptions({
   queryFn: () => getDebtsHomeFn(),
 });
 
+const EMPTY_HOME: DebtsHomePayload = {
+  people: [], currencies: [], base: null, totalsPerCurrency: [], peopleCount: 0, txCount: 0,
+};
+
 // Auth is client-side (see src/routes/app.tsx), so this protected data is
 // fetched after hydration — a loader would 401 during SSR/prerender.
 export const Route = createFileRoute("/app/")({
@@ -36,7 +40,9 @@ export const Route = createFileRoute("/app/")({
 
 function DebtsHome() {
   const qc = useQueryClient();
-  const { data } = useQuery({ ...homeQO, enabled: typeof window !== "undefined" });
+  const { data: home } = useQuery(homeQO);
+  const data = home ?? EMPTY_HOME;
+
   const invalidate = () => qc.invalidateQueries({ queryKey: ["debts-home"] });
 
 
