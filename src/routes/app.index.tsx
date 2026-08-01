@@ -81,42 +81,66 @@ function DebtsHome() {
   const [view, setView] = useState<ViewMode>(() => (typeof localStorage !== "undefined" && (localStorage.getItem("people_view") as ViewMode)) || "cards");
   useEffect(() => { try { localStorage.setItem("people_view", view); } catch { /* ignore */ } }, [view]);
 
-  const baseCurrency = data.base;
+  // Selected currency = the only ledger displayed (currencies never mix).
+  const [curId, setCurId] = useState<string>("");
+  useEffect(() => {
+    if (data.currencies.length === 0) return;
+    if (curId && data.currencies.some((c) => c.id === curId)) return;
+    const saved = (() => { try { return localStorage.getItem("scope_currency"); } catch { return null; } })();
+    const next = data.currencies.find((c) => c.id === saved) ?? data.base ?? data.currencies[0];
+    if (next) setCurId(next.id);
+  }, [data.currencies, data.base, curId]);
+  useEffect(() => { if (curId) { try { localStorage.setItem("scope_currency", curId); } catch { /* ignore */ } } }, [curId]);
 
-  // Totals from base-equivalent net (display headline)
-  const totals = useMemo(() => {
-    let owe = 0, owed = 0;
-    for (const p of data.people) {
-      if (p.net_base > 0) owed += p.net_base; else owe += -p.net_base;
-    }
-    return { owe, owed };
-  }, [data.people]);
+  const activeCurrency = data.currencies.find((c) => c.id === curId) ?? data.base ?? null;
+
+  /** Row data for the selected currency only. */
+  const rowsForCurrency = useMemo(() => {
+    return data.people.map((p) => {
+      const e = p.balances.find((b) => b.currency_id === curId);
+      return {
+        person: p.person,
+        net: e?.balance ?? 0,
+        count: e?.count ?? 0,
+        credit: e?.credit ?? 0,
+        debit: e?.debit ?? 0,
+        lastDate: e?.lastDate ?? 0,
+        lastAmount: e?.lastAmount ?? 0,
+        lastDirection: e?.lastDirection ?? "",
+      };
+    });
+  }, [data.people, curId]);
+
+  const scopeTotal = data.totalsPerCurrency.find((t) => t.currency.id === curId);
+  const totals = { owed: scopeTotal?.owed ?? 0, owe: scopeTotal?.owe ?? 0 };
 
   const filtered = useMemo(() => {
-    const list = data.people.filter((p) => {
-      if (q && !p.person.name.toLowerCase().includes(q.toLowerCase())) return false;
-      if (filter === "credit") return p.net_base > 0.001;
-      if (filter === "debit") return p.net_base < -0.001;
+    const list = rowsForCurrency.filter((r) => {
+      if (q && !r.person.name.toLowerCase().includes(q.toLowerCase())) return false;
+      if (filter === "credit") return r.net > 0.001;
+      if (filter === "debit") return r.net < -0.001;
       return true;
     });
     return list.sort((a, b) => {
       if (sort === "name") return a.person.name.localeCompare(b.person.name, "ar");
       if (sort === "recent") return b.lastDate - a.lastDate;
-      return Math.abs(b.net_base) - Math.abs(a.net_base);
+      return Math.abs(b.net) - Math.abs(a.net);
     });
-  }, [data.people, q, filter, sort]);
+  }, [rowsForCurrency, q, filter, sort]);
 
   // Adapters for legacy dialogs that still expect raw arrays
   const legacyPeople = useMemo(() => data.people.map((p) => p.person), [data.people]);
 
   return (
     <div className="space-y-3 animate-in fade-in duration-300">
+      <CurrencyScope currencies={data.currencies} value={curId} onChange={setCurId} />
+
       <DebtsHeader
         owed={totals.owed}
         owe={totals.owe}
-        baseName={baseCurrency?.name ?? "محلي"}
-        peopleCount={data.peopleCount}
-        txCount={data.txCount}
+        baseName={activeCurrency?.name ?? "محلي"}
+        peopleCount={scopeTotal?.peopleCount ?? data.peopleCount}
+        txCount={rowsForCurrency.reduce((a, r) => a + r.count, 0)}
         filter={filter}
         onFilterChange={setFilter}
       />
@@ -124,7 +148,7 @@ function DebtsHome() {
       {data.totalsPerCurrency.length > 0 && (
         <div className="space-y-1.5">
           <div className="flex items-center justify-between px-1">
-            <div className="text-[10px] font-bold text-muted-foreground tracking-wide">الأرصدة حسب العملة</div>
+            <div className="text-[10px] font-bold text-muted-foreground tracking-wide">مسارات العملات (منفصلة تماماً)</div>
             <div className="text-[9px] text-muted-foreground tabular-nums">{data.totalsPerCurrency.length} عملة</div>
           </div>
           <div className="grid grid-cols-2 gap-1.5">
@@ -132,12 +156,13 @@ function DebtsHome() {
               <BalanceCard
                 key={r.currency.id}
                 data={{ currency: r.currency, owed: r.owed, owe: r.owe }}
-                defaultOpen={r.currency.is_base}
+                defaultOpen={r.currency.id === curId}
               />
             ))}
           </div>
         </div>
       )}
+
 
       <div className="flex items-center gap-1.5">
         <div className="flex-1"><SearchBar value={q} onChange={setQ} placeholder="ابحث عن شخص..." /></div>
