@@ -7,7 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
-import { UserPlus, Save } from "lucide-react";
+import { UserPlus, Save, BookUser } from "lucide-react";
+import { contactPickerSupported, pickContact } from "@/lib/contacts";
 
 export interface PersonEditing {
   id: string;
@@ -104,7 +105,32 @@ export function PersonFormDialog({ open, onOpenChange, editing, onSuccess }: Pro
           <div className="grid grid-cols-2 gap-2">
             <div>
               <Label className="text-[12px]">رقم الجوال</Label>
-              <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="9665xxxxxxxx" dir="ltr" maxLength={30} inputMode="tel" />
+              <div className="flex items-center gap-1">
+                <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="9665xxxxxxxx" dir="ltr" maxLength={30} inputMode="tel" className="flex-1" />
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!contactPickerSupported()) {
+                      toast.info("جهات الاتصال غير مدعومة في هذا المتصفح — افتح التطبيق من متصفح الجوال (Chrome).");
+                      return;
+                    }
+                    try {
+                      const c = await pickContact();
+                      if (!c) return;
+                      if (c.phone) setPhone(c.phone);
+                      if (c.name && !name.trim()) setName(c.name);
+                      if (!c.phone) toast.info("جهة الاتصال المختارة لا تحتوي رقماً");
+                    } catch {
+                      toast.error("تم إلغاء اختيار جهة الاتصال");
+                    }
+                  }}
+                  aria-label="استيراد رقم من جهات الاتصال"
+                  title="اختيار رقم من جهات الاتصال بالهاتف"
+                  className="size-9 shrink-0 rounded-md border bg-secondary text-primary flex items-center justify-center hover:bg-primary/10 active:scale-95 transition"
+                >
+                  <BookUser className="size-4" />
+                </button>
+              </div>
             </div>
             <div>
               <Label className="text-[12px]">النوع</Label>

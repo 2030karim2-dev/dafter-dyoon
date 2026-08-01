@@ -16,6 +16,7 @@ import {
   varsForBucket,
 } from "@/lib/messaging/render.server";
 import { deliver, channelAvailability } from "@/lib/messaging/providers.server";
+import { bulkMessages } from "@/lib/messaging/bulk.server";
 
 export interface OutboxRow {
   id: string;
@@ -172,6 +173,25 @@ export const enqueueMessagesFn = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { queued: inserted?.length ?? 0 };
   });
+
+/** Bulk follow-up: queue + deliver (or mark manual) for many customers. */
+export const sendBulkMessagesFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        targets: z
+          .array(z.object({ person_id: z.string().uuid(), currency_id: z.string().uuid() }))
+          .min(1)
+          .max(500),
+        channel: z.enum(["whatsapp", "telegram", "sms"]).default("whatsapp"),
+        mode: z.enum(["queue", "send", "manual"]).default("send"),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) =>
+    bulkMessages(context.supabase, context.userId, data.targets, data.channel, data.mode),
+  );
 
 /** Mark a queued message as sent (used after a manual WhatsApp send). */
 export const markSentFn = createServerFn({ method: "POST" })
