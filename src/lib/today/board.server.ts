@@ -190,14 +190,19 @@ export async function loadToday(supabase: DB, userId: string): Promise<TodayPayl
       promise_id: null,
       outbox_id: o.id,
       note: o.last_error ?? o.channel,
+      ...contactState(p.id),
     });
   }
 
   const ORDER: Record<TaskKind, number> = {
     promise_broken: 0, overdue: 1, due_today: 2, promise_due: 3, failed_message: 4,
   };
-  tasks.sort((a, b) =>
-    ORDER[a.kind] !== ORDER[b.kind] ? ORDER[a.kind] - ORDER[b.kind] : b.amount - a.amount);
+  // Not-yet-reminded customers always come first; reminded ones are parked below.
+  tasks.sort((a, b) => {
+    if (a.reminded !== b.reminded) return a.reminded ? 1 : -1;
+    if (ORDER[a.kind] !== ORDER[b.kind]) return ORDER[a.kind] - ORDER[b.kind];
+    return b.amount - a.amount;
+  });
 
   const counts: TodayCounts = {
     all: tasks.length,
@@ -206,7 +211,10 @@ export async function loadToday(supabase: DB, userId: string): Promise<TodayPayl
     promise_due: tasks.filter((t) => t.kind === "promise_due").length,
     promise_broken: tasks.filter((t) => t.kind === "promise_broken").length,
     failed_message: tasks.filter((t) => t.kind === "failed_message").length,
+    pending: tasks.filter((t) => !t.reminded).length,
+    reminded: tasks.filter((t) => t.reminded).length,
   };
+
 
   const perCur = new Map<string, number>();
   for (const t of tasks) {
