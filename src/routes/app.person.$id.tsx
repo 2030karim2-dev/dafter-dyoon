@@ -51,7 +51,9 @@ function PersonPage() {
   const [confirmArchive, setConfirmArchive] = useState(false);
   const [confirmDelPerson, setConfirmDelPerson] = useState(false);
   const [openAi, setOpenAi] = useState(false);
-  const [tab, setTab] = useState<"timeline" | "attachments" | "insights">("timeline");
+  const [tab, setTab] = useState<"timeline" | "feed" | "promises" | "attachments" | "insights">("timeline");
+  const [openPay, setOpenPay] = useState(false);
+  const [openPromise, setOpenPromise] = useState(false);
 
   const load = async () => {
     if (!user) return;
