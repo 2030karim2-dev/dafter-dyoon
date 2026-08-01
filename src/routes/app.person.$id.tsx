@@ -217,10 +217,22 @@ function PersonPage() {
 
       <PersonBalancesByCurrency name={name} phone={phone} balances={balancesByCurrency} totalTxCount={txs.length} txs={txs} />
 
+      {/* Quick collection actions on the active currency path */}
+      <div className="grid grid-cols-2 gap-1.5">
+        <Button size="sm" variant="outline" className="h-7 text-[11px]" disabled={!curId} onClick={() => setOpenPay(true)}>
+          <HandCoins className="size-3" /> تسجيل دفعة
+        </Button>
+        <Button size="sm" variant="outline" className="h-7 text-[11px]" disabled={!curId} onClick={() => setOpenPromise(true)}>
+          <CalendarClock className="size-3" /> وعد بالسداد
+        </Button>
+      </div>
+
       {/* Tabs */}
-      <div className="grid grid-cols-3 gap-1 rounded-xl bg-secondary/60 p-1 ring-1 ring-border">
+      <div className="grid grid-cols-5 gap-1 rounded-xl bg-secondary/60 p-1 ring-1 ring-border">
         {[
           { v: "timeline" as const,    label: "المعاملات",  icon: ClipboardList },
+          { v: "feed" as const,        label: "السجل",      icon: History },
+          { v: "promises" as const,    label: "الوعود",     icon: CalendarClock },
           { v: "attachments" as const, label: "المرفقات",   icon: Paperclip },
           { v: "insights" as const,    label: "تحليلات",    icon: BarChart3 },
         ].map((t) => {
@@ -230,7 +242,7 @@ function PersonPage() {
             <button
               key={t.v}
               onClick={() => setTab(t.v)}
-              className={`inline-flex items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-[11.5px] font-semibold transition ${
+              className={`inline-flex flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1 text-[9.5px] font-semibold transition ${
                 active ? "bg-card text-primary shadow-sm ring-1 ring-primary/30" : "text-muted-foreground hover:text-foreground"
               }`}
             >
@@ -255,6 +267,10 @@ function PersonPage() {
         )
       )}
 
+      {tab === "feed" && <PersonFeed personId={id} currencyId={curId || null} />}
+
+      {tab === "promises" && <PersonPromises personId={id} currencyId={curId || null} />}
+
       {tab === "attachments" && (
         <CustomerAttachments personId={id} personPhone={phone} />
       )}
@@ -264,6 +280,25 @@ function PersonPage() {
           <CustomerHealthCard personId={id} />
           <PersonAnalytics txs={scopedTxs} />
         </div>
+      )}
+
+      {curId && (
+        <>
+          <PaymentDialog
+            open={openPay} onOpenChange={setOpenPay}
+            personId={id} personName={name} currencyId={curId}
+            currencyLabel={primaryBalance?.currency.symbol || primaryBalance?.currency.name || ""}
+            suggested={Math.abs(balanceForActions) || undefined}
+            onDone={load}
+          />
+          <PromiseDialog
+            open={openPromise} onOpenChange={setOpenPromise}
+            personId={id} personName={name} currencyId={curId}
+            currencyLabel={primaryBalance?.currency.symbol || primaryBalance?.currency.name || ""}
+            suggested={Math.abs(balanceForActions) || undefined}
+            onDone={load}
+          />
+        </>
       )}
 
       <button
