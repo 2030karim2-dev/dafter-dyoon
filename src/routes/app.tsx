@@ -10,6 +10,7 @@ import { useTheme } from "@/lib/theme";
 import { fetchPending, pollAndNotify } from "@/lib/notifications";
 import { syncRemindersFn } from "@/lib/jobs.functions";
 import { registerServiceWorker } from "@/lib/push";
+import { AlertCenter } from "@/components/alerts/AlertCenter";
 
 export const Route = createFileRoute("/app")({ component: AppLayout });
 
@@ -90,6 +91,8 @@ function AppLayout() {
       <main className="max-w-3xl mx-auto px-2.5 py-2.5">
         <Outlet />
       </main>
+
+      <AlertCenter userId={user.id} />
 
       <GlobalSearchDialog open={searchOpen} onOpenChange={setSearchOpen} />
       <BottomNav />

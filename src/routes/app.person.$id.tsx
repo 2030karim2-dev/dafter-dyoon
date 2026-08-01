@@ -26,6 +26,7 @@ import { ClipboardList, Paperclip, BarChart3, History, CalendarClock, HandCoins 
 import { CurrencyScope } from "@/components/common/CurrencyScope";
 import { PersonFeed } from "@/features/person/PersonFeed";
 import { PersonPromises } from "@/features/person/PersonPromises";
+import { PersonActivity } from "@/features/person/PersonActivity";
 import { PaymentDialog } from "@/features/today/PaymentDialog";
 import { PromiseDialog } from "@/features/today/PromiseDialog";
 
@@ -55,7 +56,7 @@ function PersonPage() {
   const [confirmArchive, setConfirmArchive] = useState(false);
   const [confirmDelPerson, setConfirmDelPerson] = useState(false);
   const [openAi, setOpenAi] = useState(false);
-  const [tab, setTab] = useState<"timeline" | "feed" | "promises" | "attachments" | "insights">("timeline");
+  const [tab, setTab] = useState<"timeline" | "feed" | "activity" | "promises" | "attachments" | "insights">("timeline");
   const [openPay, setOpenPay] = useState(false);
   const [openPromise, setOpenPromise] = useState(false);
 
