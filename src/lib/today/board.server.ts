@@ -25,6 +25,11 @@ export interface TodayTask {
   promise_id: string | null;
   outbox_id: string | null;
   note: string | null;
+  /** Reminder state — separates "not contacted yet" from "waiting next cycle". */
+  last_contact_at: string | null;
+  contact_count: number;
+  reminded: boolean;          // contacted recently → parked until next cycle
+  next_reminder_at: string | null;
 }
 
 export interface TodayCounts {
@@ -34,6 +39,8 @@ export interface TodayCounts {
   promise_due: number;
   promise_broken: number;
   failed_message: number;
+  pending: number;            // not reminded yet — needs action now
+  reminded: number;           // already reminded — waiting next cycle
 }
 
 export interface TodayPayload {
