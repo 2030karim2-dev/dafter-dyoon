@@ -1,7 +1,8 @@
 import { AlertTriangle } from "lucide-react";
 import { fmtMoney } from "@/lib/format";
+import type { BoardTotal } from "@/lib/followup.functions";
 
-export function AtRiskBanner({ totals }: { totals: [string, number][] }) {
+export function AtRiskBanner({ totals }: { totals: BoardTotal[] }) {
   if (totals.length === 0) return null;
   return (
     <div className="rounded-lg border border-danger/30 bg-danger-soft/40 p-2.5 flex items-start gap-2">
@@ -9,12 +10,12 @@ export function AtRiskBanner({ totals }: { totals: [string, number][] }) {
       <div className="text-[11px] leading-relaxed">
         <div className="font-bold text-danger mb-0.5">إجمالي المبالغ المعرضة للخطر:</div>
         <div className="flex flex-wrap gap-1.5">
-          {totals.map(([cur, amt]) => (
+          {totals.map((t) => (
             <span
-              key={cur}
+              key={t.currency_id}
               className="bg-card border rounded px-1.5 py-0.5 font-black tabular-nums text-danger"
             >
-              {fmtMoney(amt)} {cur}
+              {fmtMoney(t.amount)} {t.symbol}
             </span>
           ))}
         </div>
