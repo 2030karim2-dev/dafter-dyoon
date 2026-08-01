@@ -212,8 +212,9 @@ function DebtsHome() {
         <PersonTable
           rows={filtered.map((p) => ({
             person: p.person,
-            balance: { net: p.net_base, count: p.txCount, lastDate: p.lastDate, totalCredit: p.totalCredit_base, totalDebit: p.totalDebit_base },
+            balance: { net: p.net, count: p.count, lastDate: p.lastDate, totalCredit: p.credit, totalDebit: p.debit, symbol: activeCurrency?.symbol },
           }))}
+
           onEdit={(p) => { const full = legacyPeople.find((x) => x.id === p.id)!; setEditingPerson({ id: full.id, name: full.name, phone: full.phone, type: full.type, notes: full.notes ?? null, avatar_color: full.avatar_color, credit_limit: full.credit_limit ?? null }); setOpenPerson(true); }}
           onArchive={(p) => setArchivePerson(legacyPeople.find((x) => x.id === p.id) ?? null)}
           onDelete={(p) => setDelPerson(legacyPeople.find((x) => x.id === p.id) ?? null)}
