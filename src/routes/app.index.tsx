@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { queryOptions, useSuspenseQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { queryOptions, useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,7 @@ import { DebtsHeader } from "@/features/debts/DebtsHeader";
 import { PersonRow } from "@/features/debts/PersonRow";
 import { PersonTable } from "@/features/debts/PersonTable";
 import { BalanceCard } from "@/components/common/BalanceCard";
-import { getDebtsHomeFn, archivePersonFn, deletePersonFn, type PersonWithBalances } from "@/lib/home.functions";
+import { getDebtsHomeFn, archivePersonFn, deletePersonFn, type PersonWithBalances, type DebtsHomePayload } from "@/lib/home.functions";
 import { processRecurringFn } from "@/lib/jobs.functions";
 import { toast } from "sonner";
 
@@ -28,15 +28,23 @@ const homeQO = queryOptions({
   queryFn: () => getDebtsHomeFn(),
 });
 
+const EMPTY_HOME: DebtsHomePayload = {
+  people: [], currencies: [], base: null, totalsPerCurrency: [], peopleCount: 0, txCount: 0,
+};
+
+// Auth is client-side (see src/routes/app.tsx), so this protected data is
+// fetched after hydration — a loader would 401 during SSR/prerender.
 export const Route = createFileRoute("/app/")({
-  loader: ({ context }) => context.queryClient.ensureQueryData(homeQO),
   component: DebtsHome,
 });
 
 function DebtsHome() {
   const qc = useQueryClient();
-  const { data } = useSuspenseQuery(homeQO);
+  const { data: home } = useQuery(homeQO);
+  const data = home ?? EMPTY_HOME;
+
   const invalidate = () => qc.invalidateQueries({ queryKey: ["debts-home"] });
+
 
   // Idle-time backend housekeeping (recurring generation).
   const runRecurring = useServerFn(processRecurringFn);
