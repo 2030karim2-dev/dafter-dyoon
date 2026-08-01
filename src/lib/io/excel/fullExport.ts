@@ -23,14 +23,23 @@ export async function exportFullAccountWorkbook(
   const pMap = new Map<string, PersonRow>(peopleList.map((p) => [p.id, p]));
   const cMap = new Map<string, CurRow>(((currencies as CurRow[]) ?? []).map((c) => [c.id, c]));
 
-  const peopleSheet = peopleList.map((p) => {
-    let bal = 0;
+  // One row per person PER CURRENCY — currencies are never mixed.
+  const peopleSheet = peopleList.flatMap((p) => {
+    const byCur = new Map<string, number>();
     for (const t of txList.filter((x) => x.person_id === p.id)) {
-      const rate = cMap.get(t.currency_id)?.rate ?? 1;
-      bal += Number(t.amount) * (t.direction === "credit" ? 1 : -1) * rate;
+      const prev = byCur.get(t.currency_id) ?? 0;
+      byCur.set(t.currency_id, prev + Number(t.amount) * (t.direction === "credit" ? 1 : -1));
     }
-    return { "الاسم": p.name, "الجوال": p.phone ?? "", "الرصيد": Math.abs(bal), "الحالة": bal >= 0 ? "له" : "عليه" };
+    if (byCur.size === 0) return [{ "الاسم": p.name, "الجوال": p.phone ?? "", "العملة": "—", "الرصيد": 0, "الحالة": "مسوّى" }];
+    return Array.from(byCur.entries()).map(([cid, bal]) => ({
+      "الاسم": p.name,
+      "الجوال": p.phone ?? "",
+      "العملة": cMap.get(cid)?.name ?? "—",
+      "الرصيد": Math.abs(bal),
+      "الحالة": Math.abs(bal) < 0.005 ? "مسوّى" : bal > 0 ? "له" : "عليه",
+    }));
   });
+
 
   const txSheet = txList.map((t) => ({
     "التاريخ": new Date(t.transaction_date).toLocaleDateString("ar-EG"),
