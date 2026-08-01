@@ -34,6 +34,7 @@ import { Route as AppSettingsCompanyRouteImport } from './routes/app.settings.co
 import { Route as AppSettingsAppearanceRouteImport } from './routes/app.settings.appearance'
 import { Route as AppSettingsAboutRouteImport } from './routes/app.settings.about'
 import { Route as AppPersonIdRouteImport } from './routes/app.person.$id'
+import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
 import { Route as ApiPublicCronProcessRouteImport } from './routes/api/public/cron/process'
 
 const AuthRoute = AuthRouteImport.update({
@@ -162,6 +163,12 @@ const AppPersonIdRoute = AppPersonIdRouteImport.update({
   path: '/person/$id',
   getParentRoute: () => AppRoute,
 } as any)
+const ApiPublicTelegramWebhookRoute =
+  ApiPublicTelegramWebhookRouteImport.update({
+    id: '/api/public/telegram/webhook',
+    path: '/api/public/telegram/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicCronProcessRoute = ApiPublicCronProcessRouteImport.update({
   id: '/api/public/cron/process',
   path: '/api/public/cron/process',
@@ -195,6 +202,7 @@ export interface FileRoutesByFullPath {
   '/app/settings/security': typeof AppSettingsSecurityRoute
   '/app/settings/': typeof AppSettingsIndexRoute
   '/api/public/cron/process': typeof ApiPublicCronProcessRoute
+  '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -221,6 +229,7 @@ export interface FileRoutesByTo {
   '/app/settings/security': typeof AppSettingsSecurityRoute
   '/app/settings': typeof AppSettingsIndexRoute
   '/api/public/cron/process': typeof ApiPublicCronProcessRoute
+  '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -250,6 +259,7 @@ export interface FileRoutesById {
   '/app/settings/security': typeof AppSettingsSecurityRoute
   '/app/settings/': typeof AppSettingsIndexRoute
   '/api/public/cron/process': typeof ApiPublicCronProcessRoute
+  '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -280,6 +290,7 @@ export interface FileRouteTypes {
     | '/app/settings/security'
     | '/app/settings/'
     | '/api/public/cron/process'
+    | '/api/public/telegram/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -306,6 +317,7 @@ export interface FileRouteTypes {
     | '/app/settings/security'
     | '/app/settings'
     | '/api/public/cron/process'
+    | '/api/public/telegram/webhook'
   id:
     | '__root__'
     | '/'
@@ -334,6 +346,7 @@ export interface FileRouteTypes {
     | '/app/settings/security'
     | '/app/settings/'
     | '/api/public/cron/process'
+    | '/api/public/telegram/webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -341,6 +354,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   AuthRoute: typeof AuthRoute
   ApiPublicCronProcessRoute: typeof ApiPublicCronProcessRoute
+  ApiPublicTelegramWebhookRoute: typeof ApiPublicTelegramWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -520,6 +534,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPersonIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/api/public/telegram/webhook': {
+      id: '/api/public/telegram/webhook'
+      path: '/api/public/telegram/webhook'
+      fullPath: '/api/public/telegram/webhook'
+      preLoaderRoute: typeof ApiPublicTelegramWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/cron/process': {
       id: '/api/public/cron/process'
       path: '/api/public/cron/process'
@@ -597,17 +618,8 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   AuthRoute: AuthRoute,
   ApiPublicCronProcessRoute: ApiPublicCronProcessRoute,
+  ApiPublicTelegramWebhookRoute: ApiPublicTelegramWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

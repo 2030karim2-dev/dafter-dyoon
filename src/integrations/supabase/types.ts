@@ -149,6 +149,51 @@ export type Database = {
         }
         Relationships: []
       }
+      channel_settings: {
+        Row: {
+          created_at: string
+          signature_name: string | null
+          sms_enabled: boolean
+          sms_from: string | null
+          telegram_chat_id: string | null
+          telegram_enabled: boolean
+          telegram_link_code: string | null
+          updated_at: string
+          user_id: string
+          whatsapp_auto: boolean
+          whatsapp_enabled: boolean
+          whatsapp_from: string | null
+        }
+        Insert: {
+          created_at?: string
+          signature_name?: string | null
+          sms_enabled?: boolean
+          sms_from?: string | null
+          telegram_chat_id?: string | null
+          telegram_enabled?: boolean
+          telegram_link_code?: string | null
+          updated_at?: string
+          user_id: string
+          whatsapp_auto?: boolean
+          whatsapp_enabled?: boolean
+          whatsapp_from?: string | null
+        }
+        Update: {
+          created_at?: string
+          signature_name?: string | null
+          sms_enabled?: boolean
+          sms_from?: string | null
+          telegram_chat_id?: string | null
+          telegram_enabled?: boolean
+          telegram_link_code?: string | null
+          updated_at?: string
+          user_id?: string
+          whatsapp_auto?: boolean
+          whatsapp_enabled?: boolean
+          whatsapp_from?: string | null
+        }
+        Relationships: []
+      }
       company_profile: {
         Row: {
           address: string | null
@@ -369,6 +414,131 @@ export type Database = {
         }
         Relationships: []
       }
+      followup_policies: {
+        Row: {
+          auto_send: boolean
+          created_at: string
+          daily_digest: boolean
+          days_before: number
+          max_reminders: number
+          overdue_every_days: number
+          quiet_end: number
+          quiet_start: number
+          timezone: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          auto_send?: boolean
+          created_at?: string
+          daily_digest?: boolean
+          days_before?: number
+          max_reminders?: number
+          overdue_every_days?: number
+          quiet_end?: number
+          quiet_start?: number
+          timezone?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          auto_send?: boolean
+          created_at?: string
+          daily_digest?: boolean
+          days_before?: number
+          max_reminders?: number
+          overdue_every_days?: number
+          quiet_end?: number
+          quiet_start?: number
+          timezone?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      message_log: {
+        Row: {
+          body: string
+          channel: string
+          created_at: string
+          destination: string | null
+          id: string
+          kind: string
+          outbox_id: string | null
+          person_id: string | null
+          provider_ref: string | null
+          sent_at: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          channel: string
+          created_at?: string
+          destination?: string | null
+          id?: string
+          kind: string
+          outbox_id?: string | null
+          person_id?: string | null
+          provider_ref?: string | null
+          sent_at?: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          channel?: string
+          created_at?: string
+          destination?: string | null
+          id?: string
+          kind?: string
+          outbox_id?: string | null
+          person_id?: string | null
+          provider_ref?: string | null
+          sent_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_log_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      message_templates: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          is_active: boolean
+          kind: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          kind: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          kind?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       opening_balances: {
         Row: {
           amount: number
@@ -419,6 +589,78 @@ export type Database = {
             columns: ["person_id"]
             isOneToOne: false
             referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      outbox: {
+        Row: {
+          attempts: number
+          body: string
+          channel: string
+          created_at: string
+          dedupe_key: string
+          destination: string | null
+          id: string
+          kind: string
+          last_error: string | null
+          person_id: string | null
+          scheduled_at: string
+          sent_at: string | null
+          status: string
+          transaction_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          attempts?: number
+          body: string
+          channel?: string
+          created_at?: string
+          dedupe_key: string
+          destination?: string | null
+          id?: string
+          kind?: string
+          last_error?: string | null
+          person_id?: string | null
+          scheduled_at?: string
+          sent_at?: string | null
+          status?: string
+          transaction_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          body?: string
+          channel?: string
+          created_at?: string
+          dedupe_key?: string
+          destination?: string | null
+          id?: string
+          kind?: string
+          last_error?: string | null
+          person_id?: string | null
+          scheduled_at?: string
+          sent_at?: string | null
+          status?: string
+          transaction_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "outbox_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outbox_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
             referencedColumns: ["id"]
           },
         ]
@@ -676,7 +918,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      seed_followup_defaults: { Args: { _user_id: string }; Returns: undefined }
     }
     Enums: {
       [_ in never]: never

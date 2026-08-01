@@ -117,8 +117,19 @@ async function runForUser(supabaseAdmin: any, userId: string) {
     }
   }
 
+  // --- Follow-up engine: queue due reminders, auto-deliver, owner digest ---
+  try {
+    const { runFollowupCycle, sendDigest } = await import("@/lib/followup/engine.server");
+    const cycle = await runFollowupCycle(supabaseAdmin, userId, { deliverNow: true });
+    (stats as any).followup = cycle;
+    (stats as any).digest = await sendDigest(supabaseAdmin, userId);
+  } catch (e: any) {
+    (stats as any).followup = { error: e?.message ?? "failed" };
+  }
+
   return stats;
 }
+
 
 export const Route = createFileRoute("/api/public/cron/process")({
   server: {
