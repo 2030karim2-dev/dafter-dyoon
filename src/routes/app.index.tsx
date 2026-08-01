@@ -97,11 +97,31 @@ function DebtsHome() {
   const activeCurrency = data.currencies.find((c) => c.id === curId) ?? data.base ?? null;
 
   /** Row data for the selected currency only. */
+  const curMap = useMemo(
+    () => new Map(data.currencies.map((c) => [c.id, c])),
+    [data.currencies],
+  );
+
   const rowsForCurrency = useMemo(() => {
     return data.people.map((p) => {
       const e = p.balances.find((b) => b.currency_id === curId);
+      // Balances outside the active path stay visible so the user never has to
+      // switch currency scopes just to see the full picture for a customer.
+      const others = p.balances
+        .filter((b) => b.currency_id !== curId && (Math.abs(b.balance) > 0.001 || b.count > 0))
+        .map((b) => {
+          const c = curMap.get(b.currency_id);
+          return {
+            currency_id: b.currency_id,
+            name: c?.name ?? "",
+            symbol: c?.symbol ?? "",
+            net: b.balance,
+            count: b.count,
+          };
+        });
       return {
         person: p.person,
+        others,
         net: e?.balance ?? 0,
         count: e?.count ?? 0,
         credit: e?.credit ?? 0,
@@ -111,7 +131,7 @@ function DebtsHome() {
         lastDirection: e?.lastDirection ?? "",
       };
     });
-  }, [data.people, curId]);
+  }, [data.people, curId, curMap]);
 
   const scopeTotal = data.totalsPerCurrency.find((t) => t.currency.id === curId);
   const totals = { owed: scopeTotal?.owed ?? 0, owe: scopeTotal?.owe ?? 0 };
@@ -214,7 +234,7 @@ function DebtsHome() {
         <PersonTable
           rows={filtered.map((p) => ({
             person: p.person,
-            balance: { net: p.net, count: p.count, lastDate: p.lastDate, totalCredit: p.credit, totalDebit: p.debit, symbol: activeCurrency?.symbol },
+            balance: { net: p.net, count: p.count, lastDate: p.lastDate, totalCredit: p.credit, totalDebit: p.debit, symbol: activeCurrency?.symbol, others: p.others },
           }))}
 
           onEdit={(p) => { const full = legacyPeople.find((x) => x.id === p.id)!; setEditingPerson({ id: full.id, name: full.name, phone: full.phone, type: full.type, notes: full.notes ?? null, avatar_color: full.avatar_color, credit_limit: full.credit_limit ?? null }); setOpenPerson(true); }}
@@ -227,7 +247,7 @@ function DebtsHome() {
             <PersonRow
               key={p.person.id}
               person={p.person}
-              balance={{ net: p.net, count: p.count, lastDate: p.lastDate, lastAmount: p.lastAmount, lastDirection: p.lastDirection, totalCredit: p.credit, totalDebit: p.debit, symbol: activeCurrency?.symbol }}
+              balance={{ net: p.net, count: p.count, lastDate: p.lastDate, lastAmount: p.lastAmount, lastDirection: p.lastDirection, totalCredit: p.credit, totalDebit: p.debit, symbol: activeCurrency?.symbol, others: p.others }}
               index={i}
               onEdit={() => { setEditingPerson({ id: p.person.id, name: p.person.name, phone: p.person.phone, type: p.person.type, notes: p.person.notes ?? null, avatar_color: p.person.avatar_color, credit_limit: p.person.credit_limit ?? null }); setOpenPerson(true); }}
               onArchive={() => setArchivePerson(p.person)}
