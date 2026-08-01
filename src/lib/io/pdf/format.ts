@@ -8,7 +8,7 @@ export interface Tx {
   currency_id: string;
 }
 
-export interface Currency { id: string; name: string; symbol: string; rate: number; is_base?: boolean }
+export interface Currency { id: string; name: string; symbol: string; is_base?: boolean }
 
 export interface OpeningBalance { currency_id: string; amount: number; direction: string }
 

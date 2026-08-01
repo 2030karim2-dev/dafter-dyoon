@@ -26,7 +26,7 @@ import { ClipboardList, Paperclip, BarChart3 } from "lucide-react";
 
 export const Route = createFileRoute("/app/person/$id")({ component: PersonPage });
 
-interface Currency { id: string; name: string; symbol: string; rate: number; is_base: boolean }
+interface Currency { id: string; name: string; symbol: string; is_base: boolean }
 interface Tx { id: string; person_id: string; amount: number; direction: string; currency_id: string; transaction_date: string; details: string | null; due_date: string | null; is_paid: boolean }
 
 function PersonPage() {

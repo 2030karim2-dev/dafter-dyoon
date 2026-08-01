@@ -17,7 +17,7 @@ export async function exportPersonStatements(personId: string, personName: strin
         .select("amount,direction,transaction_date,details,currency_id")
         .eq("person_id", personId)
         .order("transaction_date", { ascending: true }),
-      supabase.from("currencies").select("id,name,symbol,rate,is_base"),
+      supabase.from("currencies").select("id,name,symbol,is_base"),
       supabase.from("company_profile").select("name,address,phone,email,tax_number,notes").maybeSingle(),
       supabase.from("opening_balances").select("currency_id,amount,direction").eq("person_id", personId),
     ]);

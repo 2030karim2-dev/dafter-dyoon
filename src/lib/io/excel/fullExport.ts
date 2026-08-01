@@ -15,7 +15,7 @@ export async function exportFullAccountWorkbook(
         .from("transactions")
         .select("person_id,amount,direction,transaction_date,details,currency_id")
         .eq("user_id", userId),
-      supabase.from("currencies").select("id,name,symbol,rate").eq("user_id", userId),
+      supabase.from("currencies").select("id,name,symbol").eq("user_id", userId),
     ]);
 
   const peopleList = (people as PersonRow[]) ?? [];

@@ -11,7 +11,7 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/currencies")({ component: CurrenciesPage });
 
-interface Currency { id: string; name: string; symbol: string; rate: number; is_base: boolean }
+interface Currency { id: string; name: string; symbol: string; is_base: boolean }
 
 function CurrenciesPage() {
   const { user } = useAuth();
