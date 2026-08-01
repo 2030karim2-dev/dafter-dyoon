@@ -110,6 +110,14 @@ export function PersonRow({ person, balance, index = 0, onEdit, onArchive, onDel
           </div>
         </div>
       )}
+
+      {balance.others && balance.others.length > 0 && (
+        <div className="mt-1.5 pt-1.5 border-t border-dashed flex items-center gap-1.5">
+          <span className="text-[8.5px] font-bold text-muted-foreground shrink-0">عملات أخرى</span>
+          <OtherCurrencyChips items={balance.others} />
+        </div>
+      )}
     </Link>
+
   );
 }
