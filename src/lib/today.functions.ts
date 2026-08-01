@@ -6,6 +6,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import { loadToday } from "@/lib/today/board.server";
 import { recordPayment, sweepBrokenPromises } from "@/lib/today/payments.server";
+import { channelAvailability } from "@/lib/messaging/providers.server";
 
 export type { TodayPayload, TodayTask, TodayCounts, TaskKind } from "@/lib/today/board.server";
 
@@ -13,7 +14,8 @@ export const getTodayFn = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await sweepBrokenPromises(context.supabase, context.userId);
-    return loadToday(context.supabase, context.userId);
+    const payload = await loadToday(context.supabase, context.userId);
+    return { ...payload, availability: channelAvailability() };
   });
 
 const promiseSchema = z.object({
