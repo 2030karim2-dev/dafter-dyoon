@@ -53,13 +53,21 @@ function TodayPage() {
   const sendOutbox = useServerFn(sendOutboxFn);
 
   const rows = useMemo(() => {
-    const term = q.trim();
-    return payload.tasks.filter(
-      (t) =>
-        (tab === "all" || t.kind === tab) &&
-        (!term || t.person_name.includes(term) || (t.phone ?? "").includes(term)),
-    );
+    return payload.tasks.filter((t) => {
+      const tabOk =
+        tab === "all" ? true
+        : tab === "pending" ? !t.reminded
+        : tab === "reminded" ? t.reminded
+        : t.kind === tab;
+      if (!tabOk) return false;
+      return smartMatch(q, {
+        text: [t.person_name, t.note, t.currency_name],
+        phones: [t.phone],
+        numbers: [t.amount],
+      });
+    });
   }, [payload.tasks, tab, q]);
+
 
   const invalidate = () => {
     void qc.invalidateQueries({ queryKey: ["today-board"] });
