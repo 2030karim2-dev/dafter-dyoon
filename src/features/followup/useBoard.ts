@@ -5,9 +5,13 @@ import type { BoardBucket, FollowupBoard, Severity } from "@/lib/followup.functi
 
 export type FollowupTab = "all" | "critical" | "late" | "due" | "soon";
 
-export type BoardPayload = FollowupBoard & {
-  availability: { whatsapp: boolean; telegram: boolean; sms: boolean };
-};
+export interface Availability {
+  whatsapp_auto: boolean;
+  telegram: boolean;
+  sms: boolean;
+}
+
+export type BoardPayload = FollowupBoard & { availability: Availability };
 
 export const EMPTY_BOARD: BoardPayload = {
   buckets: [],
@@ -16,8 +20,9 @@ export const EMPTY_BOARD: BoardPayload = {
   policy: null,
   channels: null,
   generated_at: "",
-  availability: { whatsapp: false, telegram: false, sms: false },
+  availability: { whatsapp_auto: false, telegram: false, sms: false },
 };
+
 
 /** Reads the whole board from the backend. No client-side scoring. */
 export function useBoard() {
