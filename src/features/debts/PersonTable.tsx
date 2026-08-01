@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { fmtMoney, fmtDate } from "@/lib/format";
 import type { PersonBalance } from "./PersonRow";
 import { RowActions } from "@/components/common/RowActions";
+import { OtherCurrencyChips } from "./OtherCurrencyChips";
 
 interface Person {
   id: string;
@@ -16,14 +17,15 @@ interface Props {
   onDelete?: (p: Person) => void;
 }
 
-/** Professional, colorful, dense table view of customers. */
+/** Professional, colorful, fully grid-lined table view of customers. */
 export function PersonTable({ rows, onEdit, onArchive, onDelete }: Props) {
   const hasActions = !!(onEdit || onArchive || onDelete);
+  const cols = (hasActions ? 10 : 9) as number;
   return (
-    <div className="rounded-lg border bg-card shadow-card overflow-hidden animate-in fade-in duration-200">
+    <div className="rounded-lg border-2 border-primary/25 bg-card shadow-card overflow-hidden animate-in fade-in duration-200">
       <div className="overflow-x-auto">
-        <table className="w-full text-[10.5px] border-collapse">
-          <thead className="bg-gradient-primary text-primary-foreground">
+        <table className="w-full text-[10.5px] border-collapse [&_th]:border [&_td]:border [&_th]:border-primary/25 [&_td]:border-border/70">
+          <thead className="bg-gradient-primary text-primary-foreground sticky top-0 z-10">
             <tr className="[&>th]:px-2 [&>th]:py-1.5 [&>th]:font-bold [&>th]:text-right [&>th]:whitespace-nowrap">
               <th className="w-7">#</th>
               <th>العميل</th>
@@ -32,6 +34,7 @@ export function PersonTable({ rows, onEdit, onArchive, onDelete }: Props) {
               <th className="text-left">له</th>
               <th className="text-left">عليه</th>
               <th className="text-left">الصافي</th>
+              <th className="text-center">عملات أخرى</th>
               <th className="text-center hidden xs:table-cell">آخر دفعة</th>
               {hasActions && <th className="text-center w-10">إجراء</th>}
             </tr>
@@ -49,7 +52,7 @@ export function PersonTable({ rows, onEdit, onArchive, onDelete }: Props) {
               return (
                 <tr
                   key={person.id}
-                  className={`${zebra} ${stateTint} border-b border-border/60 hover:bg-primary/5 transition-colors`}
+                  className={`${zebra} ${stateTint} hover:bg-primary/5 transition-colors`}
                 >
                   <td className="px-2 py-1.5 text-muted-foreground tabular-nums">{i + 1}</td>
                   <td className="px-2 py-1.5">
@@ -86,7 +89,15 @@ export function PersonTable({ rows, onEdit, onArchive, onDelete }: Props) {
                       >
                         {isCredit ? "" : "-"}
                         {fmtMoney(Math.abs(balance.net))}
+                        {balance.symbol ? <span className="text-[8.5px] font-bold opacity-75"> {balance.symbol}</span> : null}
                       </span>
+                    )}
+                  </td>
+                  <td className="px-2 py-1.5">
+                    {balance.others && balance.others.length > 0 ? (
+                      <OtherCurrencyChips items={balance.others} />
+                    ) : (
+                      <span className="text-muted-foreground text-[9px]">—</span>
                     )}
                   </td>
                   <td className="px-2 py-1.5 text-center hidden xs:table-cell text-muted-foreground tabular-nums">
@@ -106,7 +117,7 @@ export function PersonTable({ rows, onEdit, onArchive, onDelete }: Props) {
             })}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={hasActions ? 9 : 8} className="text-center py-4 text-muted-foreground text-[10px]">
+                <td colSpan={cols} className="text-center py-4 text-muted-foreground text-[10px]">
                   لا توجد بيانات
                 </td>
               </tr>
