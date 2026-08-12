@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { getFollowupBoardFn } from "@/lib/followup.functions";
 import type { BoardBucket, FollowupBoard, Severity } from "@/lib/followup.functions";
 import { smartMatch } from "@/lib/search/match";
+import { useAuth } from "@/lib/auth";
 
 export type FollowupTab = "pending" | "reminded" | "all" | "critical" | "late" | "due" | "soon";
 
@@ -27,9 +28,12 @@ export const EMPTY_BOARD: BoardPayload = {
 /** Reads the whole board from the backend. No client-side scoring. */
 export function useBoard() {
   const fetchBoard = useServerFn(getFollowupBoardFn);
+  const { user } = useAuth();
+  const uid = user?.id;
   return useQuery({
-    queryKey: ["followup-board"],
+    queryKey: ["followup-board", uid],
     queryFn: () => fetchBoard() as Promise<BoardPayload>,
+    enabled: !!uid,
     staleTime: 30_000,
   });
 }

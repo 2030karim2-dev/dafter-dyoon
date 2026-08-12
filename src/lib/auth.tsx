@@ -1,4 +1,5 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, ReactNode } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Session, User } from "@supabase/supabase-js";
 
@@ -14,9 +15,21 @@ interface AuthCtx {
 const Ctx = createContext<AuthCtx | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const qc = useQueryClient();
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Clear ALL cached server data when the signed-in user changes (account
+  // switch, sign-out, expired session) so nothing leaks between accounts
+  // sharing the same browser. The uid is also part of every protected
+  // query key, but stale entries would still linger without this.
+  const prevUid = useRef<string | null>(null);
+  useEffect(() => {
+    const cur = user?.id ?? null;
+    if (prevUid.current !== null && cur !== prevUid.current) qc.clear();
+    prevUid.current = cur;
+  }, [user, qc]);
 
   useEffect(() => {
     const {

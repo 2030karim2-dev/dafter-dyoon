@@ -16,6 +16,7 @@ import {
   saveFollowupPolicyFn,
 } from "@/lib/followup.functions";
 import { createTelegramLinkFn, testTelegramFn } from "@/lib/messaging.functions";
+import { useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/app/settings/channels")({
   component: ChannelsPage,
@@ -45,9 +46,12 @@ function ChannelsPage() {
   const createLink = useServerFn(createTelegramLinkFn);
   const testTg = useServerFn(testTelegramFn);
 
+  const { user } = useAuth();
+  const uid = user?.id;
   const { data, isLoading } = useQuery({
-    queryKey: ["followup-settings"],
+    queryKey: ["followup-settings", uid],
     queryFn: () => fetchSettings(),
+    enabled: !!uid,
   });
 
   const [pol, setPol] = useState({
@@ -269,7 +273,7 @@ function ChannelsPage() {
             dir="ltr"
             value={ch.whatsapp_from}
             onChange={(e) => setCh({ ...ch, whatsapp_from: e.target.value })}
-            placeholder="+9665xxxxxxxx"
+            placeholder="+9677xxxxxxxx"
           />
         </div>
         <div>

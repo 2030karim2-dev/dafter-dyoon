@@ -24,16 +24,19 @@ import {
   type DebtsHomePayload,
 } from "@/lib/home.functions";
 import { processRecurringFn } from "@/lib/jobs.functions";
+import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 
 type Filter = "all" | "credit" | "debit";
 type Sort = "active" | "name" | "recent";
 type ViewMode = "cards" | "table";
 
-const homeQO = queryOptions({
-  queryKey: ["debts-home"],
-  queryFn: () => getDebtsHomeFn(),
-});
+const homeQO = (uid: string) =>
+  queryOptions({
+    queryKey: ["debts-home", uid],
+    queryFn: () => getDebtsHomeFn(),
+    enabled: !!uid,
+  });
 
 const EMPTY_HOME: DebtsHomePayload = {
   people: [],
@@ -52,7 +55,9 @@ export const Route = createFileRoute("/app/")({
 
 function DebtsHome() {
   const qc = useQueryClient();
-  const { data: home } = useQuery(homeQO);
+  const { user } = useAuth();
+  const uid = user?.id ?? "";
+  const { data: home, isError, refetch } = useQuery(homeQO(uid));
   const data = home ?? EMPTY_HOME;
 
   const invalidate = () => {
@@ -113,12 +118,13 @@ function DebtsHome() {
   const [sort, setSort] = useState<Sort>("active");
   const [view, setView] = useState<ViewMode>(
     () =>
-      (typeof localStorage !== "undefined" && (localStorage.getItem("people_view") as ViewMode)) ||
+      (typeof localStorage !== "undefined" &&
+        (localStorage.getItem("daftarak.people_view") as ViewMode)) ||
       "cards",
   );
   useEffect(() => {
     try {
-      localStorage.setItem("people_view", view);
+      localStorage.setItem("daftarak.people_view", view);
     } catch {
       /* ignore */
     }
@@ -300,7 +306,18 @@ function DebtsHome() {
         </div>
       )}
 
-      {filtered.length === 0 ? (
+      {isError && !home ? (
+        <EmptyState
+          icon={Users}
+          title="تعذّر تحميل البيانات"
+          description="تحقّق من اتصالك بالإنترنت ثم أعد المحاولة."
+          action={
+            <Button onClick={() => void refetch()} variant="outline">
+              إعادة المحاولة
+            </Button>
+          }
+        />
+      ) : filtered.length === 0 ? (
         data.people.length === 0 ? (
           <EmptyState
             icon={UserPlus}

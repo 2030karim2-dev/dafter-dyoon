@@ -41,7 +41,7 @@ export function buildStatementHtml(o: TemplateOpts): string {
 
       <div style="background:${C.primary};color:#fff;padding:14px 16px;border-radius:8px;display:flex;justify-content:space-between;align-items:center;">
         <div style="display:flex;align-items:center;gap:12px;">
-          ${logo ? `<img src="${logo}" style="width:48px;height:48px;border-radius:8px;background:#fff;object-fit:contain;padding:3px;" crossorigin="anonymous" />` : ""}
+          ${logo ? `<img src="${esc(logo)}" style="width:48px;height:48px;border-radius:8px;background:#fff;object-fit:contain;padding:3px;" crossorigin="anonymous" />` : ""}
           <div>
             <div style="font-size:18px;font-weight:800;">${esc(company?.name) || "دفترك"}</div>
             <div style="font-size:10.5px;opacity:.9;margin-top:2px;">${contact}</div>

@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getTodayFn, type TodayPayload } from "@/lib/today.functions";
+import { useAuth } from "@/lib/auth";
 
 export interface TodayAvailability {
   whatsapp_auto: boolean;
@@ -31,9 +32,12 @@ export const EMPTY_TODAY: TodayData = {
 /** The workspace is computed server-side; the hook only reads it. */
 export function useToday() {
   const getToday = useServerFn(getTodayFn);
+  const { user } = useAuth();
+  const uid = user?.id;
   return useQuery({
-    queryKey: ["today-board"],
+    queryKey: ["today-board", uid],
     queryFn: () => getToday() as Promise<TodayData>,
+    enabled: !!uid,
     staleTime: 30_000,
   });
 }

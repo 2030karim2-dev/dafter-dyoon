@@ -45,7 +45,7 @@ export function FollowupCard({
           type="checkbox"
           checked={selected}
           onChange={onSelect}
-          className="size-3.5 accent-[hsl(var(--primary))]"
+          className="size-3.5 accent-primary"
           aria-label={`تحديد ${b.name}`}
         />
         <Avatar name={b.name} color={b.avatar_color} size="sm" />

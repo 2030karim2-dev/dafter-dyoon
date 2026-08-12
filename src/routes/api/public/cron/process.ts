@@ -3,7 +3,8 @@
  * Iterates ALL users (admin client), runs reminders sync, recurring rules,
  * and per-user auto-backup based on profile.backup_frequency.
  *
- * Auth: requires apikey header matching SUPABASE_PUBLISHABLE_KEY.
+ * Auth: requires the dedicated CRON_SECRET via "Authorization: Bearer <secret>"
+ * or the "x-cron-secret" header (never the publishable key).
  */
 import { createFileRoute } from "@tanstack/react-router";
 import type { SupabaseClient } from "@supabase/supabase-js";

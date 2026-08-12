@@ -137,7 +137,7 @@ export function PersonFormDialog({ open, onOpenChange, editing, onSuccess }: Pro
                 <Input
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  placeholder="9665xxxxxxxx"
+                  placeholder="9677xxxxxxxx"
                   dir="ltr"
                   maxLength={30}
                   inputMode="tel"

@@ -34,6 +34,7 @@ import {
   CalendarClock,
   HandCoins,
   Activity,
+  UserX,
 } from "lucide-react";
 import { CurrencyScope } from "@/components/common/CurrencyScope";
 import { waPhone } from "@/lib/phone";
@@ -82,6 +83,7 @@ function PersonPage() {
     address: string | null;
   } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
   const [openAdd, setOpenAdd] = useState(false);
   const [editingTx, setEditingTx] = useState<Tx | null>(null);
   const [delTxId, setDelTxId] = useState<string | null>(null);
@@ -99,20 +101,37 @@ function PersonPage() {
     setLoading(true);
     const [{ data: person }, { data: t }, { data: c }, { data: p }, { data: ob }, { data: co }] =
       await Promise.all([
-        supabase.from("people").select("name,phone").eq("id", id).single(),
+        supabase
+          .from("people")
+          .select("name,phone")
+          .eq("id", id)
+          .eq("user_id", user.id)
+          .maybeSingle(),
         supabase
           .from("transactions")
           .select("*")
           .eq("person_id", id)
-          .order("transaction_date", { ascending: false }),
-        supabase.from("currencies").select("*").order("is_base", { ascending: false }),
-        supabase.from("people").select("id,name"),
+          .eq("user_id", user.id)
+          .order("transaction_date", { ascending: false })
+          .limit(1000),
+        supabase
+          .from("currencies")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("is_base", { ascending: false }),
+        supabase.from("people").select("id,name").eq("user_id", user.id),
         supabase
           .from("opening_balances")
           .select("currency_id,amount,direction")
-          .eq("person_id", id),
-        supabase.from("company_profile").select("name,phone,address").maybeSingle(),
+          .eq("person_id", id)
+          .eq("user_id", user.id),
+        supabase
+          .from("company_profile")
+          .select("name,phone,address")
+          .eq("user_id", user.id)
+          .maybeSingle(),
       ]);
+    setNotFound(!person);
     setName(person?.name ?? "");
     setPhone(person?.phone ?? null);
     setDraftName(person?.name ?? "");
@@ -206,10 +225,12 @@ function PersonPage() {
   };
 
   const togglePaid = async (tx: Tx) => {
+    if (!user) return;
     const { error } = await supabase
       .from("transactions")
       .update({ is_paid: !tx.is_paid })
-      .eq("id", tx.id);
+      .eq("id", tx.id)
+      .eq("user_id", user.id);
     if (error) {
       toast.error(error.message);
       return;
@@ -219,7 +240,12 @@ function PersonPage() {
   };
 
   const archivePerson = async () => {
-    const { error } = await supabase.from("people").update({ is_archived: true }).eq("id", id);
+    if (!user) return;
+    const { error } = await supabase
+      .from("people")
+      .update({ is_archived: true })
+      .eq("id", id)
+      .eq("user_id", user.id);
     if (error) {
       toast.error(error.message);
       return;
@@ -233,7 +259,8 @@ function PersonPage() {
       toast.error("استخدم الأرشفة بدلاً من الحذف — لديه معاملات");
       return;
     }
-    const { error } = await supabase.from("people").delete().eq("id", id);
+    if (!user) return;
+    const { error } = await supabase.from("people").delete().eq("id", id).eq("user_id", user.id);
     if (error) {
       toast.error(error.message);
       return;
@@ -247,10 +274,12 @@ function PersonPage() {
       toast.error("الاسم مطلوب");
       return;
     }
+    if (!user) return;
     const { error } = await supabase
       .from("people")
       .update({ name: draftName.trim(), phone: draftPhone.trim() || null })
-      .eq("id", id);
+      .eq("id", id)
+      .eq("user_id", user.id);
     if (error) {
       toast.error(error.message);
       return;
@@ -316,6 +345,24 @@ function PersonPage() {
     const p = waPhone(phone);
     window.open(p ? `https://wa.me/${p}?text=${text}` : `https://wa.me/?text=${text}`, "_blank");
   };
+
+  if (!loading && notFound) {
+    return (
+      <EmptyState
+        icon={UserX}
+        title="العميل غير موجود"
+        description="ربما حُذف هذا العميل أو أن الرابط غير صحيح."
+        action={
+          <Button
+            onClick={() => nav({ to: "/app" })}
+            className="bg-gradient-primary text-primary-foreground"
+          >
+            العودة للرئيسية
+          </Button>
+        }
+      />
+    );
+  }
 
   return (
     <div className="space-y-3 animate-in fade-in duration-300">

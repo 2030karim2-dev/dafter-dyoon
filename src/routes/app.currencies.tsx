@@ -69,8 +69,12 @@ function CurrenciesPage() {
   };
 
   const del = async () => {
-    if (!pendingDelete) return;
-    const { error } = await supabase.from("currencies").delete().eq("id", pendingDelete.id);
+    if (!pendingDelete || !user) return;
+    const { error } = await supabase
+      .from("currencies")
+      .delete()
+      .eq("id", pendingDelete.id)
+      .eq("user_id", user.id);
     if (error) {
       toast.error(error.message);
       return;
@@ -81,8 +85,28 @@ function CurrenciesPage() {
 
   const setBase = async (id: string) => {
     if (!user) return;
-    await supabase.from("currencies").update({ is_base: false }).eq("user_id", user.id);
-    await supabase.from("currencies").update({ is_base: true }).eq("id", id);
+    // Set the new base FIRST: if this fails the old base stays intact.
+    // If the second call fails we end up with two bases (self-heals on the
+    // next toggle) — but never with zero base currencies.
+    const { error: e1 } = await supabase
+      .from("currencies")
+      .update({ is_base: true })
+      .eq("id", id)
+      .eq("user_id", user.id);
+    if (e1) {
+      toast.error(e1.message);
+      return;
+    }
+    const { error: e2 } = await supabase
+      .from("currencies")
+      .update({ is_base: false })
+      .eq("user_id", user.id)
+      .neq("id", id);
+    if (e2) {
+      toast.error(e2.message);
+      load();
+      return;
+    }
     toast.success("تم تعيين العملة الأساسية");
     load();
   };
@@ -159,6 +183,7 @@ function CurrenciesPage() {
                 <button
                   onClick={() => setPendingDelete(c)}
                   className="text-muted-foreground hover:text-danger p-2"
+                  aria-label={`حذف عملة ${c.name}`}
                 >
                   <Trash2 className="size-4" />
                 </button>

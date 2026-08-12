@@ -16,6 +16,7 @@ import {
   type OutboxRow,
 } from "@/lib/messaging.functions";
 import { waPhone } from "@/lib/phone";
+import { useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/app/outbox")({
   component: OutboxPage,
@@ -57,9 +58,12 @@ function OutboxPage() {
   const remove = useServerFn(deleteOutboxFn);
   const [filter, setFilter] = useState<"queued" | "sent" | "failed" | "all">("queued");
 
+  const { user } = useAuth();
+  const uid = user?.id;
   const { data, isLoading } = useQuery({
-    queryKey: ["outbox"],
+    queryKey: ["outbox", uid],
     queryFn: () => fetchOutbox(),
+    enabled: !!uid,
     staleTime: 15_000,
   });
 
