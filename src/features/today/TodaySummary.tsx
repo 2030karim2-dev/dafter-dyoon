@@ -16,8 +16,12 @@ export function TodaySummary({ payload }: { payload: TodayPayload }) {
           ) : (
             totals.map((t) => (
               <div key={t.currency_id} className="flex items-baseline justify-between gap-1">
-                <span className="text-[9px] text-muted-foreground truncate">{t.symbol || t.name}</span>
-                <span className="font-extrabold text-[12px] tabular-nums text-danger">{fmtMoney(t.amount)}</span>
+                <span className="text-[9px] text-muted-foreground truncate">
+                  {t.symbol || t.name}
+                </span>
+                <span className="font-extrabold text-[12px] tabular-nums text-danger">
+                  {fmtMoney(t.amount)}
+                </span>
               </div>
             ))
           )}
@@ -31,8 +35,12 @@ export function TodaySummary({ payload }: { payload: TodayPayload }) {
           ) : (
             collected_today.map((t) => (
               <div key={t.currency_id} className="flex items-baseline justify-between gap-1">
-                <span className="text-[9px] text-muted-foreground truncate">{t.symbol || t.name}</span>
-                <span className="font-extrabold text-[12px] tabular-nums text-success">{fmtMoney(t.amount)}</span>
+                <span className="text-[9px] text-muted-foreground truncate">
+                  {t.symbol || t.name}
+                </span>
+                <span className="font-extrabold text-[12px] tabular-nums text-success">
+                  {fmtMoney(t.amount)}
+                </span>
               </div>
             ))
           )}

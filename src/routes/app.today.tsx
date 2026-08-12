@@ -24,9 +24,16 @@ export const Route = createFileRoute("/app/today")({
   head: () => ({
     meta: [
       { title: "مهام اليوم | دفترك" },
-      { name: "description", content: "صندوق عمل يومي يجمع الديون المستحقة والمتأخرة ووعود السداد والرسائل الفاشلة في مكان واحد." },
+      {
+        name: "description",
+        content:
+          "صندوق عمل يومي يجمع الديون المستحقة والمتأخرة ووعود السداد والرسائل الفاشلة في مكان واحد.",
+      },
       { property: "og:title", content: "مهام اليوم | دفترك" },
-      { property: "og:description", content: "ابدأ يومك بقائمة واضحة: من تتصل به، من تذكّره، ومن وعد بالسداد." },
+      {
+        property: "og:description",
+        content: "ابدأ يومك بقائمة واضحة: من تتصل به، من تذكّره، ومن وعد بالسداد.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -56,10 +63,13 @@ function TodayPage() {
   const rows = useMemo(() => {
     return payload.tasks.filter((t) => {
       const tabOk =
-        tab === "all" ? true
-        : tab === "pending" ? !t.reminded
-        : tab === "reminded" ? t.reminded
-        : t.kind === tab;
+        tab === "all"
+          ? true
+          : tab === "pending"
+            ? !t.reminded
+            : tab === "reminded"
+              ? t.reminded
+              : t.kind === tab;
       if (!tabOk) return false;
       return smartMatch(q, {
         text: [t.person_name, t.note, t.currency_name],
@@ -68,7 +78,6 @@ function TodayPage() {
       });
     });
   }, [payload.tasks, tab, q]);
-
 
   const invalidate = () => {
     void qc.invalidateQueries({ queryKey: ["today-board"] });
@@ -109,7 +118,10 @@ function TodayPage() {
       return sendOutbox({ data: { id: res.outbox_id } });
     },
     onSuccess: (res) => {
-      if (res.ok) { toast.success("تم الإرسال"); setSheet(null); } else toast.error(res.error ?? "فشل الإرسال");
+      if (res.ok) {
+        toast.success("تم الإرسال");
+        setSheet(null);
+      } else toast.error(res.error ?? "فشل الإرسال");
       invalidate();
       void qc.invalidateQueries({ queryKey: ["outbox"] });
     },
@@ -119,7 +131,8 @@ function TodayPage() {
   const retry = useMutation({
     mutationFn: (t: TodayTask) => sendOutbox({ data: { id: t.outbox_id! } }),
     onSuccess: (res) => {
-      res.ok ? toast.success("تم الإرسال") : toast.error(res.error ?? "فشل الإرسال");
+      if (res.ok) toast.success("تم الإرسال");
+      else toast.error(res.error ?? "فشل الإرسال");
       invalidate();
       void qc.invalidateQueries({ queryKey: ["outbox"] });
     },
@@ -134,7 +147,12 @@ function TodayPage() {
         subtitle="ابدأ من هنا: كل ما يحتاج إجراءً اليوم"
         back="/app"
         actions={
-          <Button size="sm" variant="outline" className="h-7 text-[10px]" onClick={() => void refetch()}>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-7 text-[10px]"
+            onClick={() => void refetch()}
+          >
             <RefreshCw className={`size-3 ${isFetching ? "animate-spin" : ""}`} /> تحديث
           </Button>
         }
@@ -145,9 +163,15 @@ function TodayPage() {
       <SearchBar value={q} onChange={setQ} placeholder="ابحث باسم متقطع، رقم هاتف، أو مبلغ..." />
 
       {isLoading ? (
-        <div className="flex justify-center py-10"><Loader2 className="size-5 animate-spin text-primary" /></div>
+        <div className="flex justify-center py-10">
+          <Loader2 className="size-5 animate-spin text-primary" />
+        </div>
       ) : rows.length === 0 ? (
-        <EmptyState icon={Sun} title="لا مهام اليوم" description="لا يوجد مستحق أو متأخر أو وعد يحتاج متابعة الآن." />
+        <EmptyState
+          icon={Sun}
+          title="لا مهام اليوم"
+          description="لا يوجد مستحق أو متأخر أو وعد يحتاج متابعة الآن."
+        />
       ) : (
         <div className="space-y-1.5">
           {rows.map((t) => (

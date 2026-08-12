@@ -28,7 +28,14 @@ interface Props {
 
 /** One actionable row of the daily workspace. Micro density, single-tap actions. */
 export function TodayTaskCard({
-  task, canAuto, onOpen, onMessage, onAutoSend, onPay, onPromise, onRetry,
+  task,
+  canAuto,
+  onOpen,
+  onMessage,
+  onAutoSend,
+  onPay,
+  onPromise,
+  onRetry,
 }: Props) {
   const s = KIND_STYLE[task.kind];
   const isMsg = task.kind === "failed_message";
@@ -45,7 +52,9 @@ export function TodayTaskCard({
           <div className="min-w-0 flex-1">
             <div className="font-bold text-[12px] truncate">{task.person_name}</div>
             <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ring-1 ${s.tone}`}>{s.label}</span>
+              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ring-1 ${s.tone}`}>
+                {s.label}
+              </span>
               {task.reminded ? (
                 <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full ring-1 bg-success/12 text-success ring-success/25 flex items-center gap-0.5">
                   <CheckCheck className="size-2.5" /> تم التذكير {fmtDay(task.last_contact_at)}
@@ -56,10 +65,14 @@ export function TodayTaskCard({
                 </span>
               )}
               {!isMsg && task.days > 0 && (
-                <span className="text-[9px] text-muted-foreground tabular-nums">{task.days} يوم تأخير</span>
+                <span className="text-[9px] text-muted-foreground tabular-nums">
+                  {task.days} يوم تأخير
+                </span>
               )}
               {isMsg && task.note && (
-                <span className="text-[9px] text-muted-foreground truncate max-w-[140px]">{task.note}</span>
+                <span className="text-[9px] text-muted-foreground truncate max-w-[140px]">
+                  {task.note}
+                </span>
               )}
             </div>
             {task.reminded && task.next_reminder_at && (
@@ -72,7 +85,9 @@ export function TodayTaskCard({
         {!isMsg && (
           <div className="text-left shrink-0">
             <div className="font-extrabold text-[13px] tabular-nums">{fmtMoney(task.amount)}</div>
-            <div className="text-[9px] text-muted-foreground">{task.currency_symbol || task.currency_name}</div>
+            <div className="text-[9px] text-muted-foreground">
+              {task.currency_symbol || task.currency_name}
+            </div>
           </div>
         )}
       </div>

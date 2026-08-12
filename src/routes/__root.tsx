@@ -1,4 +1,10 @@
-import { Outlet, Link, createRootRouteWithContext, HeadContent, Scripts } from "@tanstack/react-router";
+import {
+  Outlet,
+  Link,
+  createRootRouteWithContext,
+  HeadContent,
+  Scripts,
+} from "@tanstack/react-router";
 import type { QueryClient } from "@tanstack/react-query";
 import { QueryClientProvider } from "@tanstack/react-query";
 import appCss from "../styles.css?url";
@@ -16,7 +22,10 @@ function NotFoundComponent() {
         <h2 className="mt-4 text-xl font-semibold text-foreground">الصفحة غير موجودة</h2>
         <p className="mt-2 text-sm text-muted-foreground">الرابط الذي تبحث عنه غير متوفر.</p>
         <div className="mt-6">
-          <Link to="/" className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
+          <Link
+            to="/"
+            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          >
             العودة للرئيسية
           </Link>
         </div>
@@ -32,16 +41,28 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
       { name: "theme-color", content: "#1e40af" },
       { title: "دفترك - متابعة الديون والعملاء باحتراف" },
-      { name: "description", content: "دفترك: منصة احترافية لإدارة الديون ومتابعة العملاء والتذكير بالاستحقاقات، كشوف حسابات، تذكيرات ذكية، ومزامنة سحابية آمنة." },
+      {
+        name: "description",
+        content:
+          "دفترك: منصة احترافية لإدارة الديون ومتابعة العملاء والتذكير بالاستحقاقات، كشوف حسابات، تذكيرات ذكية، ومزامنة سحابية آمنة.",
+      },
       { property: "og:type", content: "website" },
       { property: "og:title", content: "دفترك - متابعة الديون والعملاء باحتراف" },
-      { property: "og:description", content: "دفترك: منصة احترافية لإدارة الديون ومتابعة العملاء والتذكير بالاستحقاقات، كشوف حسابات، تذكيرات ذكية، ومزامنة سحابية آمنة." },
+      {
+        property: "og:description",
+        content:
+          "دفترك: منصة احترافية لإدارة الديون ومتابعة العملاء والتذكير بالاستحقاقات، كشوف حسابات، تذكيرات ذكية، ومزامنة سحابية آمنة.",
+      },
       { property: "og:locale", content: "ar_SA" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "دفترك - متابعة الديون والعملاء باحتراف" },
-      { name: "twitter:description", content: "دفترك: منصة احترافية لإدارة الديون ومتابعة العملاء والتذكير بالاستحقاقات، كشوف حسابات، تذكيرات ذكية، ومزامنة سحابية آمنة." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/e6a05cd6-61bb-41b3-9c54-da8e73c303ce/id-preview-7bcd9df1--00e31430-83e2-407e-a84e-1f113e43ee71.lovable.app-1782682571190.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/e6a05cd6-61bb-41b3-9c54-da8e73c303ce/id-preview-7bcd9df1--00e31430-83e2-407e-a84e-1f113e43ee71.lovable.app-1782682571190.png" },
+      {
+        name: "twitter:description",
+        content:
+          "دفترك: منصة احترافية لإدارة الديون ومتابعة العملاء والتذكير بالاستحقاقات، كشوف حسابات، تذكيرات ذكية، ومزامنة سحابية آمنة.",
+      },
+      { property: "og:image", content: "/og-cover.png" },
+      { name: "twitter:image", content: "/og-cover.png" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
@@ -50,9 +71,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "icon", type: "image/png", sizes: "32x32", href: "/icons/icon-32.png" },
       { rel: "icon", type: "image/png", sizes: "192x192", href: "/icons/icon-192.png" },
       { rel: "apple-touch-icon", sizes: "180x180", href: "/icons/icon-180.png" },
-      { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap" },
+      // Tajawal is self-hosted via @fontsource (see styles.css) — no Google Fonts request.
     ],
   }),
   shellComponent: RootShell,
@@ -60,10 +79,32 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   notFoundComponent: NotFoundComponent,
 });
 
+/**
+ * Runs BEFORE first paint to eliminate theme/accent/font FOUC: reads the
+ * persisted appearance prefs and applies the dark class, font size and
+ * primary color inline. ThemeProvider re-applies the full variable set right
+ * after hydration using the same localStorage keys.
+ */
+const BOOT_SCRIPT = `(function(){try{
+var d=document.documentElement;
+var t=localStorage.getItem("theme")||"system";
+var dark=t==="dark"||(t==="system"&&window.matchMedia("(prefers-color-scheme: dark)").matches);
+d.classList.toggle("dark",dark);
+var fs=localStorage.getItem("daftarak.fontsize");
+if(fs==="sm")d.style.fontSize="12px";else if(fs==="lg")d.style.fontSize="14px";
+var a=localStorage.getItem("daftarak.accent")||"blue";
+var P={green:["oklch(0.5 0.17 165)","oklch(0.72 0.17 165)"],violet:["oklch(0.5 0.2 295)","oklch(0.74 0.17 295)"],rose:["oklch(0.55 0.2 15)","oklch(0.72 0.18 15)"],amber:["oklch(0.6 0.16 75)","oklch(0.78 0.15 75)"]};
+var v=P[a];
+if(v){var p=v[dark?1:0];d.style.setProperty("--primary",p);d.style.setProperty("--ring",p);}
+}catch(e){}})();`;
+
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ar" dir="rtl">
-      <head><HeadContent /></head>
+    <html lang="ar" dir="rtl" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: BOOT_SCRIPT }} />
+        <HeadContent />
+      </head>
       <body>
         {children}
         <Scripts />

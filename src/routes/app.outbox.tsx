@@ -75,7 +75,8 @@ function OutboxPage() {
   const doSend = useMutation({
     mutationFn: (id: string) => send({ data: { id } }),
     onSuccess: (res) => {
-      res.ok ? toast.success("تم الإرسال") : toast.error(res.error ?? "فشل الإرسال");
+      if (res.ok) toast.success("تم الإرسال");
+      else toast.error(res.error ?? "فشل الإرسال");
       invalidate();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -131,7 +132,11 @@ function OutboxPage() {
           <Loader2 className="size-5 animate-spin text-primary" />
         </div>
       ) : rows.length === 0 ? (
-        <EmptyState icon={Inbox} title="لا توجد رسائل" description="سيتم تجهيز التذكيرات تلقائياً حسب سياسة المتابعة." />
+        <EmptyState
+          icon={Inbox}
+          title="لا توجد رسائل"
+          description="سيتم تجهيز التذكيرات تلقائياً حسب سياسة المتابعة."
+        />
       ) : (
         <div className="space-y-1.5">
           {rows.map((r) => {
@@ -142,19 +147,17 @@ function OutboxPage() {
                   <span className="font-bold text-[12px] flex-1 truncate">
                     {r.person_name ?? "—"}
                   </span>
-                  <span className="text-[9.5px] px-1 py-px rounded bg-secondary text-muted-foreground">
+                  <span className="text-[10.5px] px-1 py-px rounded bg-secondary text-muted-foreground">
                     {CHANNEL[r.channel] ?? r.channel}
                   </span>
-                  <span className={`text-[9.5px] px-1 py-px rounded font-bold ${st.cls}`}>
+                  <span className={`text-[10.5px] px-1 py-px rounded font-bold ${st.cls}`}>
                     {st.label}
                   </span>
                 </div>
                 <pre className="text-[10.5px] whitespace-pre-wrap leading-relaxed bg-secondary/60 rounded p-1.5 max-h-28 overflow-auto font-sans">
                   {r.body}
                 </pre>
-                {r.last_error && (
-                  <div className="text-[10px] text-danger">خطأ: {r.last_error}</div>
-                )}
+                {r.last_error && <div className="text-[10px] text-danger">خطأ: {r.last_error}</div>}
                 <div className="flex gap-1">
                   {r.status !== "sent" && (
                     <>

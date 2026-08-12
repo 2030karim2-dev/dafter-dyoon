@@ -10,7 +10,7 @@ export function SettingsGroup({ title, children }: Props) {
   return (
     <div className="space-y-1">
       {title && (
-        <h3 className="text-[9.5px] font-bold uppercase tracking-wider text-muted-foreground px-1.5">
+        <h3 className="text-[10.5px] font-bold uppercase tracking-wider text-muted-foreground px-1.5">
           {title}
         </h3>
       )}

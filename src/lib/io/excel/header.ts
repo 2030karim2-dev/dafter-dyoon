@@ -1,12 +1,26 @@
 import type ExcelJS from "exceljs";
 import type { CompanyRow, CurRow, PersonRow } from "./types";
 import {
-  COL_BORDER_STRONG, COL_HEAD_BG, COL_INFO_BG, COL_LABEL, COL_SECTION_BG,
-  COL_SUBHEAD_BG, COL_TEXT, FONT, fmtDateEN, rtl, solid, thinBorder,
+  COL_BORDER_STRONG,
+  COL_HEAD_BG,
+  COL_INFO_BG,
+  COL_LABEL,
+  COL_SECTION_BG,
+  COL_SUBHEAD_BG,
+  COL_TEXT,
+  FONT,
+  fmtDateEN,
+  rtl,
+  solid,
+  thinBorder,
 } from "./theme";
 
 /** Company brand block (rows 1-3) + statement title band (row 4). */
-export function writeCompanyHeader(ws: ExcelJS.Worksheet, comp: CompanyRow | null, currency: CurRow) {
+export function writeCompanyHeader(
+  ws: ExcelJS.Worksheet,
+  comp: CompanyRow | null,
+  currency: CurRow,
+) {
   ws.mergeCells("A1:F1");
   const h1 = ws.getCell("A1");
   h1.value = comp?.name || "اسم المنشأة";

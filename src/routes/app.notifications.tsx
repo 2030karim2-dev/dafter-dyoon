@@ -44,11 +44,18 @@ function NotificationsCenter() {
   };
 
   const snooze = async (it: PendingItem, days = 1) => {
-    const d = new Date(); d.setDate(d.getDate() + days);
+    const d = new Date();
+    d.setDate(d.getDate() + days);
     if (it.kind === "overdue" && it.transaction_id) {
-      await supabase.from("transactions").update({ due_date: d.toISOString().slice(0, 10) }).eq("id", it.transaction_id);
+      await supabase
+        .from("transactions")
+        .update({ due_date: d.toISOString().slice(0, 10) })
+        .eq("id", it.transaction_id);
     } else {
-      await supabase.from("reminders").update({ due_date: d.toISOString(), snoozed_until: d.toISOString() }).eq("id", it.id);
+      await supabase
+        .from("reminders")
+        .update({ due_date: d.toISOString(), snoozed_until: d.toISOString() })
+        .eq("id", it.id);
     }
     setItems((xs) => xs.filter((x) => x.id !== it.id));
     toast.success(`مؤجل ${days} يوم`);
@@ -56,12 +63,21 @@ function NotificationsCenter() {
 
   return (
     <div className="space-y-4">
-      <PageHeader icon={Bell} title="مركز الإشعارات" subtitle={`${items.length} تنبيه`} back="/app" />
+      <PageHeader
+        icon={Bell}
+        title="مركز الإشعارات"
+        subtitle={`${items.length} تنبيه`}
+        back="/app"
+      />
 
       {loading ? (
         <Card className="p-6 text-center text-sm text-muted-foreground">جارٍ التحميل...</Card>
       ) : items.length === 0 ? (
-        <EmptyState icon={Bell} title="لا توجد إشعارات" description="ستظهر هنا التذكيرات المستحقة والديون المتأخرة" />
+        <EmptyState
+          icon={Bell}
+          title="لا توجد إشعارات"
+          description="ستظهر هنا التذكيرات المستحقة والديون المتأخرة"
+        />
       ) : (
         <div className="space-y-2 animate-in fade-in">
           {items.map((it) => (
@@ -71,7 +87,9 @@ function NotificationsCenter() {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="font-semibold text-sm truncate">{it.title}</div>
-                <div className="text-[11px] text-muted-foreground mt-0.5">{fmtDate(it.due_date)}</div>
+                <div className="text-[11px] text-muted-foreground mt-0.5">
+                  {fmtDate(it.due_date)}
+                </div>
                 <div className="flex gap-1.5 mt-2">
                   <button
                     onClick={() => markDone(it)}
@@ -93,7 +111,11 @@ function NotificationsCenter() {
                   </button>
                 </div>
               </div>
-              <Link to="/app/reminders" className="text-primary text-xs font-semibold p-1" aria-label="فتح التذكيرات">
+              <Link
+                to="/app/reminders"
+                className="text-primary text-xs font-semibold p-1"
+                aria-label="فتح التذكيرات"
+              >
                 <ArrowLeft className="size-4" />
               </Link>
             </Card>

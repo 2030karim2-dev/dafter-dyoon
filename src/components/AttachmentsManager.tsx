@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
+import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { Paperclip, Trash2, Upload, FileText, ImageIcon, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 
 interface Attachment {
   id: string;
+  created_at: string | null;
   storage_path: string;
   file_name: string;
   mime_type: string | null;
@@ -22,35 +24,60 @@ export function AttachmentsManager({ entityType, entityId, compact }: Props) {
   const { user } = useAuth();
   const [items, setItems] = useState<Attachment[]>([]);
   const [busy, setBusy] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<Attachment | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const load = async () => {
     if (!entityId) return;
     const { data } = await supabase
       .from("attachments")
-      .select("id,storage_path,file_name,mime_type,size_bytes")
+      .select("id,created_at,storage_path,file_name,mime_type,size_bytes")
       .eq("entity_type", entityType)
       .eq("entity_id", entityId)
       .order("created_at", { ascending: false });
-    setItems((data ?? []) as Attachment[]);
+    // Client-side tiebreak: rows sharing the same created_at second keep a
+    // deterministic order instead of Postgres' undefined order.
+    const sorted = (data ?? []).sort((a, b) =>
+      String(b.created_at).localeCompare(String(a.created_at)),
+    );
+    setItems(sorted as Attachment[]);
   };
 
-  useEffect(() => { load(); }, [entityType, entityId]);
+  useEffect(() => {
+    load();
+  }, [entityType, entityId]);
 
   const upload = async (file: File) => {
     if (!user) return;
-    if (file.size > 5 * 1024 * 1024) { toast.error("الحد الأقصى 5MB"); return; }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("الحد الأقصى 5MB");
+      return;
+    }
     setBusy(true);
     const ext = file.name.split(".").pop() || "bin";
     const path = `${user.id}/${entityType}/${entityId}/${Date.now()}.${ext}`;
     const { error } = await supabase.storage.from("receipts").upload(path, file);
-    if (error) { setBusy(false); toast.error(error.message); return; }
+    if (error) {
+      setBusy(false);
+      toast.error(error.message);
+      return;
+    }
     const { error: e2 } = await supabase.from("attachments").insert({
-      user_id: user.id, entity_type: entityType, entity_id: entityId,
-      storage_path: path, file_name: file.name, mime_type: file.type, size_bytes: file.size,
-    } as never);
+      user_id: user.id,
+      entity_type: entityType,
+      entity_id: entityId,
+      storage_path: path,
+      file_name: file.name,
+      mime_type: file.type,
+      size_bytes: file.size,
+    });
     setBusy(false);
-    if (e2) { toast.error(e2.message); return; }
+    if (e2) {
+      // Roll back the uploaded file so storage never holds orphan objects.
+      await supabase.storage.from("receipts").remove([path]);
+      toast.error(e2.message);
+      return;
+    }
     toast.success("تم الرفع");
     load();
   };
@@ -60,11 +87,15 @@ export function AttachmentsManager({ entityType, entityId, compact }: Props) {
     if (data?.signedUrl) window.open(data.signedUrl, "_blank");
   };
 
-  const remove = async (a: Attachment) => {
-    if (!confirm("حذف المرفق؟")) return;
+  const confirmRemove = async () => {
+    const a = pendingDelete;
+    if (!a) return;
     await supabase.storage.from("receipts").remove([a.storage_path]);
     const { error } = await supabase.from("attachments").delete().eq("id", a.id);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     toast.success("تم الحذف");
     load();
   };
@@ -81,29 +112,64 @@ export function AttachmentsManager({ entityType, entityId, compact }: Props) {
         {items.map((a) => {
           const isImg = (a.mime_type ?? "").startsWith("image/");
           return (
-            <div key={a.id} className="group flex items-center gap-1 bg-secondary rounded-md px-1.5 py-1 text-[11px] ring-1 ring-border">
+            <div
+              key={a.id}
+              className="group flex items-center gap-1 bg-secondary rounded-md px-1.5 py-1 text-[11px] ring-1 ring-border"
+            >
               {isImg ? <ImageIcon className="size-3" /> : <FileText className="size-3" />}
-              <button type="button" onClick={() => open(a)} className="max-w-[120px] truncate hover:underline">
+              <button
+                type="button"
+                onClick={() => open(a)}
+                className="max-w-[120px] truncate hover:underline"
+              >
                 {a.file_name}
               </button>
-              <button type="button" onClick={() => open(a)} className="text-muted-foreground hover:text-foreground"><ExternalLink className="size-3" /></button>
-              <button type="button" onClick={() => remove(a)} className="text-danger opacity-60 hover:opacity-100"><Trash2 className="size-3" /></button>
+              <button
+                type="button"
+                onClick={() => open(a)}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <ExternalLink className="size-3" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setPendingDelete(a)}
+                aria-label="حذف المرفق"
+                className="text-danger opacity-60 hover:opacity-100"
+              >
+                <Trash2 className="size-3" />
+              </button>
             </div>
           );
         })}
         <input
-          ref={inputRef} type="file" className="hidden"
+          ref={inputRef}
+          type="file"
+          className="hidden"
           accept="image/*,application/pdf"
           onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])}
         />
         <button
-          type="button" disabled={busy}
+          type="button"
+          disabled={busy}
           onClick={() => inputRef.current?.click()}
           className="inline-flex items-center gap-1 rounded-md border border-dashed border-primary/40 text-primary px-2 py-1 text-[11px] hover:bg-primary/5 disabled:opacity-50"
         >
           <Upload className="size-3" /> {busy ? "…" : "إرفاق"}
         </button>
       </div>
+
+      <ConfirmDialog
+        open={!!pendingDelete}
+        onOpenChange={(v) => {
+          if (!v) setPendingDelete(null);
+        }}
+        title="حذف المرفق؟"
+        description={pendingDelete ? `سيُحذف "${pendingDelete.file_name}" نهائياً.` : undefined}
+        confirmLabel="حذف"
+        destructive
+        onConfirm={confirmRemove}
+      />
     </div>
   );
 }

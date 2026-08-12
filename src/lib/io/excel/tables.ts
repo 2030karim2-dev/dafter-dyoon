@@ -1,15 +1,40 @@
 import type ExcelJS from "exceljs";
 import type { CompanyRow, CurRow, TxRow } from "./types";
 import {
-  COL_CREDIT, COL_DEBIT, COL_HEAD_BG, COL_HEAD_TXT, COL_OPENING_BG, COL_OPENING_TXT,
-  COL_TEXT, COL_TOTAL_BG, COL_ZEBRA, FONT, NUM_FMT, fmtDateEN, rtl, solid, thinBorder,
+  COL_CREDIT,
+  COL_DEBIT,
+  COL_HEAD_BG,
+  COL_HEAD_TXT,
+  COL_OPENING_BG,
+  COL_OPENING_TXT,
+  COL_TEXT,
+  COL_TOTAL_BG,
+  COL_ZEBRA,
+  FONT,
+  NUM_FMT,
+  fmtDateEN,
+  rtl,
+  solid,
+  thinBorder,
 } from "./theme";
 
-export interface StatementTotals { balance: number; totalDebit: number; totalCredit: number; endRow: number }
+export interface StatementTotals {
+  balance: number;
+  totalDebit: number;
+  totalCredit: number;
+  endRow: number;
+}
 
 /** Table head row. Returns the next row index. */
 export function writeTableHead(ws: ExcelJS.Worksheet, row: number, currency: CurRow): number {
-  const headers = ["#", "التاريخ", "البيان", "مدين (عليه)", "دائن (له)", `الرصيد (${currency.symbol || currency.name})`];
+  const headers = [
+    "#",
+    "التاريخ",
+    "البيان",
+    "مدين (عليه)",
+    "دائن (له)",
+    `الرصيد (${currency.symbol || currency.name})`,
+  ];
   headers.forEach((h, i) => {
     const c = ws.getCell(row, i + 1);
     c.value = h;
@@ -36,7 +61,9 @@ export function writeStatementBody(
 
   if (opening !== 0) {
     const cells: (string | number | null)[] = [
-      0, "—", "رصيد افتتاحي",
+      0,
+      "—",
+      "رصيد افتتاحي",
       opening < 0 ? Math.abs(opening) : null,
       opening > 0 ? opening : null,
       balance,
@@ -56,12 +83,20 @@ export function writeStatementBody(
 
   const sorted = txs
     .slice()
-    .sort((a, b) => new Date(a.transaction_date).getTime() - new Date(b.transaction_date).getTime());
+    .sort(
+      (a, b) => new Date(a.transaction_date).getTime() - new Date(b.transaction_date).getTime(),
+    );
 
   sorted.forEach((t, idx) => {
     const amt = Number(t.amount);
     const credit = t.direction === "credit";
-    if (credit) { balance += amt; totalCredit += amt; } else { balance -= amt; totalDebit += amt; }
+    if (credit) {
+      balance += amt;
+      totalCredit += amt;
+    } else {
+      balance -= amt;
+      totalDebit += amt;
+    }
 
     const cells: (string | number | null)[] = [
       idx + 1,
@@ -80,15 +115,30 @@ export function writeStatementBody(
       c.font = { name: FONT, size: 10, color: { argb: COL_TEXT } };
       if (zebra) c.fill = solid(COL_ZEBRA);
       if (i >= 3) c.numFmt = NUM_FMT;
-      if (i === 3 && v != null) c.font = { name: FONT, size: 10, bold: true, color: { argb: COL_DEBIT } };
-      if (i === 4 && v != null) c.font = { name: FONT, size: 10, bold: true, color: { argb: COL_CREDIT } };
-      if (i === 5) c.font = { name: FONT, size: 10, bold: true, color: { argb: balance >= 0 ? COL_CREDIT : COL_DEBIT } };
+      if (i === 3 && v != null)
+        c.font = { name: FONT, size: 10, bold: true, color: { argb: COL_DEBIT } };
+      if (i === 4 && v != null)
+        c.font = { name: FONT, size: 10, bold: true, color: { argb: COL_CREDIT } };
+      if (i === 5)
+        c.font = {
+          name: FONT,
+          size: 10,
+          bold: true,
+          color: { argb: balance >= 0 ? COL_CREDIT : COL_DEBIT },
+        };
     });
     ws.getRow(row).height = 20;
     row++;
   });
 
-  const totalCells: (string | number | null)[] = ["", "", "الإجمالي", totalDebit, totalCredit, balance];
+  const totalCells: (string | number | null)[] = [
+    "",
+    "",
+    "الإجمالي",
+    totalDebit,
+    totalCredit,
+    balance,
+  ];
   totalCells.forEach((v, i) => {
     const c = ws.getCell(row, i + 1);
     c.value = v;
@@ -99,7 +149,13 @@ export function writeStatementBody(
     if (i >= 3) c.numFmt = NUM_FMT;
     if (i === 3) c.font = { name: FONT, size: 11, bold: true, color: { argb: COL_DEBIT } };
     if (i === 4) c.font = { name: FONT, size: 11, bold: true, color: { argb: COL_CREDIT } };
-    if (i === 5) c.font = { name: FONT, size: 12, bold: true, color: { argb: balance >= 0 ? COL_CREDIT : COL_DEBIT } };
+    if (i === 5)
+      c.font = {
+        name: FONT,
+        size: 12,
+        bold: true,
+        color: { argb: balance >= 0 ? COL_CREDIT : COL_DEBIT },
+      };
   });
   ws.getRow(row).height = 26;
 
@@ -119,9 +175,17 @@ export function writeStatementFooter(
   ws.mergeCells(`A${row}:F${row}`);
   const fb = ws.getCell(`A${row}`);
   const status = balance >= 0 ? "له" : "عليه";
-  const abs = Math.abs(balance).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const abs = Math.abs(balance).toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
   fb.value = `الرصيد النهائي بعملة ${currency.name}: ${abs} ${currency.symbol ?? ""} (${status})`;
-  fb.font = { name: FONT, size: 13, bold: true, color: { argb: balance >= 0 ? COL_CREDIT : COL_DEBIT } };
+  fb.font = {
+    name: FONT,
+    size: 13,
+    bold: true,
+    color: { argb: balance >= 0 ? COL_CREDIT : COL_DEBIT },
+  };
   fb.alignment = rtl("center");
   fb.fill = solid("FFF1F5F9");
   fb.border = thinBorder;

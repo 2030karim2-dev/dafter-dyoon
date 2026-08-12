@@ -5,13 +5,13 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-type DB = SupabaseClient<any, any, any>;
+type DB = SupabaseClient;
 
 export interface RecordPaymentInput {
   person_id: string;
   currency_id: string;
   amount: number;
-  paid_at: string;      // ISO
+  paid_at: string; // ISO
   note?: string | null;
 }
 
@@ -81,7 +81,10 @@ export async function recordPayment(
       .from("payment_allocations")
       .select("debt_tx_id,amount")
       .eq("user_id", userId)
-      .in("debt_tx_id", debts.map((d) => d.id));
+      .in(
+        "debt_tx_id",
+        debts.map((d) => d.id),
+      );
     for (const a of allocs ?? []) {
       allocatedByTx.set(a.debt_tx_id, (allocatedByTx.get(a.debt_tx_id) ?? 0) + Number(a.amount));
     }
@@ -109,8 +112,11 @@ export async function recordPayment(
 
   if (rows.length > 0) await supabase.from("payment_allocations").insert(rows);
   if (settled.length > 0) {
-    await supabase.from("transactions").update({ is_paid: true })
-      .eq("user_id", userId).in("id", settled);
+    await supabase
+      .from("transactions")
+      .update({ is_paid: true })
+      .eq("user_id", userId)
+      .in("id", settled);
   }
 
   // 3) any open promise in this currency is considered kept when covered
@@ -121,12 +127,18 @@ export async function recordPayment(
     .eq("person_id", input.person_id)
     .eq("currency_id", input.currency_id)
     .eq("status", "open");
-  const covered = (promises ?? []).filter((p: { amount: number | string }) => Number(p.amount) <= amount + 0.0001);
+  const covered = (promises ?? []).filter(
+    (p: { amount: number | string }) => Number(p.amount) <= amount + 0.0001,
+  );
   if (covered.length > 0) {
-    await supabase.from("payment_promises")
+    await supabase
+      .from("payment_promises")
       .update({ status: "kept", kept_at: new Date().toISOString() })
       .eq("user_id", userId)
-      .in("id", covered.map((p: { id: string }) => p.id));
+      .in(
+        "id",
+        covered.map((p: { id: string }) => p.id),
+      );
   }
 
   return {

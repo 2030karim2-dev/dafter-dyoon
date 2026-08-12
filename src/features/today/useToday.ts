@@ -13,8 +13,14 @@ export type TodayData = TodayPayload & { availability: TodayAvailability };
 export const EMPTY_TODAY: TodayData = {
   tasks: [],
   counts: {
-    all: 0, due_today: 0, overdue: 0, promise_due: 0,
-    promise_broken: 0, failed_message: 0, pending: 0, reminded: 0,
+    all: 0,
+    due_today: 0,
+    overdue: 0,
+    promise_due: 0,
+    promise_broken: 0,
+    failed_message: 0,
+    pending: 0,
+    reminded: 0,
   },
   totals: [],
   collected_today: [],

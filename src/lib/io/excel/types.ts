@@ -1,6 +1,10 @@
 /** Shared row shapes used by the Excel export engine. */
 
-export interface PersonRow { id: string; name: string; phone: string | null }
+export interface PersonRow {
+  id: string;
+  name: string;
+  phone: string | null;
+}
 
 export interface TxRow {
   person_id?: string;
@@ -11,9 +15,17 @@ export interface TxRow {
   currency_id: string;
 }
 
-export interface CurRow { id: string; name: string; symbol: string; is_base?: boolean }
+export interface CurRow {
+  id: string;
+  name: string;
+  symbol: string;
+  is_base?: boolean;
+}
 
-export interface CatRow { id: string; name: string }
+export interface CatRow {
+  id: string;
+  name: string;
+}
 
 export interface OpeningRow {
   currency_id: string;
@@ -32,5 +44,4 @@ export interface CompanyRow {
   notes?: string | null;
 }
 
-export const XLSX_MIME =
-  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+export const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";

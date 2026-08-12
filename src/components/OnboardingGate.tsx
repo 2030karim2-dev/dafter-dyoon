@@ -9,7 +9,10 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
   const [needs, setNeeds] = useState<boolean | null>(null);
 
   useEffect(() => {
-    if (loading || !user) { setNeeds(false); return; }
+    if (loading || !user) {
+      setNeeds(false);
+      return;
+    }
     let cancelled = false;
     (async () => {
       const { data } = await supabase
@@ -20,10 +23,19 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
       if (cancelled) return;
       setNeeds(!data?.onboarded);
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [user, loading]);
 
-  if (needs === null) return null;
+  if (needs === null) {
+    // Branded loader instead of a blank flash while checking onboarded status.
+    return (
+      <div className="fixed inset-0 z-[90] bg-gradient-hero flex items-center justify-center">
+        <div className="size-8 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+      </div>
+    );
+  }
   if (needs) return <OnboardingFlow onDone={() => setNeeds(false)} />;
   return <>{children}</>;
 }

@@ -46,11 +46,13 @@ export const createPromiseFn = createServerFn({ method: "POST" })
 export const resolvePromiseFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z.object({
-      id: z.string().uuid(),
-      status: z.enum(["kept", "broken", "cancelled", "open"]),
-      promised_date: z.string().min(8).max(10).optional(),
-    }).parse(d),
+    z
+      .object({
+        id: z.string().uuid(),
+        status: z.enum(["kept", "broken", "cancelled", "open"]),
+        promised_date: z.string().min(8).max(10).optional(),
+      })
+      .parse(d),
   )
   .handler(async ({ data, context }) => {
     const patch = {
@@ -58,8 +60,11 @@ export const resolvePromiseFn = createServerFn({ method: "POST" })
       ...(data.status === "kept" ? { kept_at: new Date().toISOString() } : {}),
       ...(data.promised_date ? { promised_date: data.promised_date } : {}),
     };
-    const { error } = await context.supabase.from("payment_promises")
-      .update(patch).eq("id", data.id).eq("user_id", context.userId);
+    const { error } = await context.supabase
+      .from("payment_promises")
+      .update(patch)
+      .eq("id", data.id)
+      .eq("user_id", context.userId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

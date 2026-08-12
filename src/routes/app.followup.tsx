@@ -7,7 +7,17 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { SearchBar } from "@/components/common/SearchBar";
 import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
-import { Loader2, RefreshCw, Send, Target, Inbox, CheckCheck, ListChecks, Zap, X } from "lucide-react";
+import {
+  Loader2,
+  RefreshCw,
+  Send,
+  Target,
+  Inbox,
+  CheckCheck,
+  ListChecks,
+  Zap,
+  X,
+} from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { AtRiskBanner } from "@/features/followup/AtRiskBanner";
 import { FollowupCard } from "@/features/followup/FollowupCard";
@@ -36,7 +46,8 @@ export const Route = createFileRoute("/app/followup")({
       { title: "متابعة العملاء والديون | دفترك" },
       {
         name: "description",
-        content: "لوحة متابعة احترافية للديون المستحقة والمتأخرة مع تذكيرات تلقائية عبر واتساب وتليجرام.",
+        content:
+          "لوحة متابعة احترافية للديون المستحقة والمتأخرة مع تذكيرات تلقائية عبر واتساب وتليجرام.",
       },
       { property: "og:title", content: "متابعة العملاء والديون | دفترك" },
       {
@@ -132,7 +143,8 @@ function FollowupPage() {
 
   /** Bulk queue only — messages wait in the outbox. */
   const bulk = useMutation({
-    mutationFn: () => enqueueMessages({ data: { targets: selectedTargets(), channel: "whatsapp" } }),
+    mutationFn: () =>
+      enqueueMessages({ data: { targets: selectedTargets(), channel: "whatsapp" } }),
     onSuccess: (res) => {
       toast.success(`تم إضافة ${res.queued} رسالة إلى الصادر`);
       afterBulk();
@@ -155,8 +167,7 @@ function FollowupPage() {
   });
 
   const allSelected = rows.length > 0 && rows.every((b) => selected.has(keyOf(b)));
-  const toggleAll = () =>
-    setSelected(allSelected ? new Set() : new Set(rows.map((b) => keyOf(b))));
+  const toggleAll = () => setSelected(allSelected ? new Set() : new Set(rows.map((b) => keyOf(b))));
 
   const cycle = useMutation({
     mutationFn: () => runCycle(),
@@ -172,7 +183,8 @@ function FollowupPage() {
     const k = keyOf(b);
     setSelected((prev) => {
       const next = new Set(prev);
-      next.has(k) ? next.delete(k) : next.add(k);
+      if (next.has(k)) next.delete(k);
+      else next.add(k);
       return next;
     });
   };
@@ -234,9 +246,7 @@ function FollowupPage() {
 
       {selected.size > 0 && (
         <div className="sticky top-11 z-20 rounded-lg border-2 border-primary/40 bg-card/95 backdrop-blur p-2 space-y-1.5 shadow-elevated animate-in slide-in-from-top-1">
-          <div className="text-[11px] font-black">
-            الإرسال الجماعي — {selected.size} عميل
-          </div>
+          <div className="text-[11px] font-black">الإرسال الجماعي — {selected.size} عميل</div>
           <div className="grid grid-cols-3 gap-1">
             <Button
               size="sm"
@@ -249,7 +259,11 @@ function FollowupPage() {
                   : "الإرسال التلقائي غير مفعّل في إعدادات القنوات"
               }
             >
-              {bulkSend.isPending ? <Loader2 className="size-3 animate-spin" /> : <Zap className="size-3" />}
+              {bulkSend.isPending ? (
+                <Loader2 className="size-3 animate-spin" />
+              ) : (
+                <Zap className="size-3" />
+              )}
               إرسال فوري
             </Button>
             <Button
@@ -259,7 +273,11 @@ function FollowupPage() {
               onClick={() => bulk.mutate()}
               disabled={bulk.isPending}
             >
-              {bulk.isPending ? <Loader2 className="size-3 animate-spin" /> : <Send className="size-3" />}
+              {bulk.isPending ? (
+                <Loader2 className="size-3 animate-spin" />
+              ) : (
+                <Send className="size-3" />
+              )}
               تجهيز بالصادر
             </Button>
             <Button
@@ -300,9 +318,7 @@ function FollowupPage() {
               canAuto={board.availability.whatsapp_auto}
               onSelect={() => toggle(b)}
               onMessage={() => build.mutate(b)}
-              onAutoSend={() =>
-                autoSend.mutate({ bucket: b, body: "", outboxId: null })
-              }
+              onAutoSend={() => autoSend.mutate({ bucket: b, body: "", outboxId: null })}
             />
           ))}
         </div>
@@ -323,7 +339,8 @@ function FollowupPage() {
       )}
 
       <p className="text-[10px] text-muted-foreground text-center">
-        آخر تحديث للوحة: {board.generated_at ? new Date(board.generated_at).toLocaleString("ar") : "—"}
+        آخر تحديث للوحة:{" "}
+        {board.generated_at ? new Date(board.generated_at).toLocaleString("ar") : "—"}
         {" · "}
         <button className="underline" onClick={() => void refetch()}>
           تحديث

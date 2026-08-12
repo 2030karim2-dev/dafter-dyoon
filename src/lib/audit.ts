@@ -5,7 +5,7 @@ export async function logAudit(
   action: string,
   entity: string,
   entityId?: string,
-  metadata?: Record<string, unknown>
+  metadata?: Record<string, unknown>,
 ) {
   try {
     await supabase.from("audit_log").insert({

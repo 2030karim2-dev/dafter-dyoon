@@ -5,12 +5,17 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-type DB = SupabaseClient<any, any, any>;
+type DB = SupabaseClient;
 
-export type TaskKind = "due_today" | "overdue" | "promise_due" | "promise_broken" | "failed_message";
+export type TaskKind =
+  | "due_today"
+  | "overdue"
+  | "promise_due"
+  | "promise_broken"
+  | "failed_message";
 
 export interface TodayTask {
-  id: string;                 // stable key
+  id: string; // stable key
   kind: TaskKind;
   person_id: string;
   person_name: string;
@@ -20,7 +25,7 @@ export interface TodayTask {
   currency_name: string;
   currency_symbol: string;
   amount: number;
-  days: number;               // days overdue (0 = today)
+  days: number; // days overdue (0 = today)
   transaction_id: string | null;
   promise_id: string | null;
   outbox_id: string | null;
@@ -28,7 +33,7 @@ export interface TodayTask {
   /** Reminder state — separates "not contacted yet" from "waiting next cycle". */
   last_contact_at: string | null;
   contact_count: number;
-  reminded: boolean;          // contacted recently → parked until next cycle
+  reminded: boolean; // contacted recently → parked until next cycle
   next_reminder_at: string | null;
 }
 
@@ -39,8 +44,8 @@ export interface TodayCounts {
   promise_due: number;
   promise_broken: number;
   failed_message: number;
-  pending: number;            // not reminded yet — needs action now
-  reminded: number;           // already reminded — waiting next cycle
+  pending: number; // not reminded yet — needs action now
+  reminded: number; // already reminded — waiting next cycle
 }
 
 export interface TodayPayload {
@@ -51,30 +56,69 @@ export interface TodayPayload {
   generated_at: string;
 }
 
-const dayStart = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; };
+const dayStart = () => {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d;
+};
 const daysBetween = (iso: string) =>
   Math.floor((dayStart().getTime() - new Date(iso).setHours(0, 0, 0, 0)) / 86400000);
 
-interface PersonLite { id: string; name: string; phone: string | null; avatar_color: string | null }
-interface CurLite { id: string; name: string; symbol: string }
+interface PersonLite {
+  id: string;
+  name: string;
+  phone: string | null;
+  avatar_color: string | null;
+}
+interface CurLite {
+  id: string;
+  name: string;
+  symbol: string;
+}
 
 export async function loadToday(supabase: DB, userId: string): Promise<TodayPayload> {
   const [pRes, cRes, tRes, prRes, obRes, payRes, logRes, polRes] = await Promise.all([
-    supabase.from("people").select("id,name,phone,avatar_color")
-      .eq("user_id", userId).eq("is_archived", false),
+    supabase
+      .from("people")
+      .select("id,name,phone,avatar_color")
+      .eq("user_id", userId)
+      .eq("is_archived", false),
     supabase.from("currencies").select("id,name,symbol").eq("user_id", userId),
-    supabase.from("transactions").select("id,person_id,currency_id,amount,direction,due_date,is_paid,details")
-      .eq("user_id", userId).eq("direction", "credit").eq("is_paid", false).not("due_date", "is", null),
-    supabase.from("payment_promises").select("id,person_id,currency_id,amount,promised_date,status,note")
-      .eq("user_id", userId).in("status", ["open", "broken"]),
-    supabase.from("outbox").select("id,person_id,channel,status,last_error,body")
-      .eq("user_id", userId).eq("status", "failed").limit(50),
-    supabase.from("transactions").select("currency_id,amount")
-      .eq("user_id", userId).eq("direction", "debit")
+    supabase
+      .from("transactions")
+      .select("id,person_id,currency_id,amount,direction,due_date,is_paid,details")
+      .eq("user_id", userId)
+      .eq("direction", "credit")
+      .eq("is_paid", false)
+      .not("due_date", "is", null),
+    supabase
+      .from("payment_promises")
+      .select("id,person_id,currency_id,amount,promised_date,status,note")
+      .eq("user_id", userId)
+      .in("status", ["open", "broken"]),
+    supabase
+      .from("outbox")
+      .select("id,person_id,channel,status,last_error,body")
+      .eq("user_id", userId)
+      .eq("status", "failed")
+      .limit(50),
+    supabase
+      .from("transactions")
+      .select("currency_id,amount")
+      .eq("user_id", userId)
+      .eq("direction", "debit")
       .gte("transaction_date", dayStart().toISOString()),
-    supabase.from("message_log").select("person_id,sent_at")
-      .eq("user_id", userId).order("sent_at", { ascending: false }).limit(2000),
-    supabase.from("followup_policies").select("overdue_every_days").eq("user_id", userId).maybeSingle(),
+    supabase
+      .from("message_log")
+      .select("person_id,sent_at")
+      .eq("user_id", userId)
+      .order("sent_at", { ascending: false })
+      .limit(2000),
+    supabase
+      .from("followup_policies")
+      .select("overdue_every_days")
+      .eq("user_id", userId)
+      .maybeSingle(),
   ]);
 
   const people = new Map(((pRes.data ?? []) as PersonLite[]).map((p) => [p.id, p]));
@@ -87,7 +131,10 @@ export async function loadToday(supabase: DB, userId: string): Promise<TodayPayl
     if (!m.person_id) continue;
     const cur = contacts.get(m.person_id);
     if (!cur) contacts.set(m.person_id, { last: m.sent_at, count: 1 });
-    else { cur.count += 1; if (m.sent_at > cur.last) cur.last = m.sent_at; }
+    else {
+      cur.count += 1;
+      if (m.sent_at > cur.last) cur.last = m.sent_at;
+    }
   }
 
   const contactState = (personId: string) => {
@@ -121,7 +168,6 @@ export async function loadToday(supabase: DB, userId: string): Promise<TodayPayl
 
   const tasks: TodayTask[] = [];
 
-
   // 1) transactions due today / overdue — aggregated per person+currency
   type Acc = { amount: number; days: number; txId: string | null };
   const grouped = new Map<string, Acc>();
@@ -132,7 +178,10 @@ export async function loadToday(supabase: DB, userId: string): Promise<TodayPayl
     if (days < 0) continue; // not due yet — handled by the follow-up board
     const acc = grouped.get(key) ?? { amount: 0, days: 0, txId: null };
     acc.amount += Number(t.amount);
-    if (days >= acc.days) { acc.days = days; acc.txId = t.id; }
+    if (days >= acc.days) {
+      acc.days = days;
+      acc.txId = t.id;
+    }
     grouped.set(key, acc);
   }
   grouped.forEach((acc, key) => {
@@ -195,7 +244,11 @@ export async function loadToday(supabase: DB, userId: string): Promise<TodayPayl
   }
 
   const ORDER: Record<TaskKind, number> = {
-    promise_broken: 0, overdue: 1, due_today: 2, promise_due: 3, failed_message: 4,
+    promise_broken: 0,
+    overdue: 1,
+    due_today: 2,
+    promise_due: 3,
+    failed_message: 4,
   };
   // Not-yet-reminded customers always come first; reminded ones are parked below.
   tasks.sort((a, b) => {
@@ -214,7 +267,6 @@ export async function loadToday(supabase: DB, userId: string): Promise<TodayPayl
     pending: tasks.filter((t) => !t.reminded).length,
     reminded: tasks.filter((t) => t.reminded).length,
   };
-
 
   const perCur = new Map<string, number>();
   for (const t of tasks) {

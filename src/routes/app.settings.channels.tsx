@@ -297,7 +297,9 @@ function ChannelsPage() {
         <div className="flex items-center justify-between">
           <span className="text-[11.5px]">
             تمكين تليجرام{" "}
-            {!av?.telegram && <span className="text-[10px] text-muted-foreground">(غير مربوط)</span>}
+            {!av?.telegram && (
+              <span className="text-[10px] text-muted-foreground">(غير مربوط)</span>
+            )}
           </span>
           <Switch
             checked={ch.telegram_enabled}

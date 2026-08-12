@@ -1,8 +1,12 @@
-/* Daftarak Service Worker — local notifications + click routing */
-const CACHE = "daftarak-v1";
+/* Daftarak Service Worker — local notifications + click routing.
+   NOTE: no fetch handler yet — offline caching is intentionally deferred. */
 
-self.addEventListener("install", (e) => { self.skipWaiting(); });
-self.addEventListener("activate", (e) => { e.waitUntil(self.clients.claim()); });
+self.addEventListener("install", () => {
+  self.skipWaiting();
+});
+self.addEventListener("activate", (e) => {
+  e.waitUntil(self.clients.claim());
+});
 
 // Receive messages from the app to schedule a notification
 self.addEventListener("message", (event) => {
@@ -27,7 +31,10 @@ self.addEventListener("notificationclick", (event) => {
   event.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((all) => {
       for (const c of all) {
-        if ("focus" in c) { c.navigate(url); return c.focus(); }
+        if ("focus" in c) {
+          c.navigate(url);
+          return c.focus();
+        }
       }
       return self.clients.openWindow(url);
     }),

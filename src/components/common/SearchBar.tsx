@@ -11,7 +11,12 @@ export function SearchBar({ value, onChange, placeholder = "ابحث..." }: Prop
   return (
     <div className="relative">
       <Search className="pointer-events-none absolute start-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
-      <Input value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="ps-8 pe-8 h-9 text-[12px]" />
+      <Input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="ps-8 pe-8 h-9 text-[12px]"
+      />
       {value && (
         <button
           onClick={() => onChange("")}

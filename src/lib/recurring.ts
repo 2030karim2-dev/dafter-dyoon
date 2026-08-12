@@ -53,16 +53,22 @@ export async function processDueRecurring(userId: string): Promise<number> {
             details: r.note ?? r.title,
             transaction_date: next.toISOString(),
           });
-          if (error) { console.error("recurring transaction insert failed", error); break; }
+          if (error) {
+            console.error("recurring transaction insert failed", error);
+            break;
+          }
         }
         count++;
         next = advance(next, r.frequency);
         safety++;
       }
-      await supabase.from("recurring_rules").update({
-        next_run: next.toISOString(),
-        last_run: now.toISOString(),
-      }).eq("id", r.id);
+      await supabase
+        .from("recurring_rules")
+        .update({
+          next_run: next.toISOString(),
+          last_run: now.toISOString(),
+        })
+        .eq("id", r.id);
     } catch (e) {
       console.error("recurring rule failed", r.id, e);
     }

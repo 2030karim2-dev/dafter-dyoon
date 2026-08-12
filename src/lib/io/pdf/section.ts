@@ -37,8 +37,13 @@ export function renderCurrencySection(
 
   curTxs.forEach((t, i) => {
     const amt = Number(t.amount);
-    if (t.direction === "credit") { acc += amt; cCredit += amt; }
-    else { acc -= amt; cDebit += amt; }
+    if (t.direction === "credit") {
+      acc += amt;
+      cCredit += amt;
+    } else {
+      acc -= amt;
+      cDebit += amt;
+    }
     const zebra = i % 2 === 1 ? C.bgAlt : C.white;
     const desc = t.details ?? (t.direction === "credit" ? "دائن" : "مدين");
     rows.push(`

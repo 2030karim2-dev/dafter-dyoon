@@ -7,11 +7,21 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 
-export interface CurrencyDTO { id: string; name: string; symbol: string; is_base: boolean }
+export interface CurrencyDTO {
+  id: string;
+  name: string;
+  symbol: string;
+  is_base: boolean;
+}
 export interface PersonDTO {
-  id: string; name: string; type: string; is_archived: boolean;
-  avatar_color: string | null; phone: string | null;
-  notes: string | null; credit_limit: number | null;
+  id: string;
+  name: string;
+  type: string;
+  is_archived: boolean;
+  avatar_color: string | null;
+  phone: string | null;
+  notes: string | null;
+  credit_limit: number | null;
 }
 export interface PerCurrencyEntry {
   currency_id: string;
@@ -19,20 +29,20 @@ export interface PerCurrencyEntry {
   credit: number;
   debit: number;
   count: number;
-  lastDate: number;      // ms epoch
+  lastDate: number; // ms epoch
   lastAmount: number;
   lastDirection: string;
 }
 export interface PersonWithBalances {
   person: PersonDTO;
-  balances: PerCurrencyEntry[];   // one entry per account currency
+  balances: PerCurrencyEntry[]; // one entry per account currency
   txCount: number;
   lastDate: number;
 }
 export interface CurrencyTotal {
   currency: CurrencyDTO;
   owed: number; // له
-  owe: number;  // عليه
+  owe: number; // عليه
   net: number;
   peopleCount: number;
 }
@@ -50,13 +60,24 @@ export const getDebtsHomeFn = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<DebtsHomePayload> => {
     const { supabase, userId } = context;
     const [pRes, tRes, cRes, oRes] = await Promise.all([
-      supabase.from("people").select("id,name,type,is_archived,avatar_color,phone,notes,credit_limit,created_at")
-        .eq("user_id", userId).eq("is_archived", false).order("created_at", { ascending: false }),
-      supabase.from("transactions").select("id,person_id,amount,direction,currency_id,transaction_date")
+      supabase
+        .from("people")
+        .select("id,name,type,is_archived,avatar_color,phone,notes,credit_limit,created_at")
+        .eq("user_id", userId)
+        .eq("is_archived", false)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("transactions")
+        .select("id,person_id,amount,direction,currency_id,transaction_date")
         .eq("user_id", userId),
-      supabase.from("currencies").select("id,name,symbol,is_base")
-        .eq("user_id", userId).order("is_base", { ascending: false }),
-      supabase.from("opening_balances").select("person_id,currency_id,amount,direction")
+      supabase
+        .from("currencies")
+        .select("id,name,symbol,is_base")
+        .eq("user_id", userId)
+        .order("is_base", { ascending: false }),
+      supabase
+        .from("opening_balances")
+        .select("person_id,currency_id,amount,direction")
         .eq("user_id", userId),
     ]);
     const currencies = (cRes.data ?? []) as CurrencyDTO[];
@@ -65,14 +86,36 @@ export const getDebtsHomeFn = createServerFn({ method: "GET" })
     const people = (pRes.data ?? []) as PersonDTO[];
     const base = currencies.find((c) => c.is_base) ?? currencies[0] ?? null;
 
-    type Slot = { balance: number; credit: number; debit: number; count: number; lastDate: number; lastAmount: number; lastDirection: string };
-    const newSlot = (): Slot => ({ balance: 0, credit: 0, debit: 0, count: 0, lastDate: 0, lastAmount: 0, lastDirection: "" });
+    type Slot = {
+      balance: number;
+      credit: number;
+      debit: number;
+      count: number;
+      lastDate: number;
+      lastAmount: number;
+      lastDirection: string;
+    };
+    const newSlot = (): Slot => ({
+      balance: 0,
+      credit: 0,
+      debit: 0,
+      count: 0,
+      lastDate: 0,
+      lastAmount: 0,
+      lastDirection: "",
+    });
     const perPerson = new Map<string, Map<string, Slot>>();
     const slotOf = (pid: string, cid: string) => {
       let m = perPerson.get(pid);
-      if (!m) { m = new Map(); perPerson.set(pid, m); }
+      if (!m) {
+        m = new Map();
+        perPerson.set(pid, m);
+      }
       let s = m.get(cid);
-      if (!s) { s = newSlot(); m.set(cid, s); }
+      if (!s) {
+        s = newSlot();
+        m.set(cid, s);
+      }
       return s;
     };
 
@@ -82,7 +125,8 @@ export const getDebtsHomeFn = createServerFn({ method: "GET" })
       const amt = Number(o.amount);
       const v = o.direction === "credit" ? amt : -amt;
       s.balance += v;
-      if (v >= 0) s.credit += Math.abs(v); else s.debit += Math.abs(v);
+      if (v >= 0) s.credit += Math.abs(v);
+      else s.debit += Math.abs(v);
     }
 
     for (const t of txs) {
@@ -90,7 +134,8 @@ export const getDebtsHomeFn = createServerFn({ method: "GET" })
       const s = slotOf(t.person_id, t.currency_id);
       const amt = Number(t.amount);
       s.balance += t.direction === "credit" ? amt : -amt;
-      if (t.direction === "credit") s.credit += amt; else s.debit += amt;
+      if (t.direction === "credit") s.credit += amt;
+      else s.debit += amt;
       s.count += 1;
       const dateMs = new Date(t.transaction_date).getTime();
       if (dateMs >= s.lastDate) {
@@ -107,8 +152,13 @@ export const getDebtsHomeFn = createServerFn({ method: "GET" })
         const s = m?.get(c.id) ?? newSlot();
         return {
           currency_id: c.id,
-          balance: s.balance, credit: s.credit, debit: s.debit, count: s.count,
-          lastDate: s.lastDate, lastAmount: s.lastAmount, lastDirection: s.lastDirection,
+          balance: s.balance,
+          credit: s.credit,
+          debit: s.debit,
+          count: s.count,
+          lastDate: s.lastDate,
+          lastAmount: s.lastAmount,
+          lastDirection: s.lastDirection,
         };
       });
       return {
@@ -121,7 +171,9 @@ export const getDebtsHomeFn = createServerFn({ method: "GET" })
 
     // per-currency totals — strictly separate ledgers
     const totalsPerCurrency: CurrencyTotal[] = currencies.map((c) => {
-      let owed = 0, owe = 0, peopleWith = 0;
+      let owed = 0,
+        owe = 0,
+        peopleWith = 0;
       for (const p of enriched) {
         const e = p.balances.find((b) => b.currency_id === c.id);
         if (!e) continue;
@@ -133,8 +185,12 @@ export const getDebtsHomeFn = createServerFn({ method: "GET" })
     });
 
     return {
-      currencies, base, people: enriched, totalsPerCurrency,
-      peopleCount: people.length, txCount: txs.length,
+      currencies,
+      base,
+      people: enriched,
+      totalsPerCurrency,
+      peopleCount: people.length,
+      txCount: txs.length,
     };
   });
 
@@ -144,8 +200,11 @@ export const archivePersonFn = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const { error } = await supabase.from("people").update({ is_archived: true })
-      .eq("id", data.id).eq("user_id", userId);
+    const { error } = await supabase
+      .from("people")
+      .update({ is_archived: true })
+      .eq("id", data.id)
+      .eq("user_id", userId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -156,12 +215,17 @@ export const deletePersonFn = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const { count } = await supabase.from("transactions")
+    const { count } = await supabase
+      .from("transactions")
       .select("id", { count: "exact", head: true })
-      .eq("person_id", data.id).eq("user_id", userId);
+      .eq("person_id", data.id)
+      .eq("user_id", userId);
     if ((count ?? 0) > 0) throw new Error("لا يمكن الحذف — لديه معاملات. استخدم الأرشفة.");
-    const { error } = await supabase.from("people").delete()
-      .eq("id", data.id).eq("user_id", userId);
+    const { error } = await supabase
+      .from("people")
+      .delete()
+      .eq("id", data.id)
+      .eq("user_id", userId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

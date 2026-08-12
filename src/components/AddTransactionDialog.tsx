@@ -5,19 +5,49 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { TrendingUp, TrendingDown, Check, ChevronDown, Paperclip, X, FileText, ImageIcon } from "lucide-react";
+import {
+  TrendingUp,
+  TrendingDown,
+  Check,
+  ChevronDown,
+  Paperclip,
+  X,
+  FileText,
+  ImageIcon,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 import { AmountInput } from "@/components/AmountInput";
 import { evalExpr } from "@/lib/calc";
+import { toLocalDatetimeInputValue } from "@/lib/format";
 import { AttachmentsManager } from "@/components/AttachmentsManager";
 
-interface Person { id: string; name: string }
-interface Currency { id: string; name: string; is_base: boolean }
+interface Person {
+  id: string;
+  name: string;
+}
+interface Currency {
+  id: string;
+  name: string;
+  is_base: boolean;
+}
 
 interface EditingTx {
   id: string;
@@ -48,7 +78,16 @@ interface Props {
   prefill?: Prefill | null;
 }
 
-export function AddTransactionDialog({ open, onOpenChange, people, currencies, onSuccess, defaultPersonId, editing, prefill }: Props) {
+export function AddTransactionDialog({
+  open,
+  onOpenChange,
+  people,
+  currencies,
+  onSuccess,
+  defaultPersonId,
+  editing,
+  prefill,
+}: Props) {
   const { user } = useAuth();
   const [personId, setPersonId] = useState<string>("");
   const [newName, setNewName] = useState("");
@@ -72,25 +111,29 @@ export function AddTransactionDialog({ open, onOpenChange, people, currencies, o
       setDetails(editing.details ?? "");
       setDirection(editing.direction as "credit" | "debit");
       setCurrencyId(editing.currency_id);
-      setDate(new Date(editing.transaction_date).toISOString().slice(0, 16));
+      // Show the stored instant in LOCAL time (ISO slice would shift it by the UTC offset).
+      setDate(toLocalDatetimeInputValue(new Date(editing.transaction_date)));
       setDueDate(editing.due_date ? editing.due_date.slice(0, 10) : "");
     } else {
       const base = currencies.find((c) => c.is_base) ?? currencies[0];
       if (prefill) {
-        const matched = prefill.newName ? people.find((p) => p.name.trim() === prefill.newName!.trim()) : undefined;
+        const matched = prefill.newName
+          ? people.find((p) => p.name.trim() === prefill.newName!.trim())
+          : undefined;
         setPersonId(matched?.id ?? defaultPersonId ?? "");
-        setNewName(matched ? "" : prefill.newName ?? "");
+        setNewName(matched ? "" : (prefill.newName ?? ""));
         setAmount(prefill.amount != null ? String(prefill.amount) : "");
         setDetails(prefill.details ?? "");
         setDirection(prefill.direction ?? "credit");
       } else {
         setPersonId(defaultPersonId ?? "");
         setNewName("");
-        setAmount(""); setDetails("");
+        setAmount("");
+        setDetails("");
         setDirection("credit");
       }
       setCurrencyId(base?.id ?? "");
-      setDate(new Date().toISOString().slice(0, 16));
+      setDate(toLocalDatetimeInputValue(new Date()));
       setDueDate("");
     }
     setPendingFile(null);
@@ -99,15 +142,29 @@ export function AddTransactionDialog({ open, onOpenChange, people, currencies, o
   const submit = async () => {
     if (!user) return;
     const amt = evalExpr(amount);
-    if (!isFinite(amt) || amt <= 0) { toast.error("أدخل مبلغاً صحيحاً"); return; }
-    if (!currencyId) { toast.error("اختر العملة"); return; }
+    if (!isFinite(amt) || amt <= 0) {
+      toast.error("أدخل مبلغاً صحيحاً");
+      return;
+    }
+    if (!currencyId) {
+      toast.error("اختر العملة");
+      return;
+    }
     let pid = personId;
     setBusy(true);
     try {
       if (!pid && !editing) {
         const name = newName.trim();
-        if (!name) { toast.error("اختر شخصاً أو أدخل اسماً جديداً"); setBusy(false); return; }
-        const { data, error } = await supabase.from("people").insert({ name, user_id: user.id }).select("id").single();
+        if (!name) {
+          toast.error("اختر شخصاً أو أدخل اسماً جديداً");
+          setBusy(false);
+          return;
+        }
+        const { data, error } = await supabase
+          .from("people")
+          .insert({ name, user_id: user.id })
+          .select("id")
+          .single();
         if (error) throw error;
         pid = data.id;
       }
@@ -122,7 +179,12 @@ export function AddTransactionDialog({ open, onOpenChange, people, currencies, o
         due_date: dueDate || null,
       };
       const { data: txData, error: te } = editing
-        ? await supabase.from("transactions").update(payload).eq("id", editing.id).select("id").single()
+        ? await supabase
+            .from("transactions")
+            .update(payload)
+            .eq("id", editing.id)
+            .select("id")
+            .single()
         : await supabase.from("transactions").insert(payload).select("id").single();
       if (te) throw te;
       const newTxId = (txData as { id: string } | null)?.id ?? editing?.id;
@@ -137,9 +199,14 @@ export function AddTransactionDialog({ open, onOpenChange, people, currencies, o
             const { error: ue } = await supabase.storage.from("receipts").upload(path, pendingFile);
             if (ue) throw ue;
             await supabase.from("attachments").insert({
-              user_id: user.id, entity_type: "transaction", entity_id: newTxId,
-              storage_path: path, file_name: pendingFile.name, mime_type: pendingFile.type, size_bytes: pendingFile.size,
-            } as never);
+              user_id: user.id,
+              entity_type: "transaction",
+              entity_id: newTxId,
+              storage_path: path,
+              file_name: pendingFile.name,
+              mime_type: pendingFile.type,
+              size_bytes: pendingFile.size,
+            });
           }
         } catch (err) {
           const e = err as { message?: string };
@@ -147,7 +214,10 @@ export function AddTransactionDialog({ open, onOpenChange, people, currencies, o
         }
       }
       const { logAudit } = await import("@/lib/audit");
-      await logAudit(user.id, editing ? "update" : "create", "transaction", newTxId, { amount: payload.amount, direction: payload.direction });
+      await logAudit(user.id, editing ? "update" : "create", "transaction", newTxId, {
+        amount: payload.amount,
+        direction: payload.direction,
+      });
       toast.success(editing ? "تم التعديل" : "تمت الإضافة");
       onSuccess();
       onOpenChange(false);
@@ -165,7 +235,9 @@ export function AddTransactionDialog({ open, onOpenChange, people, currencies, o
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-right">{editing ? "تعديل معاملة" : "إضافة معاملة"}</DialogTitle>
+          <DialogTitle className="text-right">
+            {editing ? "تعديل معاملة" : "إضافة معاملة"}
+          </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -176,22 +248,46 @@ export function AddTransactionDialog({ open, onOpenChange, people, currencies, o
             ) : (
               <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" role="combobox" className="w-full justify-between font-normal">
-                    {selectedPerson ? selectedPerson.name : (newName || "اختر أو أضف اسماً جديداً")}
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    className="w-full justify-between font-normal"
+                  >
+                    {selectedPerson ? selectedPerson.name : newName || "اختر أو أضف اسماً جديداً"}
                     <ChevronDown className="size-4 opacity-60" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                <PopoverContent
+                  className="w-[var(--radix-popover-trigger-width)] p-0"
+                  align="start"
+                >
                   <Command>
-                    <CommandInput placeholder="ابحث أو اكتب اسماً جديداً..." value={newName} onValueChange={(v) => { setNewName(v); setPersonId(""); }} />
+                    <CommandInput
+                      placeholder="ابحث أو اكتب اسماً جديداً..."
+                      value={newName}
+                      onValueChange={(v) => {
+                        setNewName(v);
+                        setPersonId("");
+                      }}
+                    />
                     <CommandList>
                       <CommandEmpty>
                         <div className="text-sm">سيُنشأ شخص جديد باسم "{newName}"</div>
                       </CommandEmpty>
                       <CommandGroup>
                         {people.map((p) => (
-                          <CommandItem key={p.id} value={p.name} onSelect={() => { setPersonId(p.id); setNewName(""); setPickerOpen(false); }}>
-                            <Check className={`size-4 ${personId === p.id ? "opacity-100" : "opacity-0"}`} />
+                          <CommandItem
+                            key={p.id}
+                            value={p.name}
+                            onSelect={() => {
+                              setPersonId(p.id);
+                              setNewName("");
+                              setPickerOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={`size-4 ${personId === p.id ? "opacity-100" : "opacity-0"}`}
+                            />
                             {p.name}
                           </CommandItem>
                         ))}
@@ -211,9 +307,15 @@ export function AddTransactionDialog({ open, onOpenChange, people, currencies, o
             <div className="space-y-1.5">
               <Label>العملة</Label>
               <Select value={currencyId} onValueChange={setCurrencyId}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
-                  {currencies.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                  {currencies.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -222,25 +324,49 @@ export function AddTransactionDialog({ open, onOpenChange, people, currencies, o
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>التاريخ والوقت</Label>
-              <Input type="datetime-local" dir="ltr" value={date} onChange={(e) => setDate(e.target.value)} />
+              <Input
+                type="datetime-local"
+                dir="ltr"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+              />
             </div>
             <div className="space-y-1.5">
               <Label>تاريخ الاستحقاق (اختياري)</Label>
-              <Input type="date" dir="ltr" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+              <Input
+                type="date"
+                dir="ltr"
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+              />
             </div>
           </div>
 
           <div className="space-y-1.5">
             <Label>التفاصيل (اختياري)</Label>
-            <Textarea rows={2} value={details} onChange={(e) => setDetails(e.target.value)} placeholder="مثلاً: ماء ديتر وكاله" maxLength={500} />
+            <Textarea
+              rows={2}
+              value={details}
+              onChange={(e) => setDetails(e.target.value)}
+              placeholder="مثلاً: ماء ديتر وكاله"
+              maxLength={500}
+            />
           </div>
 
-          <RadioGroup value={direction} onValueChange={(v) => setDirection(v as "credit" | "debit")} className="grid grid-cols-2 gap-2">
-            <label className={`flex items-center justify-center gap-2 rounded-xl border-2 p-3 cursor-pointer transition-all ${direction === "credit" ? "border-success bg-success-soft text-success" : "border-border"}`}>
+          <RadioGroup
+            value={direction}
+            onValueChange={(v) => setDirection(v as "credit" | "debit")}
+            className="grid grid-cols-2 gap-2"
+          >
+            <label
+              className={`flex items-center justify-center gap-2 rounded-xl border-2 p-3 cursor-pointer transition-all ${direction === "credit" ? "border-success bg-success-soft text-success" : "border-border"}`}
+            >
               <RadioGroupItem value="credit" className="sr-only" />
               <TrendingUp className="size-4" /> له (دائن)
             </label>
-            <label className={`flex items-center justify-center gap-2 rounded-xl border-2 p-3 cursor-pointer transition-all ${direction === "debit" ? "border-danger bg-danger-soft text-danger" : "border-border"}`}>
+            <label
+              className={`flex items-center justify-center gap-2 rounded-xl border-2 p-3 cursor-pointer transition-all ${direction === "debit" ? "border-danger bg-danger-soft text-danger" : "border-border"}`}
+            >
               <RadioGroupItem value="debit" className="sr-only" />
               <TrendingDown className="size-4" /> عليه (مدين)
             </label>
@@ -263,20 +389,36 @@ export function AddTransactionDialog({ open, onOpenChange, people, currencies, o
                 onChange={(e) => {
                   const f = e.target.files?.[0];
                   if (!f) return;
-                  if (f.size > 5 * 1024 * 1024) { toast.error("الحد الأقصى 5MB"); return; }
+                  if (f.size > 5 * 1024 * 1024) {
+                    toast.error("الحد الأقصى 5MB");
+                    return;
+                  }
                   setPendingFile(f);
                 }}
               />
               {pendingFile ? (
                 <div className="flex items-center justify-between gap-2 rounded-lg border-2 border-primary/30 bg-primary/5 px-2.5 py-2">
                   <div className="flex items-center gap-2 min-w-0">
-                    {pendingFile.type.startsWith("image/") ? <ImageIcon className="size-4 text-primary shrink-0" /> : <FileText className="size-4 text-primary shrink-0" />}
+                    {pendingFile.type.startsWith("image/") ? (
+                      <ImageIcon className="size-4 text-primary shrink-0" />
+                    ) : (
+                      <FileText className="size-4 text-primary shrink-0" />
+                    )}
                     <div className="min-w-0">
                       <div className="text-[12px] font-medium truncate">{pendingFile.name}</div>
-                      <div className="text-[10px] text-muted-foreground">{(pendingFile.size / 1024).toFixed(1)} KB</div>
+                      <div className="text-[10px] text-muted-foreground">
+                        {(pendingFile.size / 1024).toFixed(1)} KB
+                      </div>
                     </div>
                   </div>
-                  <button type="button" onClick={() => { setPendingFile(null); if (fileRef.current) fileRef.current.value = ""; }} className="p-1 rounded hover:bg-danger/10 text-danger shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPendingFile(null);
+                      if (fileRef.current) fileRef.current.value = "";
+                    }}
+                    className="p-1 rounded hover:bg-danger/10 text-danger shrink-0"
+                  >
                     <X className="size-4" />
                   </button>
                 </div>
@@ -293,7 +435,11 @@ export function AddTransactionDialog({ open, onOpenChange, people, currencies, o
             </div>
           )}
 
-          <Button onClick={submit} disabled={busy} className="w-full bg-gradient-primary text-primary-foreground shadow-glow">
+          <Button
+            onClick={submit}
+            disabled={busy}
+            className="w-full bg-gradient-primary text-primary-foreground shadow-glow"
+          >
             {busy ? "..." : editing ? "حفظ التعديلات" : "حفظ المعاملة"}
           </Button>
         </div>

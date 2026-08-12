@@ -31,7 +31,9 @@ export async function exportPersonStatementPDF(opts: StatementPdfOpts) {
   });
 
   const used = currencies.filter(
-    (c) => filteredTxs.some((t) => t.currency_id === c.id) || openings.some((o) => o.currency_id === c.id),
+    (c) =>
+      filteredTxs.some((t) => t.currency_id === c.id) ||
+      openings.some((o) => o.currency_id === c.id),
   );
   if (used.length === 0 && currencies.length > 0) used.push(currencies[0]!);
   used.sort((a, b) => Number(b.is_base) - Number(a.is_base));
@@ -49,9 +51,17 @@ export async function exportPersonStatementPDF(opts: StatementPdfOpts) {
   const sections = used.map((cur) => renderCurrencySection(cur, filteredTxs, openings)).join("");
 
   const html = buildStatementHtml({
-    personName, phone, company, logo, filteredTxs,
+    personName,
+    phone,
+    company,
+    logo,
+    filteredTxs,
     base: currencies.find((c) => c.is_base) ?? currencies[0],
-    totalCredit, totalDebit, sections, dateFrom, dateTo,
+    totalCredit,
+    totalDebit,
+    sections,
+    dateFrom,
+    dateTo,
   });
 
   await renderHtmlToPdf(html, `statement-${personName}-${Date.now()}.pdf`);

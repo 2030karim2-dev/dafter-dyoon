@@ -4,13 +4,7 @@
  */
 import type { BoardBucket } from "@/lib/followup/board.server";
 
-export const TEMPLATE_KINDS = [
-  "upcoming",
-  "due_today",
-  "overdue",
-  "statement",
-  "thanks",
-] as const;
+export const TEMPLATE_KINDS = ["upcoming", "due_today", "overdue", "statement", "thanks"] as const;
 export type TemplateKind = (typeof TEMPLATE_KINDS)[number];
 
 export const TEMPLATE_LABEL: Record<string, string> = {

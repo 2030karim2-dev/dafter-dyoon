@@ -34,9 +34,15 @@ export function channelAvailability() {
   };
 }
 
-async function twilioSend(to: string, body: string, from: string, whatsapp: boolean): Promise<SendResult> {
+async function twilioSend(
+  to: string,
+  body: string,
+  from: string,
+  whatsapp: boolean,
+): Promise<SendResult> {
   const k = keys();
-  if (!k.lovable || !k.twilio) return { ok: false, unavailable: true, error: "قناة Twilio غير مربوطة" };
+  if (!k.lovable || !k.twilio)
+    return { ok: false, unavailable: true, error: "قناة Twilio غير مربوطة" };
   const prefix = whatsapp ? "whatsapp:" : "";
   const res = await fetch(`${GATEWAY}/twilio/Messages.json`, {
     method: "POST",
@@ -65,7 +71,11 @@ async function twilioSend(to: string, body: string, from: string, whatsapp: bool
 }
 
 /** Automatic WhatsApp send (requires a linked Twilio connection + sender number). */
-export async function sendWhatsApp(to: string, body: string, from: string | null): Promise<SendResult> {
+export async function sendWhatsApp(
+  to: string,
+  body: string,
+  from: string | null,
+): Promise<SendResult> {
   if (!from) return { ok: false, unavailable: true, error: "لم يتم تحديد رقم واتساب المُرسل" };
   return twilioSend(to, body, from, true);
 }
@@ -97,7 +107,8 @@ export async function sendSms(to: string, body: string, from: string | null): Pr
 /** Telegram message to the owner's chat. */
 export async function sendTelegram(chatId: string, text: string): Promise<SendResult> {
   const k = keys();
-  if (!k.lovable || !k.telegram) return { ok: false, unavailable: true, error: "بوت تليجرام غير مربوط" };
+  if (!k.lovable || !k.telegram)
+    return { ok: false, unavailable: true, error: "بوت تليجرام غير مربوط" };
   const res = await fetch(`${GATEWAY}/telegram/sendMessage`, {
     method: "POST",
     headers: {
@@ -113,7 +124,11 @@ export async function sendTelegram(chatId: string, text: string): Promise<SendRe
     return { ok: false, error: `Telegram ${res.status}: ${raw.slice(0, 300)}` };
   }
   try {
-    const j = JSON.parse(raw) as { ok?: boolean; description?: string; result?: { message_id?: number } };
+    const j = JSON.parse(raw) as {
+      ok?: boolean;
+      description?: string;
+      result?: { message_id?: number };
+    };
     if (j.ok === false) return { ok: false, error: j.description ?? "Telegram error" };
     return { ok: true, ref: j.result?.message_id ? String(j.result.message_id) : undefined };
   } catch {

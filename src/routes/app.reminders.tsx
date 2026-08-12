@@ -7,13 +7,21 @@ import { Bell, AlarmClock, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/common/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
-import { completeReminder, snoozeReminder, syncRemindersFromTransactions, type Reminder } from "@/lib/reminders";
+import {
+  completeReminder,
+  snoozeReminder,
+  syncRemindersFromTransactions,
+  type Reminder,
+} from "@/lib/reminders";
 import { ReminderCard, REPEAT_LABEL } from "@/features/reminders/ReminderCard";
 import { ReminderFormDialog } from "@/features/reminders/ReminderFormDialog";
 
 export const Route = createFileRoute("/app/reminders")({ component: RemindersPage });
 
-interface Person { id: string; name: string }
+interface Person {
+  id: string;
+  name: string;
+}
 type Filter = "overdue" | "today" | "upcoming" | "done";
 
 function RemindersPage() {
@@ -70,13 +78,16 @@ function RemindersPage() {
   const del = async (id: string) => {
     if (!confirm("حذف التذكير؟")) return;
     await supabase.from("reminders").delete().eq("id", id);
-    toast.success("تم الحذف"); load();
+    toast.success("تم الحذف");
+    load();
   };
 
   const filtered = useMemo(() => {
     const now = new Date();
-    const startToday = new Date(now); startToday.setHours(0, 0, 0, 0);
-    const endToday = new Date(now); endToday.setHours(23, 59, 59, 999);
+    const startToday = new Date(now);
+    startToday.setHours(0, 0, 0, 0);
+    const endToday = new Date(now);
+    endToday.setHours(23, 59, 59, 999);
     return items.filter((r) => {
       const d = new Date(r.due_date);
       if (filter === "done") return r.is_done;
@@ -89,11 +100,16 @@ function RemindersPage() {
 
   const counts = useMemo(() => {
     const now = new Date();
-    const startToday = new Date(now); startToday.setHours(0, 0, 0, 0);
-    const endToday = new Date(now); endToday.setHours(23, 59, 59, 999);
+    const startToday = new Date(now);
+    startToday.setHours(0, 0, 0, 0);
+    const endToday = new Date(now);
+    endToday.setHours(23, 59, 59, 999);
     const c = { overdue: 0, today: 0, upcoming: 0, done: 0 };
     for (const r of items) {
-      if (r.is_done) { c.done++; continue; }
+      if (r.is_done) {
+        c.done++;
+        continue;
+      }
       const d = new Date(r.due_date);
       if (d < startToday) c.overdue++;
       else if (d <= endToday) c.today++;
@@ -111,16 +127,30 @@ function RemindersPage() {
 
   return (
     <div className="space-y-3">
-      <PageHeader icon={Bell} title="التذكيرات" subtitle={`${counts.overdue + counts.today + counts.upcoming} نشط · ${counts.done} مكتمل`} back="/app" />
+      <PageHeader
+        icon={Bell}
+        title="التذكيرات"
+        subtitle={`${counts.overdue + counts.today + counts.upcoming} نشط · ${counts.done} مكتمل`}
+        back="/app"
+      />
 
       <div className="flex items-center gap-1.5">
-        <Button size="sm" variant="outline" onClick={sync} disabled={syncing} className="h-8 text-[11px] gap-1">
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={sync}
+          disabled={syncing}
+          className="h-8 text-[11px] gap-1"
+        >
           <RefreshCw className={`size-3 ${syncing ? "animate-spin" : ""}`} /> مزامنة من الديون
         </Button>
         {user && (
           <ReminderFormDialog
             open={open}
-            onOpenChange={(v) => { if (!v) setEditing(null); setOpen(v); }}
+            onOpenChange={(v) => {
+              if (!v) setEditing(null);
+              setOpen(v);
+            }}
             editing={editing}
             userId={user.id}
             people={people}
@@ -135,17 +165,25 @@ function RemindersPage() {
             key={t.id}
             onClick={() => setFilter(t.id)}
             className={`shrink-0 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-colors flex items-center gap-1 ${
-              filter === t.id ? "bg-primary text-primary-foreground" : "bg-secondary hover:bg-secondary/70"
+              filter === t.id
+                ? "bg-primary text-primary-foreground"
+                : "bg-secondary hover:bg-secondary/70"
             }`}
           >
             <span>{t.label}</span>
-            <span className={`text-[10px] font-bold ${filter === t.id ? "opacity-80" : t.tone}`}>{t.count}</span>
+            <span className={`text-[10px] font-bold ${filter === t.id ? "opacity-80" : t.tone}`}>
+              {t.count}
+            </span>
           </button>
         ))}
       </div>
 
       {filtered.length === 0 ? (
-        <EmptyState icon={AlarmClock} title="لا توجد تذكيرات" description="أضف تذكيراً أو زامن من الديون التي لها تاريخ استحقاق" />
+        <EmptyState
+          icon={AlarmClock}
+          title="لا توجد تذكيرات"
+          description="أضف تذكيراً أو زامن من الديون التي لها تاريخ استحقاق"
+        />
       ) : (
         <div className="space-y-1.5 animate-in fade-in">
           {filtered.map((r) => (
@@ -155,7 +193,10 @@ function RemindersPage() {
               personName={people.find((p) => p.id === r.person_id)?.name}
               onToggle={() => toggleDone(r)}
               onSnooze={(d) => snooze(r.id, d)}
-              onEdit={() => { setEditing(r); setOpen(true); }}
+              onEdit={() => {
+                setEditing(r);
+                setOpen(true);
+              }}
               onDelete={() => del(r.id)}
             />
           ))}

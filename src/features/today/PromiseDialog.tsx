@@ -26,7 +26,14 @@ const plusDays = (n: number) => {
 
 /** Log a "promise to pay" — the strongest collection signal in debt platforms. */
 export function PromiseDialog({
-  open, onOpenChange, personId, personName, currencyId, currencyLabel, suggested, onDone,
+  open,
+  onOpenChange,
+  personId,
+  personName,
+  currencyId,
+  currencyLabel,
+  suggested,
+  onDone,
 }: Props) {
   const [amount, setAmount] = useState(suggested ? String(suggested) : "");
   const [date, setDate] = useState(() => plusDays(3));
@@ -36,10 +43,21 @@ export function PromiseDialog({
 
   const submit = async () => {
     const v = parseFloat(amount);
-    if (!v || v <= 0) { toast.error("أدخل المبلغ الموعود"); return; }
+    if (!v || v <= 0) {
+      toast.error("أدخل المبلغ الموعود");
+      return;
+    }
     setBusy(true);
     try {
-      await create({ data: { person_id: personId, currency_id: currencyId, amount: v, promised_date: date, note: note || null } });
+      await create({
+        data: {
+          person_id: personId,
+          currency_id: currencyId,
+          amount: v,
+          promised_date: date,
+          note: note || null,
+        },
+      });
       toast.success("تم تسجيل الوعد بالسداد");
       onOpenChange(false);
       setNote("");
@@ -54,14 +72,23 @@ export function PromiseDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm">
-        <DialogHeader><DialogTitle className="text-sm">وعد بالسداد — {personName}</DialogTitle></DialogHeader>
+        <DialogHeader>
+          <DialogTitle className="text-sm">وعد بالسداد — {personName}</DialogTitle>
+        </DialogHeader>
         <div className="space-y-3">
           <div className="text-[10px] text-muted-foreground bg-secondary rounded-lg p-2">
-            إذا لم يُوفَ الوعد في موعده سيظهر تلقائياً في صندوق اليوم وترتفع خطورة العميل. العملة: <span className="font-bold">{currencyLabel}</span>
+            إذا لم يُوفَ الوعد في موعده سيظهر تلقائياً في صندوق اليوم وترتفع خطورة العميل. العملة:{" "}
+            <span className="font-bold">{currencyLabel}</span>
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs">المبلغ الموعود</Label>
-            <Input type="number" inputMode="decimal" dir="ltr" value={amount} onChange={(e) => setAmount(e.target.value)} />
+            <Input
+              type="number"
+              inputMode="decimal"
+              dir="ltr"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+            />
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs">تاريخ الوعد</Label>
@@ -72,8 +99,11 @@ export function PromiseDialog({
                 { l: "3 أيام", d: 3 },
                 { l: "أسبوع", d: 7 },
               ].map((o) => (
-                <button key={o.d} onClick={() => setDate(plusDays(o.d))}
-                  className="text-[10px] px-2 py-1 rounded-full bg-secondary hover:bg-primary/10 hover:text-primary transition-colors">
+                <button
+                  key={o.d}
+                  onClick={() => setDate(plusDays(o.d))}
+                  className="text-[10px] px-2 py-1 rounded-full bg-secondary hover:bg-primary/10 hover:text-primary transition-colors"
+                >
                   {o.l}
                 </button>
               ))}
@@ -81,9 +111,17 @@ export function PromiseDialog({
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs">ملاحظة (اختياري)</Label>
-            <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="وعد بالسداد بعد تحصيل مستحقاته" />
+            <Input
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="وعد بالسداد بعد تحصيل مستحقاته"
+            />
           </div>
-          <Button onClick={submit} disabled={busy} className="w-full bg-gradient-primary text-primary-foreground">
+          <Button
+            onClick={submit}
+            disabled={busy}
+            className="w-full bg-gradient-primary text-primary-foreground"
+          >
             حفظ الوعد
           </Button>
         </div>

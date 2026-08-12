@@ -8,7 +8,8 @@ import html2canvas from "html2canvas";
  */
 export async function renderHtmlToPdf(html: string, fileName: string) {
   const host = document.createElement("div");
-  host.style.cssText = "position:fixed;inset:auto auto 0 -10000px;width:794px;z-index:-1;pointer-events:none;opacity:0;";
+  host.style.cssText =
+    "position:fixed;inset:auto auto 0 -10000px;width:794px;z-index:-1;pointer-events:none;opacity:0;";
   host.innerHTML = html;
   document.body.appendChild(host);
 
@@ -33,7 +34,16 @@ export async function renderHtmlToPdf(html: string, fileName: string) {
     const imgH = (canvas.height * imgW) / canvas.width;
 
     if (imgH <= pageH) {
-      pdf.addImage(canvas.toDataURL("image/jpeg", 0.95), "JPEG", 0, 0, imgW, imgH, undefined, "FAST");
+      pdf.addImage(
+        canvas.toDataURL("image/jpeg", 0.95),
+        "JPEG",
+        0,
+        0,
+        imgW,
+        imgH,
+        undefined,
+        "FAST",
+      );
     } else {
       paginateCanvas(pdf, canvas, pageW, pageH);
     }
@@ -64,7 +74,16 @@ function paginateCanvas(pdf: jsPDF, canvas: HTMLCanvasElement, pageW: number, pa
     ctx.drawImage(canvas, 0, y, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
     const sliceImgH = (sliceH * pageW) / canvas.width;
     if (!first) pdf.addPage();
-    pdf.addImage(slice.toDataURL("image/jpeg", 0.95), "JPEG", 0, 0, pageW, sliceImgH, undefined, "FAST");
+    pdf.addImage(
+      slice.toDataURL("image/jpeg", 0.95),
+      "JPEG",
+      0,
+      0,
+      pageW,
+      sliceImgH,
+      undefined,
+      "FAST",
+    );
     first = false;
     y += sliceH;
   }

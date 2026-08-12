@@ -7,16 +7,40 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { BarChart3, Download, FileText, TrendingUp, TrendingDown } from "lucide-react";
 import { fmtMoney, fmtDate, monthRange } from "@/lib/format";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  LineChart,
+  Line,
+} from "recharts";
 import { CurrencyScope } from "@/components/common/CurrencyScope";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
 
 export const Route = createFileRoute("/app/reports")({ component: ReportsPage });
 
-interface Cur { id: string; name: string; symbol: string; is_base: boolean }
-interface Person { id: string; name: string }
-interface Tx { person_id: string; amount: number; direction: string; currency_id: string; transaction_date: string }
+interface Cur {
+  id: string;
+  name: string;
+  symbol: string;
+  is_base: boolean;
+}
+interface Person {
+  id: string;
+  name: string;
+}
+interface Tx {
+  person_id: string;
+  amount: number;
+  direction: string;
+  currency_id: string;
+  transaction_date: string;
+}
 
 function ReportsPage() {
   const { user } = useAuth();
@@ -42,7 +66,13 @@ function ReportsPage() {
   const [curId, setCurId] = useState<string>("");
   useEffect(() => {
     if (curs.length === 0 || curId) return;
-    const saved = (() => { try { return localStorage.getItem("scope_currency"); } catch { return null; } })();
+    const saved = (() => {
+      try {
+        return localStorage.getItem("scope_currency");
+      } catch {
+        return null;
+      }
+    })();
     setCurId((curs.find((c) => c.id === saved) ?? base)?.id ?? "");
   }, [curs, base, curId]);
   const activeCur = curs.find((c) => c.id === curId) ?? base;
@@ -56,16 +86,20 @@ function ReportsPage() {
     for (let i = 5; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const { start, end } = monthRange(d);
-      let credit = 0, debit = 0;
+      let credit = 0,
+        debit = 0;
       for (const t of scoped) {
         const ts = new Date(t.transaction_date).getTime();
         if (ts < start.getTime() || ts >= end.getTime()) continue;
         const v = Number(t.amount);
-        if (t.direction === "credit") credit += v; else debit += v;
+        if (t.direction === "credit") credit += v;
+        else debit += v;
       }
       arr.push({
         month: `${d.getMonth() + 1}/${String(d.getFullYear()).slice(2)}`,
-        credit: Math.round(credit), debit: Math.round(debit), net: Math.round(credit - debit),
+        credit: Math.round(credit),
+        debit: Math.round(debit),
+        net: Math.round(credit - debit),
       });
     }
     return arr;
@@ -85,10 +119,12 @@ function ReportsPage() {
   }, [scoped, people]);
 
   const totals = useMemo(() => {
-    let owe = 0, owed = 0;
+    let owe = 0,
+      owed = 0;
     for (const t of scoped) {
       const v = Number(t.amount);
-      if (t.direction === "credit") owed += v; else owe += v;
+      if (t.direction === "credit") owed += v;
+      else owe += v;
     }
     return { owe, owed, net: owed - owe };
   }, [scoped]);
@@ -98,26 +134,42 @@ function ReportsPage() {
     for (const t of txs) {
       const cur = curs.find((c) => c.id === t.currency_id)?.name ?? "";
       const person = people.find((p) => p.id === t.person_id)?.name ?? "";
-      rows.push([t.direction === "credit" ? "له" : "عليه", fmtDate(t.transaction_date), String(t.amount), cur, person]);
+      rows.push([
+        t.direction === "credit" ? "له" : "عليه",
+        fmtDate(t.transaction_date),
+        String(t.amount),
+        cur,
+        person,
+      ]);
     }
-    const csv = "\uFEFF" + rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const csv =
+      "\uFEFF" +
+      rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a"); a.href = url; a.download = `daftarak-report-${Date.now()}.csv`; a.click();
-    URL.revokeObjectURL(url); toast.success("تم التنزيل");
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `daftarak-report-${Date.now()}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("تم التنزيل");
   };
 
   const exportPDF = () => {
     const doc = new jsPDF();
-    doc.setFontSize(18); doc.text("Daftarak Report", 14, 20);
-    doc.setFontSize(10); doc.text(`Generated: ${new Date().toISOString().slice(0, 10)}`, 14, 28);
-    doc.setFontSize(12); doc.text(`Total Owed to you: ${fmtMoney(totals.owed)} ${activeCur?.name ?? ""}`, 14, 42);
+    doc.setFontSize(18);
+    doc.text("Daftarak Report", 14, 20);
+    doc.setFontSize(10);
+    doc.text(`Generated: ${new Date().toISOString().slice(0, 10)}`, 14, 28);
+    doc.setFontSize(12);
+    doc.text(`Total Owed to you: ${fmtMoney(totals.owed)} ${activeCur?.name ?? ""}`, 14, 42);
     doc.text(`Total You owe: ${fmtMoney(totals.owe)} ${activeCur?.name ?? ""}`, 14, 50);
     doc.text(`Net: ${fmtMoney(totals.net)}`, 14, 58);
     doc.text("Top balances:", 14, 72);
     let y = 80;
     topPeople.forEach((p) => {
-      doc.text(`${p.name}: ${p.net >= 0 ? "+" : ""}${fmtMoney(p.net)}`, 14, y); y += 8;
+      doc.text(`${p.name}: ${p.net >= 0 ? "+" : ""}${fmtMoney(p.net)}`, 14, y);
+      y += 8;
     });
     doc.save(`daftarak-report-${Date.now()}.pdf`);
     toast.success("تم التنزيل");
@@ -138,9 +190,28 @@ function ReportsPage() {
       <CurrencyScope currencies={curs} value={curId} onChange={setCurId} />
 
       <div className="grid grid-cols-3 gap-2">
-        <Card className="p-3"><div className="text-[10px] text-muted-foreground flex items-center gap-1"><TrendingUp className="size-3 text-success" />لك</div><div className="font-bold text-success text-sm mt-1">{fmtMoney(totals.owed)}</div></Card>
-        <Card className="p-3"><div className="text-[10px] text-muted-foreground flex items-center gap-1"><TrendingDown className="size-3 text-danger" />عليك</div><div className="font-bold text-danger text-sm mt-1">{fmtMoney(totals.owe)}</div></Card>
-        <Card className="p-3"><div className="text-[10px] text-muted-foreground">الصافي</div><div className={`font-bold text-sm mt-1 ${totals.net >= 0 ? "text-success" : "text-danger"}`}>{fmtMoney(totals.net)}</div></Card>
+        <Card className="p-3">
+          <div className="text-[10px] text-muted-foreground flex items-center gap-1">
+            <TrendingUp className="size-3 text-success" />
+            لك
+          </div>
+          <div className="font-bold text-success text-sm mt-1">{fmtMoney(totals.owed)}</div>
+        </Card>
+        <Card className="p-3">
+          <div className="text-[10px] text-muted-foreground flex items-center gap-1">
+            <TrendingDown className="size-3 text-danger" />
+            عليك
+          </div>
+          <div className="font-bold text-danger text-sm mt-1">{fmtMoney(totals.owe)}</div>
+        </Card>
+        <Card className="p-3">
+          <div className="text-[10px] text-muted-foreground">الصافي</div>
+          <div
+            className={`font-bold text-sm mt-1 ${totals.net >= 0 ? "text-success" : "text-danger"}`}
+          >
+            {fmtMoney(totals.net)}
+          </div>
+        </Card>
       </div>
 
       <Tabs defaultValue="movement">
@@ -175,7 +246,14 @@ function ReportsPage() {
                   <XAxis dataKey="month" fontSize={11} />
                   <YAxis fontSize={11} />
                   <Tooltip formatter={(v: unknown) => fmtMoney(Number(v ?? 0))} />
-                  <Line type="monotone" dataKey="net" name="الصافي" stroke="var(--primary)" strokeWidth={2.5} dot={{ r: 4 }} />
+                  <Line
+                    type="monotone"
+                    dataKey="net"
+                    name="الصافي"
+                    stroke="var(--primary)"
+                    strokeWidth={2.5}
+                    dot={{ r: 4 }}
+                  />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -187,21 +265,33 @@ function ReportsPage() {
             <h3 className="font-semibold text-sm mb-2">أكبر الأرصدة</h3>
             {topPeople.length === 0 ? (
               <div className="text-sm text-muted-foreground py-4 text-center">لا توجد بيانات</div>
-            ) : topPeople.map((p) => (
-              <div key={p.id} className="flex items-center justify-between py-2 border-b last:border-0">
-                <span className="text-sm font-medium">{p.name}</span>
-                <span className={`font-bold text-sm ${p.net >= 0 ? "text-success" : "text-danger"}`}>
-                  {p.net >= 0 ? "+" : ""}{fmtMoney(p.net)}
-                </span>
-              </div>
-            ))}
+            ) : (
+              topPeople.map((p) => (
+                <div
+                  key={p.id}
+                  className="flex items-center justify-between py-2 border-b last:border-0"
+                >
+                  <span className="text-sm font-medium">{p.name}</span>
+                  <span
+                    className={`font-bold text-sm ${p.net >= 0 ? "text-success" : "text-danger"}`}
+                  >
+                    {p.net >= 0 ? "+" : ""}
+                    {fmtMoney(p.net)}
+                  </span>
+                </div>
+              ))
+            )}
           </Card>
         </TabsContent>
       </Tabs>
 
       <div className="grid grid-cols-2 gap-2">
-        <Button onClick={exportCSV} variant="outline"><FileText className="size-4" /> تصدير CSV</Button>
-        <Button onClick={exportPDF} className="bg-gradient-primary text-primary-foreground"><Download className="size-4" /> تصدير PDF</Button>
+        <Button onClick={exportCSV} variant="outline">
+          <FileText className="size-4" /> تصدير CSV
+        </Button>
+        <Button onClick={exportPDF} className="bg-gradient-primary text-primary-foreground">
+          <Download className="size-4" /> تصدير PDF
+        </Button>
       </div>
     </div>
   );

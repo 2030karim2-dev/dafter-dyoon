@@ -22,8 +22,14 @@ const TABS: { key: TodayTab; label: string }[] = [
 ];
 
 export function TodayTabs({
-  tab, counts, onChange,
-}: { tab: TodayTab; counts: TodayCounts; onChange: (t: TodayTab) => void }) {
+  tab,
+  counts,
+  onChange,
+}: {
+  tab: TodayTab;
+  counts: TodayCounts;
+  onChange: (t: TodayTab) => void;
+}) {
   return (
     <div className="flex gap-1 overflow-x-auto no-scrollbar -mx-1 px-1">
       {TABS.map((t) => {

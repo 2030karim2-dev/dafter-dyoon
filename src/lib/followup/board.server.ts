@@ -208,8 +208,13 @@ export function buildBoard(input: {
     if (!peopleMap.has(t.person_id)) continue;
     const key = `${t.person_id}|${t.currency_id}`;
     const sign = t.direction === "credit" ? 1 : -1; // credit = customer owes us
-    const acc =
-      grouped.get(key) ?? { net: 0, count: 0, daysOverdue: -99999, oldestDue: null, txId: null };
+    const acc = grouped.get(key) ?? {
+      net: 0,
+      count: 0,
+      daysOverdue: -99999,
+      oldestDue: null,
+      txId: null,
+    };
     acc.net += sign * Number(t.amount);
     acc.count += 1;
     if (t.due_date) {

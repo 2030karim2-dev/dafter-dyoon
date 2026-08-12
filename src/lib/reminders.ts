@@ -20,10 +20,17 @@ export interface Reminder {
 export function advanceDate(iso: string, kind: RepeatKind): string {
   const d = new Date(iso);
   switch (kind) {
-    case "daily": d.setDate(d.getDate() + 1); break;
-    case "weekly": d.setDate(d.getDate() + 7); break;
-    case "monthly": d.setMonth(d.getMonth() + 1); break;
-    default: return iso;
+    case "daily":
+      d.setDate(d.getDate() + 1);
+      break;
+    case "weekly":
+      d.setDate(d.getDate() + 7);
+      break;
+    case "monthly":
+      d.setMonth(d.getMonth() + 1);
+      break;
+    default:
+      return iso;
   }
   return d.toISOString();
 }
@@ -32,14 +39,18 @@ export function advanceDate(iso: string, kind: RepeatKind): string {
 export async function completeReminder(r: Pick<Reminder, "id" | "due_date" | "repeat">) {
   if (r.repeat && r.repeat !== "none") {
     const next = advanceDate(r.due_date, r.repeat);
-    return supabase.from("reminders").update({ due_date: next, snoozed_until: null }).eq("id", r.id);
+    return supabase
+      .from("reminders")
+      .update({ due_date: next, snoozed_until: null })
+      .eq("id", r.id);
   }
   return supabase.from("reminders").update({ is_done: true }).eq("id", r.id);
 }
 
 /** Snooze a reminder by N days (updates due_date + snoozed_until). */
 export async function snoozeReminder(id: string, days: number) {
-  const d = new Date(); d.setDate(d.getDate() + days);
+  const d = new Date();
+  d.setDate(d.getDate() + days);
   const iso = d.toISOString();
   return supabase.from("reminders").update({ due_date: iso, snoozed_until: iso }).eq("id", id);
 }
@@ -60,12 +71,19 @@ export async function syncRemindersFromTransactions(userId: string) {
 
   const ids = txns.map((t) => t.id);
   const { data: existing } = await supabase
-    .from("reminders").select("transaction_id").in("transaction_id", ids);
-  const have = new Set((existing ?? []).map((e: { transaction_id: string | null }) => e.transaction_id));
+    .from("reminders")
+    .select("transaction_id")
+    .in("transaction_id", ids);
+  const have = new Set(
+    (existing ?? []).map((e: { transaction_id: string | null }) => e.transaction_id),
+  );
 
   const personIds = Array.from(new Set(txns.map((t) => t.person_id).filter(Boolean)));
   const { data: people } = personIds.length
-    ? await supabase.from("people").select("id,name").in("id", personIds as string[])
+    ? await supabase
+        .from("people")
+        .select("id,name")
+        .in("id", personIds as string[])
     : { data: [] as { id: string; name: string }[] };
   const nameOf = new Map((people ?? []).map((p) => [p.id, p.name]));
 
@@ -83,6 +101,9 @@ export async function syncRemindersFromTransactions(userId: string) {
 
   if (toInsert.length === 0) return 0;
   const { error } = await supabase.from("reminders").insert(toInsert);
-  if (error) { console.warn("sync reminders error", error.message); return 0; }
+  if (error) {
+    console.warn("sync reminders error", error.message);
+    return 0;
+  }
   return toInsert.length;
 }

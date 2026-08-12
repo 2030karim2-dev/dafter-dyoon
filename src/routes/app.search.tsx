@@ -10,8 +10,19 @@ import { smartMatch } from "@/lib/search/match";
 
 export const Route = createFileRoute("/app/search")({ component: SearchPage });
 
-interface Person { id: string; name: string; phone: string | null }
-interface Tx { id: string; person_id: string; amount: number; direction: string; transaction_date: string; details: string | null }
+interface Person {
+  id: string;
+  name: string;
+  phone: string | null;
+}
+interface Tx {
+  id: string;
+  person_id: string;
+  amount: number;
+  direction: string;
+  transaction_date: string;
+  details: string | null;
+}
 
 function SearchPage() {
   const { user } = useAuth();
@@ -24,7 +35,12 @@ function SearchPage() {
     (async () => {
       const [{ data: p }, { data: t }] = await Promise.all([
         supabase.from("people").select("id,name,phone").eq("user_id", user.id),
-        supabase.from("transactions").select("id,person_id,amount,direction,transaction_date,details").eq("user_id", user.id).order("transaction_date", { ascending: false }).limit(500),
+        supabase
+          .from("transactions")
+          .select("id,person_id,amount,direction,transaction_date,details")
+          .eq("user_id", user.id)
+          .order("transaction_date", { ascending: false })
+          .limit(500),
       ]);
       setPeople((p ?? []) as Person[]);
       setTxs((t ?? []) as Tx[]);
@@ -64,9 +80,18 @@ function SearchPage() {
           {peopleHits.length > 0 && (
             <Section icon={User} title={`الأشخاص (${peopleHits.length})`}>
               {peopleHits.map((p) => (
-                <Link key={p.id} to="/app/person/$id" params={{ id: p.id }} className="block bg-card border rounded-lg p-2 hover:shadow-card transition">
+                <Link
+                  key={p.id}
+                  to="/app/person/$id"
+                  params={{ id: p.id }}
+                  className="block bg-card border rounded-lg p-2 hover:shadow-card transition"
+                >
                   <div className="font-semibold text-[12px]">{p.name}</div>
-                  {p.phone && <div className="text-[10px] text-muted-foreground" dir="ltr">{p.phone}</div>}
+                  {p.phone && (
+                    <div className="text-[10px] text-muted-foreground" dir="ltr">
+                      {p.phone}
+                    </div>
+                  )}
                 </Link>
               ))}
             </Section>
@@ -77,15 +102,31 @@ function SearchPage() {
               {txHits.map((t) => {
                 const credit = t.direction === "credit";
                 return (
-                  <Link key={t.id} to="/app/person/$id" params={{ id: t.person_id }} className="block bg-card border rounded-lg p-2">
+                  <Link
+                    key={t.id}
+                    to="/app/person/$id"
+                    params={{ id: t.person_id }}
+                    className="block bg-card border rounded-lg p-2"
+                  >
                     <div className="flex justify-between items-start gap-2">
                       <div className="min-w-0">
-                        <div className="text-[12px] font-semibold truncate">{pMap.get(t.person_id)?.name ?? "—"}</div>
-                        {t.details && <div className="text-[10px] text-muted-foreground truncate">{t.details}</div>}
-                        <div className="text-[10px] text-muted-foreground">{fmtDate(t.transaction_date)}</div>
+                        <div className="text-[12px] font-semibold truncate">
+                          {pMap.get(t.person_id)?.name ?? "—"}
+                        </div>
+                        {t.details && (
+                          <div className="text-[10px] text-muted-foreground truncate">
+                            {t.details}
+                          </div>
+                        )}
+                        <div className="text-[10px] text-muted-foreground">
+                          {fmtDate(t.transaction_date)}
+                        </div>
                       </div>
-                      <div className={`font-bold text-[12px] tabular-nums ${credit ? "text-success" : "text-danger"}`}>
-                        {credit ? "+" : "-"}{fmtMoney(Number(t.amount))}
+                      <div
+                        className={`font-bold text-[12px] tabular-nums ${credit ? "text-success" : "text-danger"}`}
+                      >
+                        {credit ? "+" : "-"}
+                        {fmtMoney(Number(t.amount))}
                       </div>
                     </div>
                   </Link>
@@ -94,9 +135,10 @@ function SearchPage() {
             </Section>
           )}
 
-
           {peopleHits.length === 0 && txHits.length === 0 && (
-            <div className="text-center py-10 text-muted-foreground text-[12px]">لا توجد نتائج لـ "{q}"</div>
+            <div className="text-center py-10 text-muted-foreground text-[12px]">
+              لا توجد نتائج لـ "{q}"
+            </div>
           )}
         </div>
       )}
@@ -104,7 +146,15 @@ function SearchPage() {
   );
 }
 
-function Section({ icon: Icon, title, children }: { icon: React.ComponentType<{ className?: string }>; title: string; children: React.ReactNode }) {
+function Section({
+  icon: Icon,
+  title,
+  children,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="space-y-1.5">
       <div className="flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground px-1">

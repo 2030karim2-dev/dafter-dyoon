@@ -19,7 +19,9 @@ export function MultiCurrencyTotals({ txs, currencies }: Props) {
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between px-1">
-        <div className="text-[10px] font-bold text-muted-foreground tracking-wide">الأرصدة حسب العملة</div>
+        <div className="text-[10px] font-bold text-muted-foreground tracking-wide">
+          الأرصدة حسب العملة
+        </div>
         <div className="text-[9px] text-muted-foreground tabular-nums">{rows.length} عملة</div>
       </div>
       <div className="grid grid-cols-2 gap-1.5">

@@ -9,13 +9,25 @@ export async function registerServiceWorker(): Promise<ServiceWorkerRegistration
     swReg = await navigator.serviceWorker.register("/sw.js");
     // Try to enable periodic background sync (Chromium only)
     try {
-      const status = await (navigator as any).permissions?.query?.({ name: "periodic-background-sync" as PermissionName });
-      if (status?.state === "granted" && (swReg as any).periodicSync) {
-        await (swReg as any).periodicSync.register("daftarak-check", { minInterval: 12 * 60 * 60 * 1000 });
+      type PeriodicSyncReg = ServiceWorkerRegistration & {
+        periodicSync?: { register: (tag: string, opts: { minInterval: number }) => Promise<void> };
+      };
+      const status = await navigator.permissions.query({
+        name: "periodic-background-sync" as PermissionName,
+      });
+      const reg = swReg as PeriodicSyncReg;
+      if (status.state === "granted" && reg.periodicSync) {
+        await reg.periodicSync.register("daftarak-check", {
+          minInterval: 12 * 60 * 60 * 1000,
+        });
       }
-    } catch { /* not supported */ }
+    } catch {
+      /* not supported */
+    }
     return swReg;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 export async function ensureNotificationPermission(): Promise<boolean> {
@@ -31,8 +43,20 @@ export async function notify(title: string, body: string, url = "/app/followup",
   if (!ok) return;
   const reg = await registerServiceWorker();
   if (reg) {
-    reg.showNotification(title, { body, icon: "/favicon.ico", badge: "/favicon.ico", tag, dir: "rtl", lang: "ar", data: { url } } as NotificationOptions);
+    reg.showNotification(title, {
+      body,
+      icon: "/favicon.ico",
+      badge: "/favicon.ico",
+      tag,
+      dir: "rtl",
+      lang: "ar",
+      data: { url },
+    } as NotificationOptions);
   } else {
-    try { new Notification(title, { body, icon: "/favicon.ico" }); } catch { /* ignore */ }
+    try {
+      new Notification(title, { body, icon: "/favicon.ico" });
+    } catch {
+      /* ignore */
+    }
   }
 }

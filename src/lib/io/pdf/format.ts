@@ -8,9 +8,18 @@ export interface Tx {
   currency_id: string;
 }
 
-export interface Currency { id: string; name: string; symbol: string; is_base?: boolean }
+export interface Currency {
+  id: string;
+  name: string;
+  symbol: string;
+  is_base?: boolean;
+}
 
-export interface OpeningBalance { currency_id: string; amount: number; direction: string }
+export interface OpeningBalance {
+  currency_id: string;
+  amount: number;
+  direction: string;
+}
 
 export interface CompanyInfo {
   name?: string | null;
@@ -23,7 +32,10 @@ export interface CompanyInfo {
 }
 
 export function fmt(n: number) {
-  return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2, minimumFractionDigits: 2 }).format(n);
+  return new Intl.NumberFormat("en-US", {
+    maximumFractionDigits: 2,
+    minimumFractionDigits: 2,
+  }).format(n);
 }
 
 export function fmtInt(n: number) {
@@ -38,6 +50,9 @@ export function dmy(d: string | Date) {
 export function esc(s: string | null | undefined) {
   if (s == null) return "";
   return String(s)
-    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }

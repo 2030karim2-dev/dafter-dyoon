@@ -47,8 +47,8 @@ export function PersonTable({ rows, onEdit, onArchive, onDelete }: Props) {
               const stateTint = settled
                 ? ""
                 : isCredit
-                ? "border-r-2 border-r-success"
-                : "border-r-2 border-r-danger";
+                  ? "border-r-2 border-r-success"
+                  : "border-r-2 border-r-danger";
               return (
                 <tr
                   key={person.id}
@@ -64,10 +64,15 @@ export function PersonTable({ rows, onEdit, onArchive, onDelete }: Props) {
                       {person.name}
                     </Link>
                   </td>
-                  <td className="px-2 py-1.5 hidden sm:table-cell text-muted-foreground tabular-nums" dir="ltr">
+                  <td
+                    className="px-2 py-1.5 hidden sm:table-cell text-muted-foreground tabular-nums"
+                    dir="ltr"
+                  >
                     {person.phone || "—"}
                   </td>
-                  <td className="px-2 py-1.5 text-center tabular-nums text-muted-foreground">{balance.count}</td>
+                  <td className="px-2 py-1.5 text-center tabular-nums text-muted-foreground">
+                    {balance.count}
+                  </td>
                   <td className="px-2 py-1.5 text-left tabular-nums font-semibold text-success">
                     {(balance.totalCredit ?? 0) > 0 ? fmtMoney(balance.totalCredit ?? 0) : "—"}
                   </td>
@@ -89,7 +94,12 @@ export function PersonTable({ rows, onEdit, onArchive, onDelete }: Props) {
                       >
                         {isCredit ? "" : "-"}
                         {fmtMoney(Math.abs(balance.net))}
-                        {balance.symbol ? <span className="text-[8.5px] font-bold opacity-75"> {balance.symbol}</span> : null}
+                        {balance.symbol ? (
+                          <span className="text-[8.5px] font-bold opacity-75">
+                            {" "}
+                            {balance.symbol}
+                          </span>
+                        ) : null}
                       </span>
                     )}
                   </td>

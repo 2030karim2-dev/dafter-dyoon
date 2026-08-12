@@ -5,23 +5,31 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { PageHeader } from "@/components/common/PageHeader";
+import { useAuth } from "@/lib/auth";
+import { readNotifPref, writeNotifPref } from "@/lib/notifications";
 import { Bell, BellRing, Clock } from "lucide-react";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/app/settings/notifications")({ component: NotificationsPage });
+export const Route = createFileRoute("/app/settings/notifications")({
+  component: NotificationsPage,
+});
 
 function NotificationsPage() {
+  const { user } = useAuth();
   const [enabled, setEnabled] = useState(false);
   const [reminderTime, setReminderTime] = useState("09:00");
   const [permission, setPermission] = useState<NotificationPermission>("default");
 
   useEffect(() => {
+    if (!user) return;
+    setEnabled(readNotifPref(user.id, "enabled") === "1");
+    setReminderTime(readNotifPref(user.id, "time") ?? "09:00");
     try {
-      setEnabled(localStorage.getItem("daftarak.notif.enabled") === "1");
-      setReminderTime(localStorage.getItem("daftarak.notif.time") ?? "09:00");
       if (typeof Notification !== "undefined") setPermission(Notification.permission);
-    } catch {}
-  }, []);
+    } catch {
+      /* ignore */
+    }
+  }, [user]);
 
   const requestPerm = async () => {
     if (typeof Notification === "undefined") return toast.error("متصفحك لا يدعم الإشعارات");
@@ -37,17 +45,22 @@ function NotificationsPage() {
 
   const toggle = (v: boolean) => {
     setEnabled(v);
-    try { localStorage.setItem("daftarak.notif.enabled", v ? "1" : "0"); } catch {}
+    if (user) writeNotifPref(user.id, "enabled", v ? "1" : "0");
   };
 
   const saveTime = (t: string) => {
     setReminderTime(t);
-    try { localStorage.setItem("daftarak.notif.time", t); } catch {}
+    if (user) writeNotifPref(user.id, "time", t);
   };
 
   return (
     <div className="space-y-2.5">
-      <PageHeader icon={Bell} title="الإشعارات" subtitle="تذكيرات الاستحقاقات والديون" back="/app/settings" />
+      <PageHeader
+        icon={Bell}
+        title="الإشعارات"
+        subtitle="تذكيرات الاستحقاقات والديون"
+        back="/app/settings"
+      />
 
       <Card className="p-2.5 space-y-2.5">
         <div className="flex items-center gap-2">
@@ -57,12 +70,25 @@ function NotificationsPage() {
           <div className="flex-1 min-w-0">
             <div className="font-semibold text-[12px] leading-tight">تنبيهات المتصفح</div>
             <div className="text-[10px] text-muted-foreground truncate">
-              {permission === "granted" ? "مسموح" : permission === "denied" ? "مرفوض من المتصفح" : "بحاجة لإذن"}
+              {permission === "granted"
+                ? "مسموح"
+                : permission === "denied"
+                  ? "مرفوض من المتصفح"
+                  : "بحاجة لإذن"}
             </div>
           </div>
-          {permission === "granted"
-            ? <Switch checked={enabled} onCheckedChange={toggle} />
-            : <Button size="sm" className="h-7 text-[11px] px-2" onClick={requestPerm} disabled={permission === "denied"}>طلب الإذن</Button>}
+          {permission === "granted" ? (
+            <Switch checked={enabled} onCheckedChange={toggle} />
+          ) : (
+            <Button
+              size="sm"
+              className="h-7 text-[11px] px-2"
+              onClick={requestPerm}
+              disabled={permission === "denied"}
+            >
+              طلب الإذن
+            </Button>
+          )}
         </div>
       </Card>
 

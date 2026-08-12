@@ -50,18 +50,19 @@ export function PersonRow({ person, balance, index = 0, onEdit, onArchive, onDel
             settled
               ? "bg-secondary text-muted-foreground ring-border"
               : isCredit
-              ? "bg-success-soft text-success ring-success/30"
-              : "bg-danger-soft text-danger ring-danger/30"
+                ? "bg-success-soft text-success ring-success/30"
+                : "bg-danger-soft text-danger ring-danger/30"
           }`}
         >
           {person.name.trim().charAt(0)}
         </div>
         <div className="flex-1 min-w-0">
           <div className="font-semibold text-[12.5px] truncate leading-tight">{person.name}</div>
-          <div className="flex items-center gap-1.5 mt-0.5 text-[9.5px] text-muted-foreground">
+          <div className="flex items-center gap-1.5 mt-0.5 text-[10.5px] text-muted-foreground">
             {person.phone ? (
               <span className="inline-flex items-center gap-0.5" dir="ltr">
-                <Phone className="size-2.5" />{person.phone}
+                <Phone className="size-2.5" />
+                {person.phone}
               </span>
             ) : (
               <span>{balance.count} معاملة</span>
@@ -71,13 +72,21 @@ export function PersonRow({ person, balance, index = 0, onEdit, onArchive, onDel
         </div>
         <div className="text-left shrink-0">
           {settled ? (
-            <div className="text-[9.5px] text-muted-foreground font-semibold uppercase">مسوّى</div>
+            <div className="text-[10.5px] text-muted-foreground font-semibold uppercase">مسوّى</div>
           ) : (
             <>
-              <div className={`font-black text-[13px] tabular-nums leading-tight ${isCredit ? "text-success" : "text-danger"}`}>
-                {isCredit ? "" : "-"}{fmtMoney(Math.abs(balance.net))}{balance.symbol ? <span className="text-[9px] font-bold opacity-75"> {balance.symbol}</span> : null}
+              <div
+                className={`font-black text-[13px] tabular-nums leading-tight ${isCredit ? "text-success" : "text-danger"}`}
+              >
+                {isCredit ? "" : "-"}
+                {fmtMoney(Math.abs(balance.net))}
+                {balance.symbol ? (
+                  <span className="text-[9px] font-bold opacity-75"> {balance.symbol}</span>
+                ) : null}
               </div>
-              <div className="text-[8.5px] text-muted-foreground font-semibold uppercase mt-0.5">{isCredit ? "له" : "عليه"}</div>
+              <div className="text-[8.5px] text-muted-foreground font-semibold uppercase mt-0.5">
+                {isCredit ? "له" : "عليه"}
+              </div>
             </>
           )}
         </div>
@@ -93,17 +102,27 @@ export function PersonRow({ person, balance, index = 0, onEdit, onArchive, onDel
       </div>
 
       {(hasLast || (balance.totalCredit ?? 0) > 0 || (balance.totalDebit ?? 0) > 0) && (
-        <div className="mt-1.5 pt-1.5 border-t border-dashed grid grid-cols-3 gap-1 text-[9.5px]">
+        <div className="mt-1.5 pt-1.5 border-t border-dashed grid grid-cols-3 gap-1 text-[10.5px]">
           <div className="flex flex-col">
-            <span className="text-muted-foreground flex items-center gap-0.5"><TrendingUp className="size-2.5 text-success" /> له</span>
-            <span className="tabular-nums font-bold text-success">{fmtMoney(balance.totalCredit ?? 0)}</span>
+            <span className="text-muted-foreground flex items-center gap-0.5">
+              <TrendingUp className="size-2.5 text-success" /> له
+            </span>
+            <span className="tabular-nums font-bold text-success">
+              {fmtMoney(balance.totalCredit ?? 0)}
+            </span>
           </div>
           <div className="flex flex-col">
-            <span className="text-muted-foreground flex items-center gap-0.5"><TrendingDown className="size-2.5 text-danger" /> عليه</span>
-            <span className="tabular-nums font-bold text-danger">{fmtMoney(balance.totalDebit ?? 0)}</span>
+            <span className="text-muted-foreground flex items-center gap-0.5">
+              <TrendingDown className="size-2.5 text-danger" /> عليه
+            </span>
+            <span className="tabular-nums font-bold text-danger">
+              {fmtMoney(balance.totalDebit ?? 0)}
+            </span>
           </div>
           <div className="flex flex-col items-end">
-            <span className="text-muted-foreground flex items-center gap-0.5"><Clock className="size-2.5" /> آخر</span>
+            <span className="text-muted-foreground flex items-center gap-0.5">
+              <Clock className="size-2.5" /> آخر
+            </span>
             <span className="tabular-nums font-semibold text-foreground/80 truncate">
               {hasLast ? fmtDate(new Date(balance.lastDate).toISOString()) : "—"}
             </span>
@@ -118,6 +137,5 @@ export function PersonRow({ person, balance, index = 0, onEdit, onArchive, onDel
         </div>
       )}
     </Link>
-
   );
 }

@@ -12,8 +12,15 @@ import { RecurringFormDialog } from "@/features/recurring/RecurringFormDialog";
 
 export const Route = createFileRoute("/app/recurring")({ component: RecurringPage });
 
-interface Cur { id: string; name: string; is_base: boolean }
-interface Person { id: string; name: string }
+interface Cur {
+  id: string;
+  name: string;
+  is_base: boolean;
+}
+interface Person {
+  id: string;
+  name: string;
+}
 
 function RecurringPage() {
   const { user } = useAuth();
@@ -33,7 +40,9 @@ function RecurringPage() {
     setCurs((c ?? []) as Cur[]);
     setPeople((p ?? []) as Person[]);
   };
-  useEffect(() => { load(); }, [user]);
+  useEffect(() => {
+    load();
+  }, [user]);
 
   const toggleActive = async (r: Rule) => {
     await supabase.from("recurring_rules").update({ is_active: !r.is_active }).eq("id", r.id);
@@ -43,7 +52,8 @@ function RecurringPage() {
   const del = async (id: string) => {
     if (!confirm("حذف هذه الدورية؟")) return;
     await supabase.from("recurring_rules").delete().eq("id", id);
-    toast.success("تم الحذف"); load();
+    toast.success("تم الحذف");
+    load();
   };
 
   const runNow = async () => {
@@ -55,7 +65,10 @@ function RecurringPage() {
 
   return (
     <div className="space-y-4">
-      <Link to="/app/settings" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+      <Link
+        to="/app/settings"
+        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+      >
         <ArrowRight className="size-4" /> رجوع للإعدادات
       </Link>
 
@@ -87,7 +100,11 @@ function RecurringPage() {
       </div>
 
       {items.length === 0 ? (
-        <EmptyState icon={Repeat} title="لا توجد دوريات" description="أضف رواتب، إيجارات، اشتراكات لتُسجّل تلقائياً عند موعدها." />
+        <EmptyState
+          icon={Repeat}
+          title="لا توجد دوريات"
+          description="أضف رواتب، إيجارات، اشتراكات لتُسجّل تلقائياً عند موعدها."
+        />
       ) : (
         <div className="space-y-2">
           {items.map((r) => (

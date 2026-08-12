@@ -20,27 +20,32 @@ function b64decode(s: string): Uint8Array {
 }
 
 export function biometricEnabled(): boolean {
-  try { return localStorage.getItem(ENABLED_KEY) === "1" && !!localStorage.getItem(CRED_KEY); }
-  catch { return false; }
+  try {
+    return localStorage.getItem(ENABLED_KEY) === "1" && !!localStorage.getItem(CRED_KEY);
+  } catch {
+    return false;
+  }
 }
 
 export async function biometricAvailable(): Promise<boolean> {
   try {
     if (typeof window === "undefined" || !window.PublicKeyCredential) return false;
     return await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
-  } catch { return false; }
+  } catch {
+    return false;
+  }
 }
 
 export async function registerBiometric(userId: string, userName: string): Promise<void> {
   const challenge = crypto.getRandomValues(new Uint8Array(32));
   const userIdBytes = new TextEncoder().encode(userId);
-  const cred = await navigator.credentials.create({
+  const cred = (await navigator.credentials.create({
     publicKey: {
       challenge,
       rp: { name: "دفترك" },
       user: { id: userIdBytes, name: userName || userId, displayName: userName || "دفترك" },
       pubKeyCredParams: [
-        { type: "public-key", alg: -7 },   // ES256
+        { type: "public-key", alg: -7 }, // ES256
         { type: "public-key", alg: -257 }, // RS256
       ],
       authenticatorSelection: {
@@ -51,7 +56,7 @@ export async function registerBiometric(userId: string, userName: string): Promi
       timeout: 60_000,
       attestation: "none",
     },
-  }) as PublicKeyCredential | null;
+  })) as PublicKeyCredential | null;
   if (!cred) throw new Error("لم يتم تسجيل البصمة");
   localStorage.setItem(CRED_KEY, b64encode(cred.rawId));
   localStorage.setItem(ENABLED_KEY, "1");
@@ -61,7 +66,9 @@ export function disableBiometric() {
   try {
     localStorage.removeItem(CRED_KEY);
     localStorage.setItem(ENABLED_KEY, "0");
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
 }
 
 export async function verifyBiometric(): Promise<boolean> {

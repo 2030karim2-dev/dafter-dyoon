@@ -12,7 +12,12 @@ export interface AiOpeningRow {
   notes: string;
 }
 
-interface CurrencyLite { id: string; name: string; symbol: string; is_base: boolean }
+interface CurrencyLite {
+  id: string;
+  name: string;
+  symbol: string;
+  is_base: boolean;
+}
 
 function normName(s: string) {
   return s.trim().replace(/\s+/g, " ").toLowerCase();
@@ -29,7 +34,9 @@ function pickCurrency(code: string, curs: CurrencyLite[], baseId: string): strin
     USD: ["$", "دولار", "usd", "dollar"],
   };
   const tk = tokens[code] ?? [];
-  const hit = curs.find((c) => tk.some((t) => c.name.toLowerCase().includes(t) || c.symbol.toLowerCase().includes(t)));
+  const hit = curs.find((c) =>
+    tk.some((t) => c.name.toLowerCase().includes(t) || c.symbol.toLowerCase().includes(t)),
+  );
   return hit?.id ?? baseId;
 }
 
@@ -48,18 +55,32 @@ export async function commitOpeningBalances(
   rows: AiOpeningRow[],
 ): Promise<CommitResult> {
   const res: CommitResult = {
-    peopleCreated: 0, peopleMerged: 0, openingsInserted: 0,
-    openingsUpdated: 0, paymentsInserted: 0, skipped: 0, errors: [],
+    peopleCreated: 0,
+    peopleMerged: 0,
+    openingsInserted: 0,
+    openingsUpdated: 0,
+    paymentsInserted: 0,
+    skipped: 0,
+    errors: [],
   };
 
   // Load currencies
-  const { data: curData } = await supabase.from("currencies").select("id,name,symbol,is_base").eq("user_id", userId);
+  const { data: curData } = await supabase
+    .from("currencies")
+    .select("id,name,symbol,is_base")
+    .eq("user_id", userId);
   const curs = (curData ?? []) as CurrencyLite[];
   const baseId = curs.find((c) => c.is_base)?.id ?? curs[0]?.id;
-  if (!baseId) { res.errors.push("لا توجد عملات معرّفة"); return res; }
+  if (!baseId) {
+    res.errors.push("لا توجد عملات معرّفة");
+    return res;
+  }
 
   // Load existing people
-  const { data: existing } = await supabase.from("people").select("id,name,phone").eq("user_id", userId);
+  const { data: existing } = await supabase
+    .from("people")
+    .select("id,name,phone")
+    .eq("user_id", userId);
   type PRow = { id: string; name: string; phone: string | null };
   const exList = (existing ?? []) as PRow[];
   const byPhone = new Map<string, PRow>();
@@ -77,7 +98,10 @@ export async function commitOpeningBalances(
 
   rows.forEach((r, i) => {
     const name = (r.name || "").trim();
-    if (!name) { res.skipped++; return; }
+    if (!name) {
+      res.skipped++;
+      return;
+    }
     const ph = normPhone(r.phone);
     const existingP = (ph && byPhone.get(ph)) || byName.get(normName(name));
     if (existingP) {
@@ -106,12 +130,18 @@ export async function commitOpeningBalances(
       else unique.set(k, { name: c.name, phone: c.phone, idxs: [c.idx] });
     }
     const payload = Array.from(unique.values()).map((u) => ({
-      user_id: userId, name: u.name, phone: u.phone, type: "general",
+      user_id: userId,
+      name: u.name,
+      phone: u.phone,
+      type: "general",
     }));
     for (let i = 0; i < payload.length; i += 200) {
       const chunk = payload.slice(i, i + 200);
       const { data, error } = await supabase.from("people").insert(chunk).select("id,name,phone");
-      if (error) { res.errors.push(error.message); continue; }
+      if (error) {
+        res.errors.push(error.message);
+        continue;
+      }
       const inserted = (data ?? []) as PRow[];
       // map back by name+phone order (insert preserves order)
       const uniqArr = Array.from(unique.values()).slice(i, i + 200);
@@ -133,14 +163,35 @@ export async function commitOpeningBalances(
       .from("opening_balances")
       .select("id,person_id,currency_id,amount")
       .in("person_id", chunk);
-    for (const o of (data ?? []) as { id: string; person_id: string; currency_id: string; amount: number }[]) {
+    for (const o of (data ?? []) as {
+      id: string;
+      person_id: string;
+      currency_id: string;
+      amount: number;
+    }[]) {
       existingOB.set(`${o.person_id}:${o.currency_id}`, { id: o.id, amount: o.amount });
     }
   }
 
   // Build opening + payment payloads
-  type OBIns = { user_id: string; person_id: string; currency_id: string; amount: number; direction: string; note: string; opening_date?: string };
-  type TxIns = { user_id: string; person_id: string; currency_id: string; amount: number; direction: string; details: string; transaction_date: string };
+  type OBIns = {
+    user_id: string;
+    person_id: string;
+    currency_id: string;
+    amount: number;
+    direction: string;
+    note: string;
+    opening_date?: string;
+  };
+  type TxIns = {
+    user_id: string;
+    person_id: string;
+    currency_id: string;
+    amount: number;
+    direction: string;
+    details: string;
+    transaction_date: string;
+  };
   const obInsert: OBIns[] = [];
   const obUpdate: { id: string; amount: number; direction: string; note: string | null }[] = [];
   const payments: TxIns[] = [];
@@ -158,8 +209,12 @@ export async function commitOpeningBalances(
       obUpdate.push({ id: ex.id, amount: r.amount, direction: r.direction, note });
     } else {
       obInsert.push({
-        user_id: userId, person_id: pid, currency_id: curId,
-        amount: r.amount, direction: r.direction, note,
+        user_id: userId,
+        person_id: pid,
+        currency_id: curId,
+        amount: r.amount,
+        direction: r.direction,
+        note,
         ...(opening_date ? { opening_date } : {}),
       });
       existingOB.set(key, { id: "_", amount: r.amount });
@@ -169,7 +224,9 @@ export async function commitOpeningBalances(
         ? new Date(r.last_payment_date).toISOString()
         : new Date().toISOString();
       payments.push({
-        user_id: userId, person_id: pid, currency_id: curId,
+        user_id: userId,
+        person_id: pid,
+        currency_id: curId,
         amount: r.last_payment_amount,
         direction: r.direction === "credit" ? "debit" : "credit", // payment reduces the balance
         details: "آخر دفعة (مستورد)",
@@ -181,7 +238,9 @@ export async function commitOpeningBalances(
   // Insert openings
   for (let i = 0; i < obInsert.length; i += 200) {
     const chunk = obInsert.slice(i, i + 200);
-    const { error, count } = await supabase.from("opening_balances").insert(chunk, { count: "exact" });
+    const { error, count } = await supabase
+      .from("opening_balances")
+      .insert(chunk, { count: "exact" });
     if (error) res.errors.push(error.message);
     else res.openingsInserted += count ?? chunk.length;
   }

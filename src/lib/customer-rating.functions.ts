@@ -13,14 +13,17 @@ const MODEL = "google/gemini-3-flash-preview";
  */
 export const analyzeCustomerRating = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
-    z.object({ person_id: z.string().uuid() }).parse(d),
-  )
+  .inputValidator((d: unknown) => z.object({ person_id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
 
     const [{ data: person }, { data: txs }] = await Promise.all([
-      supabase.from("people").select("id,name").eq("id", data.person_id).eq("user_id", userId).single(),
+      supabase
+        .from("people")
+        .select("id,name")
+        .eq("id", data.person_id)
+        .eq("user_id", userId)
+        .single(),
       supabase
         .from("transactions")
         .select("amount,direction,transaction_date,due_date,is_paid,details")
@@ -91,19 +94,17 @@ export const analyzeCustomerRating = createServerFn({ method: "POST" })
       prompt: `الاسم: ${person.name}\nالبيانات: ${JSON.stringify(summary)}`,
     });
 
-    await supabase
-      .from("customer_ratings")
-      .upsert(
-        {
-          user_id: userId,
-          person_id: data.person_id,
-          score: output.score,
-          rating: output.rating,
-          reason: output.reason,
-          computed_at: new Date().toISOString(),
-        },
-        { onConflict: "person_id" },
-      );
+    await supabase.from("customer_ratings").upsert(
+      {
+        user_id: userId,
+        person_id: data.person_id,
+        score: output.score,
+        rating: output.rating,
+        reason: output.reason,
+        computed_at: new Date().toISOString(),
+      },
+      { onConflict: "person_id" },
+    );
 
     return { ...output, summary };
   });

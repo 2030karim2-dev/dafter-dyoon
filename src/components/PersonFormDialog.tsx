@@ -27,7 +27,16 @@ interface Props {
   onSuccess: (id: string) => void;
 }
 
-const COLORS = ["#3b82f6", "#10b981", "#f97316", "#ec4899", "#8b5cf6", "#ef4444", "#06b6d4", "#a16207"];
+const COLORS = [
+  "#3b82f6",
+  "#10b981",
+  "#f97316",
+  "#ec4899",
+  "#8b5cf6",
+  "#ef4444",
+  "#06b6d4",
+  "#a16207",
+];
 const TYPES = [
   { v: "customer", label: "عميل" },
   { v: "supplier", label: "مورّد" },
@@ -55,7 +64,10 @@ export function PersonFormDialog({ open, onOpenChange, editing, onSuccess }: Pro
       setColor(editing.avatar_color ?? COLORS[0]);
       setCreditLimit(editing.credit_limit != null ? String(editing.credit_limit) : "");
     } else {
-      setName(""); setPhone(""); setType("customer"); setNotes("");
+      setName("");
+      setPhone("");
+      setType("customer");
+      setNotes("");
       setColor(COLORS[Math.floor(Math.random() * COLORS.length)]);
       setCreditLimit("");
     }
@@ -64,7 +76,10 @@ export function PersonFormDialog({ open, onOpenChange, editing, onSuccess }: Pro
   const submit = async () => {
     if (!user) return;
     const nm = name.trim();
-    if (!nm) { toast.error("الاسم مطلوب"); return; }
+    if (!nm) {
+      toast.error("الاسم مطلوب");
+      return;
+    }
     setBusy(true);
     try {
       const payload = {
@@ -85,7 +100,9 @@ export function PersonFormDialog({ open, onOpenChange, editing, onSuccess }: Pro
       onOpenChange(false);
     } catch (e) {
       toast.error((e as Error).message);
-    } finally { setBusy(false); }
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -93,25 +110,45 @@ export function PersonFormDialog({ open, onOpenChange, editing, onSuccess }: Pro
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-right flex items-center gap-2">
-            {editing ? <Save className="size-4 text-primary" /> : <UserPlus className="size-4 text-primary" />}
+            {editing ? (
+              <Save className="size-4 text-primary" />
+            ) : (
+              <UserPlus className="size-4 text-primary" />
+            )}
             {editing ? "تعديل بيانات العميل" : "إضافة عميل جديد"}
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
           <div>
             <Label className="text-[12px]">الاسم *</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="اسم العميل" maxLength={80} autoFocus />
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="اسم العميل"
+              maxLength={80}
+              autoFocus
+            />
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
               <Label className="text-[12px]">رقم الجوال</Label>
               <div className="flex items-center gap-1">
-                <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="9665xxxxxxxx" dir="ltr" maxLength={30} inputMode="tel" className="flex-1" />
+                <Input
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="9665xxxxxxxx"
+                  dir="ltr"
+                  maxLength={30}
+                  inputMode="tel"
+                  className="flex-1"
+                />
                 <button
                   type="button"
                   onClick={async () => {
                     if (!contactPickerSupported()) {
-                      toast.info("جهات الاتصال غير مدعومة في هذا المتصفح — افتح التطبيق من متصفح الجوال (Chrome).");
+                      toast.info(
+                        "جهات الاتصال غير مدعومة في هذا المتصفح — افتح التطبيق من متصفح الجوال (Chrome).",
+                      );
                       return;
                     }
                     try {
@@ -134,14 +171,28 @@ export function PersonFormDialog({ open, onOpenChange, editing, onSuccess }: Pro
             </div>
             <div>
               <Label className="text-[12px]">النوع</Label>
-              <select value={type} onChange={(e) => setType(e.target.value)} className="w-full h-9 rounded-md border bg-background px-2 text-[12.5px]">
-                {TYPES.map((t) => <option key={t.v} value={t.v}>{t.label}</option>)}
+              <select
+                value={type}
+                onChange={(e) => setType(e.target.value)}
+                className="w-full h-9 rounded-md border bg-background px-2 text-[12.5px]"
+              >
+                {TYPES.map((t) => (
+                  <option key={t.v} value={t.v}>
+                    {t.label}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
           <div>
             <Label className="text-[12px]">سقف الائتمان (اختياري)</Label>
-            <Input value={creditLimit} onChange={(e) => setCreditLimit(e.target.value.replace(/[^0-9.]/g, ""))} placeholder="0" inputMode="decimal" dir="ltr" />
+            <Input
+              value={creditLimit}
+              onChange={(e) => setCreditLimit(e.target.value.replace(/[^0-9.]/g, ""))}
+              placeholder="0"
+              inputMode="decimal"
+              dir="ltr"
+            />
           </div>
           <div>
             <Label className="text-[12px]">لون البطاقة</Label>
@@ -160,9 +211,19 @@ export function PersonFormDialog({ open, onOpenChange, editing, onSuccess }: Pro
           </div>
           <div>
             <Label className="text-[12px]">ملاحظات</Label>
-            <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="عنوان، تفاصيل، أو ملاحظات داخلية" rows={2} maxLength={400} />
+            <Textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="عنوان، تفاصيل، أو ملاحظات داخلية"
+              rows={2}
+              maxLength={400}
+            />
           </div>
-          <Button onClick={submit} disabled={busy} className="w-full bg-gradient-primary text-primary-foreground">
+          <Button
+            onClick={submit}
+            disabled={busy}
+            className="w-full bg-gradient-primary text-primary-foreground"
+          >
             {busy ? "جارٍ الحفظ..." : editing ? "حفظ التعديلات" : "إضافة العميل"}
           </Button>
         </div>

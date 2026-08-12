@@ -24,7 +24,6 @@ export const EMPTY_BOARD: BoardPayload = {
   availability: { whatsapp_auto: false, telegram: false, sms: false },
 };
 
-
 /** Reads the whole board from the backend. No client-side scoring. */
 export function useBoard() {
   const fetchBoard = useServerFn(getFollowupBoardFn);
@@ -39,7 +38,12 @@ export function filterBuckets(buckets: BoardBucket[], tab: FollowupTab, q: strin
   return buckets.filter((b) => {
     if (tab === "pending" && b.reminded) return false;
     if (tab === "reminded" && !b.reminded) return false;
-    if (tab !== "all" && tab !== "pending" && tab !== "reminded" && b.severity !== (tab as Severity))
+    if (
+      tab !== "all" &&
+      tab !== "pending" &&
+      tab !== "reminded" &&
+      b.severity !== (tab as Severity)
+    )
       return false;
     return smartMatch(q, {
       text: [b.name, b.currency_name],

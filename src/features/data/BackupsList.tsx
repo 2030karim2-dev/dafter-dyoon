@@ -2,7 +2,13 @@ import { Cloud, RefreshCw, Trash2 } from "lucide-react";
 import { SettingsGroup } from "@/components/common/SettingsGroup";
 import { fmtDate } from "@/lib/format";
 
-export interface BackupItem { id: string; path: string; size_bytes: number; kind: string; created_at: string }
+export interface BackupItem {
+  id: string;
+  path: string;
+  size_bytes: number;
+  kind: string;
+  created_at: string;
+}
 
 interface Props {
   backups: BackupItem[];
@@ -27,10 +33,18 @@ export function BackupsList({ backups, onRestore, onDelete }: Props) {
             </div>
             <div className="text-[10px] text-muted-foreground mt-0.5">{fmtDate(b.created_at)}</div>
           </div>
-          <button onClick={() => onRestore(b.id)} className="text-primary p-1 hover:bg-primary/10 rounded-md" aria-label="استعادة">
+          <button
+            onClick={() => onRestore(b.id)}
+            className="text-primary p-1 hover:bg-primary/10 rounded-md"
+            aria-label="استعادة"
+          >
             <RefreshCw className="size-3.5" />
           </button>
-          <button onClick={() => onDelete(b)} className="text-danger p-1 hover:bg-danger-soft rounded-md" aria-label="حذف">
+          <button
+            onClick={() => onDelete(b)}
+            className="text-danger p-1 hover:bg-danger-soft rounded-md"
+            aria-label="حذف"
+          >
             <Trash2 className="size-3.5" />
           </button>
         </div>

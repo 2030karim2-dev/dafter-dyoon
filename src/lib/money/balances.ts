@@ -26,7 +26,7 @@ export interface CurrencyLite {
 
 export interface PerCurrencyBalance {
   currency: CurrencyLite;
-  balance: number;   // signed: + means له عندك (credit), - means عليه (debit)
+  balance: number; // signed: + means له عندك (credit), - means عليه (debit)
   txCount: number;
   opening: number;
   credit: number;
@@ -56,18 +56,21 @@ export function computeBalancesByCurrency(
     const v = Number(o.amount) * sign(o.direction);
     slot.opening += v;
     slot.balance += v;
-    if (v >= 0) slot.credit += Math.abs(v); else slot.debit += Math.abs(v);
+    if (v >= 0) slot.credit += Math.abs(v);
+    else slot.debit += Math.abs(v);
   }
   for (const t of txs) {
     const slot = map.get(t.currency_id);
     if (!slot) continue;
     const amt = Number(t.amount);
     slot.balance += amt * sign(t.direction);
-    if (t.direction === "credit") slot.credit += amt; else slot.debit += amt;
+    if (t.direction === "credit") slot.credit += amt;
+    else slot.debit += amt;
     slot.txCount += 1;
   }
-  return Array.from(map.values())
-    .sort((a, b) => Number(b.currency.is_base) - Number(a.currency.is_base));
+  return Array.from(map.values()).sort(
+    (a, b) => Number(b.currency.is_base) - Number(a.currency.is_base),
+  );
 }
 
 /**

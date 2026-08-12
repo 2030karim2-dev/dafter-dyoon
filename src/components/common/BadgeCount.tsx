@@ -15,7 +15,9 @@ export function BadgeCount({ count, tone = "primary", max = 99 }: Props) {
   if (!count) return null;
   const display = count > max ? `${max}+` : String(count);
   return (
-    <span className={`inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold rounded-full ${TONES[tone]} tabular-nums`}>
+    <span
+      className={`inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold rounded-full ${TONES[tone]} tabular-nums`}
+    >
       {display}
     </span>
   );

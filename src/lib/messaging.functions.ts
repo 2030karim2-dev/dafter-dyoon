@@ -37,25 +37,32 @@ export interface OutboxRow {
 /** Outbox list with person names resolved on the server. */
 export const getOutboxFn = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<{ rows: OutboxRow[]; availability: ReturnType<typeof channelAvailability> }> => {
-    const { supabase, userId } = context;
-    const { data } = await supabase
-      .from("outbox")
-      .select("*")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false })
-      .limit(300);
-    const rows = (data ?? []) as OutboxRow[];
-    const ids = [...new Set(rows.map((r) => r.person_id).filter(Boolean))] as string[];
-    const { data: people } = ids.length
-      ? await supabase.from("people").select("id,name").in("id", ids)
-      : { data: [] as { id: string; name: string }[] };
-    const nameOf = new Map((people ?? []).map((p) => [p.id, p.name]));
-    return {
-      rows: rows.map((r) => ({ ...r, person_name: r.person_id ? nameOf.get(r.person_id) ?? null : null })),
-      availability: channelAvailability(),
-    };
-  });
+  .handler(
+    async ({
+      context,
+    }): Promise<{ rows: OutboxRow[]; availability: ReturnType<typeof channelAvailability> }> => {
+      const { supabase, userId } = context;
+      const { data } = await supabase
+        .from("outbox")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(300);
+      const rows = (data ?? []) as OutboxRow[];
+      const ids = [...new Set(rows.map((r) => r.person_id).filter(Boolean))] as string[];
+      const { data: people } = ids.length
+        ? await supabase.from("people").select("id,name").in("id", ids)
+        : { data: [] as { id: string; name: string }[] };
+      const nameOf = new Map((people ?? []).map((p) => [p.id, p.name]));
+      return {
+        rows: rows.map((r) => ({
+          ...r,
+          person_name: r.person_id ? (nameOf.get(r.person_id) ?? null) : null,
+        })),
+        availability: channelAvailability(),
+      };
+    },
+  );
 
 /** Build (and optionally queue) a message for one customer bucket. */
 export const buildMessageFn = createServerFn({ method: "POST" })
@@ -90,7 +97,10 @@ export const buildMessageFn = createServerFn({ method: "POST" })
       varsForBucket(bucket, signature),
     );
     const channel = data.channel ?? "whatsapp";
-    const destination = channel === "telegram" ? board.channels?.telegram_chat_id ?? null : normalizePhone(bucket.phone);
+    const destination =
+      channel === "telegram"
+        ? (board.channels?.telegram_chat_id ?? null)
+        : normalizePhone(bucket.phone);
 
     let outbox_id: string | null = null;
     if (data.enqueue) {
@@ -158,7 +168,7 @@ export const enqueueMessagesFn = createServerFn({ method: "POST" })
           body: renderTemplate(templateBody(templates, kind), varsForBucket(bucket, signature)),
           destination:
             data.channel === "telegram"
-              ? board.channels?.telegram_chat_id ?? null
+              ? (board.channels?.telegram_chat_id ?? null)
               : normalizePhone(bucket.phone),
           status: "queued",
           dedupe_key: dedupeKey(bucket.person_id, kind, data.channel),

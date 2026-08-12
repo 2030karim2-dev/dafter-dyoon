@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@ai-sdk/openai-compatible": "^3.0.0",
+    "@fontsource/tajawal": "^5.2.5",
     "@cloudflare/vite-plugin": "^1.25.5",
     "@lovable.dev/cloud-auth-js": "^1.1.2",
     "@radix-ui/react-dialog": "^1.1.15",

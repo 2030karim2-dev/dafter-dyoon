@@ -29,11 +29,18 @@ export const thinBorder = {
 /** English digits, thousands separator, 2 decimals, red negatives, dash for zero. */
 export const NUM_FMT = '#,##0.00;[Red]-#,##0.00;"-"';
 
-export const solid = (argb: string) =>
-  ({ type: "pattern" as const, pattern: "solid" as const, fgColor: { argb } });
+export const solid = (argb: string) => ({
+  type: "pattern" as const,
+  pattern: "solid" as const,
+  fgColor: { argb },
+});
 
-export const rtl = (horizontal: "right" | "center" | "left" = "right", wrapText = false) =>
-  ({ horizontal, vertical: "middle" as const, readingOrder: "rtl" as const, wrapText });
+export const rtl = (horizontal: "right" | "center" | "left" = "right", wrapText = false) => ({
+  horizontal,
+  vertical: "middle" as const,
+  readingOrder: "rtl" as const,
+  wrapText,
+});
 
 /** dd/MM/yyyy using Latin digits. */
 export const fmtDateEN = (d: string | Date) => new Date(d).toLocaleDateString("en-GB");

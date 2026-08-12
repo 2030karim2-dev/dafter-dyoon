@@ -14,7 +14,7 @@ import {
 } from "@/lib/messaging/render.server";
 import { deliver } from "@/lib/messaging/providers.server";
 
-type DB = SupabaseClient<any, any, any>;
+type DB = SupabaseClient;
 type Channel = "whatsapp" | "telegram" | "sms";
 
 export interface BulkTarget {
@@ -45,13 +45,19 @@ export async function bulkMessages(
   const [tplRes, compRes, chRes] = await Promise.all([
     supabase.from("message_templates").select("kind,body,is_active").eq("user_id", userId),
     supabase.from("company_profile").select("name").eq("user_id", userId).maybeSingle(),
-    supabase.from("channel_settings").select("whatsapp_from,sms_from,telegram_chat_id").eq("user_id", userId).maybeSingle(),
+    supabase
+      .from("channel_settings")
+      .select("whatsapp_from,sms_from,telegram_chat_id")
+      .eq("user_id", userId)
+      .maybeSingle(),
   ]);
   const signature = signatureOf(board.channels, compRes.data?.name ?? null);
   const templates = tplRes.data ?? [];
 
   const rows = targets
-    .map((t) => board.buckets.find((b) => b.person_id === t.person_id && b.currency_id === t.currency_id))
+    .map((t) =>
+      board.buckets.find((b) => b.person_id === t.person_id && b.currency_id === t.currency_id),
+    )
     .filter(Boolean)
     .map((b) => {
       const bucket = b!;
@@ -65,7 +71,7 @@ export async function bulkMessages(
         body: renderTemplate(templateBody(templates, kind), varsForBucket(bucket, signature)),
         destination:
           channel === "telegram"
-            ? chRes.data?.telegram_chat_id ?? board.channels?.telegram_chat_id ?? null
+            ? (chRes.data?.telegram_chat_id ?? board.channels?.telegram_chat_id ?? null)
             : normalizePhone(bucket.phone),
         status: "queued",
         dedupe_key: dedupeKey(bucket.person_id, kind, channel),

@@ -21,10 +21,12 @@ const MappingSchema = z.object({
 export const aiSuggestImportMapping = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z.object({
-      headers: z.array(z.string()).min(1).max(60),
-      sampleRows: z.array(z.record(z.string(), z.unknown())).max(5),
-    }).parse(d),
+    z
+      .object({
+        headers: z.array(z.string()).min(1).max(60),
+        sampleRows: z.array(z.record(z.string(), z.unknown())).max(5),
+      })
+      .parse(d),
   )
   .handler(async ({ data }) => {
     const key = process.env.LOVABLE_API_KEY;
@@ -55,9 +57,7 @@ export const aiSuggestImportMapping = createServerFn({ method: "POST" })
 /** Extract structured customer/transaction rows from raw PDF text. */
 export const aiExtractFromPdfText = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
-    z.object({ text: z.string().min(20).max(60000) }).parse(d),
-  )
+  .inputValidator((d: unknown) => z.object({ text: z.string().min(20).max(60000) }).parse(d))
   .handler(async ({ data }) => {
     const key = process.env.LOVABLE_API_KEY;
     if (!key) throw new Error("AI غير متاح حالياً");
@@ -66,14 +66,18 @@ export const aiExtractFromPdfText = createServerFn({ method: "POST" })
       model: gateway(MODEL),
       output: Output.object({
         schema: z.object({
-          rows: z.array(z.object({
-            name: z.string(),
-            phone: z.string().optional(),
-            amount: z.number(),
-            direction: z.enum(["credit", "debit"]),
-            date: z.string().optional(),
-            details: z.string().optional(),
-          })).max(500),
+          rows: z
+            .array(
+              z.object({
+                name: z.string(),
+                phone: z.string().optional(),
+                amount: z.number(),
+                direction: z.enum(["credit", "debit"]),
+                date: z.string().optional(),
+                details: z.string().optional(),
+              }),
+            )
+            .max(500),
         }),
       }),
       system:
@@ -87,10 +91,12 @@ export const aiExtractFromPdfText = createServerFn({ method: "POST" })
 export const aiExtractOpeningBalances = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z.object({
-      headers: z.array(z.string()).min(1).max(40),
-      rows: z.array(z.record(z.string(), z.unknown())).min(1).max(80),
-    }).parse(d),
+    z
+      .object({
+        headers: z.array(z.string()).min(1).max(40),
+        rows: z.array(z.record(z.string(), z.unknown())).min(1).max(80),
+      })
+      .parse(d),
   )
   .handler(async ({ data }) => {
     const key = process.env.LOVABLE_API_KEY;
@@ -100,17 +106,25 @@ export const aiExtractOpeningBalances = createServerFn({ method: "POST" })
       model: gateway(MODEL),
       output: Output.object({
         schema: z.object({
-          rows: z.array(z.object({
-            name: z.string().describe("اسم العميل فقط بدون رقم الهاتف"),
-            phone: z.string().describe("رقم الجوال إن وجد، فارغ إن لم يوجد"),
-            amount: z.number().describe("المبلغ موجب دائماً"),
-            direction: z.enum(["credit", "debit"]).describe("credit=له عندي/الزبون دائن، debit=عليه/مدين"),
-            currency: z.enum(["SAR", "YER", "USD", "OTHER"]).describe("SAR=ريال سعودي، YER=ريال يمني"),
-            last_payment_amount: z.number().describe("آخر دفعة إن وجدت، 0 إن لم يوجد"),
-            last_payment_date: z.string().describe("تاريخ آخر دفعة YYYY-MM-DD أو فارغ"),
-            opening_date: z.string().describe("تاريخ الرصيد الافتتاحي YYYY-MM-DD أو فارغ"),
-            notes: z.string().describe("ملاحظات إضافية أو فارغ"),
-          })).max(80),
+          rows: z
+            .array(
+              z.object({
+                name: z.string().describe("اسم العميل فقط بدون رقم الهاتف"),
+                phone: z.string().describe("رقم الجوال إن وجد، فارغ إن لم يوجد"),
+                amount: z.number().describe("المبلغ موجب دائماً"),
+                direction: z
+                  .enum(["credit", "debit"])
+                  .describe("credit=له عندي/الزبون دائن، debit=عليه/مدين"),
+                currency: z
+                  .enum(["SAR", "YER", "USD", "OTHER"])
+                  .describe("SAR=ريال سعودي، YER=ريال يمني"),
+                last_payment_amount: z.number().describe("آخر دفعة إن وجدت، 0 إن لم يوجد"),
+                last_payment_date: z.string().describe("تاريخ آخر دفعة YYYY-MM-DD أو فارغ"),
+                opening_date: z.string().describe("تاريخ الرصيد الافتتاحي YYYY-MM-DD أو فارغ"),
+                notes: z.string().describe("ملاحظات إضافية أو فارغ"),
+              }),
+            )
+            .max(80),
         }),
       }),
       system:

@@ -4,7 +4,7 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-type DB = SupabaseClient<any, any, any>;
+type DB = SupabaseClient;
 
 export type ActivityKind = "audit" | "message" | "outbox" | "promise" | "attachment" | "tx";
 
@@ -109,9 +109,7 @@ export async function loadPersonActivity(
   for (const a of auditRes.data ?? []) {
     const meta = (a.metadata ?? {}) as Record<string, unknown>;
     const belongs =
-      a.entity_id === personId ||
-      meta["person_id"] === personId ||
-      meta["personId"] === personId;
+      a.entity_id === personId || meta["person_id"] === personId || meta["personId"] === personId;
     if (!belongs) continue;
     items.push({
       id: `au:${a.id}`,
@@ -172,8 +170,8 @@ export async function loadPersonActivity(
         p.status === "kept"
           ? "وعد سداد تم الوفاء به"
           : p.status === "broken"
-          ? "وعد سداد لم يُلتزم به"
-          : "وعد بالسداد",
+            ? "وعد سداد لم يُلتزم به"
+            : "وعد بالسداد",
       detail: p.note ?? `تاريخ الوعد: ${p.promised_date}`,
       tone,
       meta: Number(p.amount).toLocaleString("en-US"),

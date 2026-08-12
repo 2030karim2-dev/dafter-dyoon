@@ -4,8 +4,11 @@ export interface BackupSnapshot {
   version: number;
   exportedAt: string;
   user_id: string;
-  people: unknown[]; transactions: unknown[];
-  currencies: unknown[]; reminders: unknown[]; recurring: unknown[];
+  people: unknown[];
+  transactions: unknown[];
+  currencies: unknown[];
+  reminders: unknown[];
+  recurring: unknown[];
 }
 
 export async function buildSnapshot(userId: string): Promise<BackupSnapshot> {
@@ -17,8 +20,13 @@ export async function buildSnapshot(userId: string): Promise<BackupSnapshot> {
     supabase.from("recurring_rules").select("*"),
   ]);
   return {
-    version: 1, exportedAt: new Date().toISOString(), user_id: userId,
-    people: people.data ?? [], transactions: txs.data ?? [],
-    currencies: currencies.data ?? [], reminders: reminders.data ?? [], recurring: recurring.data ?? [],
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    user_id: userId,
+    people: people.data ?? [],
+    transactions: txs.data ?? [],
+    currencies: currencies.data ?? [],
+    reminders: reminders.data ?? [],
+    recurring: recurring.data ?? [],
   };
 }

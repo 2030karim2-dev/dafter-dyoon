@@ -36,7 +36,10 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         const text = (update.message?.text ?? "").trim();
         if (!chatId || !text) return Response.json({ ok: true, ignored: true });
 
-        const code = text.replace(/^\/start\s*/i, "").trim().toUpperCase();
+        const code = text
+          .replace(/^\/start\s*/i, "")
+          .trim()
+          .toUpperCase();
         if (!/^DFT-[A-Z0-9]{4,10}$/.test(code)) {
           return Response.json({ ok: true, ignored: true });
         }

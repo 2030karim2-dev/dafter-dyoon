@@ -61,8 +61,19 @@ function AboutPage() {
               color="text-primary"
               onCopy={() => copy(DEV.phone1, "الرقم")}
               actions={[
-                { href: `tel:+${DEV.phone1.replace(/^00/, "")}`, icon: Phone, label: "اتصال", className: "bg-primary/10 text-primary" },
-                { href: waLink(DEV.phone1), icon: MessageCircle, label: "واتساب", className: "bg-success/10 text-success", external: true },
+                {
+                  href: `tel:+${DEV.phone1.replace(/^00/, "")}`,
+                  icon: Phone,
+                  label: "اتصال",
+                  className: "bg-primary/10 text-primary",
+                },
+                {
+                  href: waLink(DEV.phone1),
+                  icon: MessageCircle,
+                  label: "واتساب",
+                  className: "bg-success/10 text-success",
+                  external: true,
+                },
               ]}
             />
             <ContactRow
@@ -72,8 +83,19 @@ function AboutPage() {
               color="text-primary"
               onCopy={() => copy(DEV.phone2, "الرقم")}
               actions={[
-                { href: `tel:+${DEV.phone2.replace(/^00/, "")}`, icon: Phone, label: "اتصال", className: "bg-primary/10 text-primary" },
-                { href: waLink(DEV.phone2), icon: MessageCircle, label: "واتساب", className: "bg-success/10 text-success", external: true },
+                {
+                  href: `tel:+${DEV.phone2.replace(/^00/, "")}`,
+                  icon: Phone,
+                  label: "اتصال",
+                  className: "bg-primary/10 text-primary",
+                },
+                {
+                  href: waLink(DEV.phone2),
+                  icon: MessageCircle,
+                  label: "واتساب",
+                  className: "bg-success/10 text-success",
+                  external: true,
+                },
               ]}
             />
             <ContactRow
@@ -83,7 +105,12 @@ function AboutPage() {
               color="text-danger"
               onCopy={() => copy(DEV.email, "البريد")}
               actions={[
-                { href: `mailto:${DEV.email}`, icon: Mail, label: "مراسلة", className: "bg-danger/10 text-danger" },
+                {
+                  href: `mailto:${DEV.email}`,
+                  icon: Mail,
+                  label: "مراسلة",
+                  className: "bg-danger/10 text-danger",
+                },
               ]}
             />
           </div>
@@ -105,7 +132,13 @@ function AboutPage() {
   );
 }
 
-type Action = { href: string; icon: React.ComponentType<{ className?: string }>; label: string; className: string; external?: boolean };
+type Action = {
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  className: string;
+  external?: boolean;
+};
 
 function ContactRow({
   icon: Icon,
@@ -124,12 +157,16 @@ function ContactRow({
 }) {
   return (
     <div className="py-2 flex items-center gap-2">
-      <div className={`size-8 rounded-md bg-secondary ${color} flex items-center justify-center ring-1 ring-border shrink-0`}>
+      <div
+        className={`size-8 rounded-md bg-secondary ${color} flex items-center justify-center ring-1 ring-border shrink-0`}
+      >
         <Icon className="size-4" />
       </div>
       <div className="flex-1 min-w-0 text-right">
         <div className="text-[10px] text-muted-foreground">{label}</div>
-        <div dir="ltr" className="font-mono font-semibold text-[12px] truncate text-right">{value}</div>
+        <div dir="ltr" className="font-mono font-semibold text-[12px] truncate text-right">
+          {value}
+        </div>
       </div>
       <div className="flex items-center gap-1 shrink-0">
         {actions.map((a, i) => (

@@ -4,9 +4,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Wallet, TrendingUp, Bell, Users, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
+import { completeOnboardingFn } from "@/lib/onboarding.functions";
 import { toast } from "sonner";
 
-interface Currency { id: string; name: string; symbol: string; is_base: boolean }
+interface Currency {
+  id: string;
+  name: string;
+  symbol: string;
+  is_base: boolean;
+}
 
 const SLIDES = [
   {
@@ -46,7 +52,10 @@ export function OnboardingFlow({ onDone }: Props) {
   useEffect(() => {
     if (!user) return;
     (async () => {
-      const { data } = await supabase.from("currencies").select("id,name,symbol,is_base").eq("user_id", user.id);
+      const { data } = await supabase
+        .from("currencies")
+        .select("id,name,symbol,is_base")
+        .eq("user_id", user.id);
       const list = (data ?? []) as Currency[];
       setCurrencies(list);
       const base = list.find((c) => c.is_base);
@@ -58,17 +67,10 @@ export function OnboardingFlow({ onDone }: Props) {
     if (!user) return;
     setBusy(true);
     try {
-      // Set base currency
-      if (baseId) {
-        await supabase.from("currencies").update({ is_base: false }).eq("user_id", user.id);
-        await supabase.from("currencies").update({ is_base: true }).eq("id", baseId);
-      }
-      // Save name + mark onboarded
-      await supabase.from("profiles").upsert({
-        user_id: user.id,
-        display_name: name.trim() || null,
-        onboarded: true,
-      }, { onConflict: "user_id" });
+      // Server-side: base currency + profile in one safe, ordered operation.
+      await completeOnboardingFn({
+        data: { displayName: name.trim() || null, baseCurrencyId: baseId || null },
+      });
       toast.success("جاهز للانطلاق! 🎉");
       onDone();
     } catch (e) {
@@ -114,7 +116,9 @@ export function OnboardingFlow({ onDone }: Props) {
                     key={c.id}
                     onClick={() => setBaseId(c.id)}
                     className={`p-3 rounded-xl border-2 transition-all ${
-                      baseId === c.id ? "bg-white text-primary border-white shadow-glow" : "border-white/30 bg-white/10 hover:bg-white/20"
+                      baseId === c.id
+                        ? "bg-white text-primary border-white shadow-glow"
+                        : "border-white/30 bg-white/10 hover:bg-white/20"
                     }`}
                   >
                     <div className="font-bold">{c.name}</div>
@@ -131,7 +135,10 @@ export function OnboardingFlow({ onDone }: Props) {
       {/* Dots */}
       <div className="flex justify-center gap-1.5 mb-4">
         {Array.from({ length: SLIDES.length + 1 }).map((_, i) => (
-          <div key={i} className={`h-1.5 rounded-full transition-all ${i === step ? "w-6 bg-white" : "w-1.5 bg-white/40"}`} />
+          <div
+            key={i}
+            className={`h-1.5 rounded-full transition-all ${i === step ? "w-6 bg-white" : "w-1.5 bg-white/40"}`}
+          />
         ))}
       </div>
 
@@ -140,7 +147,9 @@ export function OnboardingFlow({ onDone }: Props) {
         {!isLast && (
           <Button
             variant="ghost"
-            onClick={() => { setStep(SLIDES.length); }}
+            onClick={() => {
+              setStep(SLIDES.length);
+            }}
             className="text-white/85 hover:text-white hover:bg-white/10"
           >
             تخطّي
@@ -148,7 +157,11 @@ export function OnboardingFlow({ onDone }: Props) {
         )}
         <div className="flex-1" />
         {step > 0 && !isLast && (
-          <Button variant="ghost" onClick={() => setStep((s) => s - 1)} className="text-white hover:bg-white/10">
+          <Button
+            variant="ghost"
+            onClick={() => setStep((s) => s - 1)}
+            className="text-white hover:bg-white/10"
+          >
             <ChevronRight className="size-5" />
           </Button>
         )}
@@ -173,7 +186,7 @@ export function OnboardingFlow({ onDone }: Props) {
   );
 }
 
-function SlideView({ slide, idx }: { slide: typeof SLIDES[number]; idx: number }) {
+function SlideView({ slide, idx }: { slide: (typeof SLIDES)[number]; idx: number }) {
   const Icon = slide.icon;
   return (
     <div key={idx} className="max-w-sm animate-in fade-in slide-in-from-right-6 duration-500">

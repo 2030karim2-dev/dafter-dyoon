@@ -1,13 +1,13 @@
 import { createFileRoute, Outlet, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
-import { supabase } from "@/integrations/supabase/client";
 import { Wallet, Loader2, Bell, Search, Moon, Sun } from "lucide-react";
 import { BottomNav } from "@/components/BottomNav";
 import { BadgeCount } from "@/components/common/BadgeCount";
 import { GlobalSearchDialog } from "@/components/GlobalSearchDialog";
 import { useTheme } from "@/lib/theme";
-import { fetchPending, pollAndNotify } from "@/lib/notifications";
+import { pollAndNotify } from "@/lib/notifications";
+import { usePendingAlerts } from "@/hooks/usePendingAlerts";
 import { syncRemindersFn } from "@/lib/jobs.functions";
 import { registerServiceWorker } from "@/lib/push";
 import { AlertCenter } from "@/components/alerts/AlertCenter";
@@ -17,12 +17,18 @@ export const Route = createFileRoute("/app")({ component: AppLayout });
 function AppLayout() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const [pending, setPending] = useState(0);
+  const { count: pending } = usePendingAlerts();
   const [searchOpen, setSearchOpen] = useState(false);
   const { theme, set: setTheme } = useTheme();
-  const isDark = theme === "dark" || (theme === "system" && typeof window !== "undefined" && window.matchMedia?.("(prefers-color-scheme: dark)").matches);
+  const isDark =
+    theme === "dark" ||
+    (theme === "system" &&
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-color-scheme: dark)").matches);
 
-  useEffect(() => { registerServiceWorker(); }, []);
+  useEffect(() => {
+    registerServiceWorker();
+  }, []);
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/auth" });
@@ -30,24 +36,26 @@ function AppLayout() {
 
   useEffect(() => {
     if (!user) return;
-    let cancelled = false;
-    const load = async () => {
-      const items = await fetchPending(user.id);
-      if (!cancelled) setPending(items.length);
-    };
-    load();
     // Defer heavy backend sync until the browser is idle so navigation feels instant.
-    const idle = (cb: () => void) =>
-      (window as any).requestIdleCallback?.(cb, { timeout: 2000 }) ?? setTimeout(cb, 1200);
-    const handle = idle(() => {
+    const w = window as unknown as {
+      requestIdleCallback?: (cb: () => void, o?: object) => number;
+      cancelIdleCallback?: (h: number) => void;
+    };
+    let handle: number;
+    let usedIdle = false;
+    const cb = () => {
       syncRemindersFn().catch(() => null);
       pollAndNotify(user.id);
-    });
-    const t = setInterval(load, 5 * 60 * 1000);
+    };
+    if (w.requestIdleCallback) {
+      usedIdle = true;
+      handle = w.requestIdleCallback(cb, { timeout: 2000 });
+    } else {
+      handle = window.setTimeout(cb, 1200);
+    }
     return () => {
-      cancelled = true;
-      clearInterval(t);
-      (window as any).cancelIdleCallback?.(handle);
+      if (usedIdle) w.cancelIdleCallback?.(handle);
+      else clearTimeout(handle);
     };
   }, [user]);
 
@@ -70,13 +78,25 @@ function AppLayout() {
             دفترك
           </Link>
           <div className="flex items-center gap-0.5">
-            <button onClick={() => setSearchOpen(true)} className="p-1.5 rounded-md hover:bg-white/10 transition-colors" aria-label="بحث">
+            <button
+              onClick={() => setSearchOpen(true)}
+              className="p-1.5 rounded-md hover:bg-white/10 transition-colors"
+              aria-label="بحث"
+            >
               <Search className="size-3.5" />
             </button>
-            <button onClick={() => setTheme(isDark ? "light" : "dark")} className="p-1.5 rounded-md hover:bg-white/10 transition-colors" aria-label="تبديل المظهر">
+            <button
+              onClick={() => setTheme(isDark ? "light" : "dark")}
+              className="p-1.5 rounded-md hover:bg-white/10 transition-colors"
+              aria-label="تبديل المظهر"
+            >
               {isDark ? <Sun className="size-3.5" /> : <Moon className="size-3.5" />}
             </button>
-            <Link to="/app/notifications" className="relative p-1.5 rounded-md hover:bg-white/10 transition-colors" aria-label="الإشعارات">
+            <Link
+              to="/app/notifications"
+              className="relative p-1.5 rounded-md hover:bg-white/10 transition-colors"
+              aria-label="الإشعارات"
+            >
               <Bell className="size-3.5" />
               {pending > 0 && (
                 <span className="absolute top-0 right-0">

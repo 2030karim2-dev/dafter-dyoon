@@ -28,7 +28,12 @@ const fmtDay = (iso: string | null) =>
   iso ? new Date(iso).toLocaleDateString("ar", { day: "2-digit", month: "2-digit" }) : "—";
 
 export function FollowupCard({
-  bucket: b, selected, canAuto, onSelect, onMessage, onAutoSend,
+  bucket: b,
+  selected,
+  canAuto,
+  onSelect,
+  onMessage,
+  onAutoSend,
 }: Props) {
   const sev = SEV[b.severity];
   return (
@@ -47,15 +52,15 @@ export function FollowupCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
             <span className="font-bold text-[12px] truncate">{b.name}</span>
-            <span className={`text-[9.5px] px-1 py-px rounded font-bold ${sev.cls}`}>
+            <span className={`text-[10.5px] px-1 py-px rounded font-bold ${sev.cls}`}>
               {sev.label}
             </span>
             {b.reminded ? (
-              <span className="text-[9.5px] px-1 py-px rounded font-bold bg-success/15 text-success flex items-center gap-0.5">
+              <span className="text-[10.5px] px-1 py-px rounded font-bold bg-success/15 text-success flex items-center gap-0.5">
                 <CheckCheck className="size-2.5" /> تم التذكير {fmtDay(b.last_contact_at)}
               </span>
             ) : (
-              <span className="text-[9.5px] px-1 py-px rounded font-bold bg-danger/12 text-danger">
+              <span className="text-[10.5px] px-1 py-px rounded font-bold bg-danger/12 text-danger">
                 لم يُذكَّر
               </span>
             )}
@@ -82,7 +87,7 @@ export function FollowupCard({
           <div className="font-black text-[12.5px] tabular-nums text-danger">
             {fmtMoney(Math.abs(b.net))}
           </div>
-          <div className="text-[9.5px] text-muted-foreground">{b.currency_symbol}</div>
+          <div className="text-[10.5px] text-muted-foreground">{b.currency_symbol}</div>
         </div>
       </div>
 
@@ -95,7 +100,7 @@ export function FollowupCard({
       )}
 
       {b.reminded && b.next_reminder_at && (
-        <div className="text-[9.5px] text-muted-foreground">
+        <div className="text-[10.5px] text-muted-foreground">
           التنبيه القادم: {fmtDay(b.next_reminder_at)}
         </div>
       )}

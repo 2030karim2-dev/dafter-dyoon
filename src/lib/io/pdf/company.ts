@@ -34,5 +34,7 @@ export async function ensureArabicFontLoaded() {
       f.load('400 12px "Tajawal"'),
     ]);
     await f.ready;
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
 }

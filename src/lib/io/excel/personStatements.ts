@@ -9,20 +9,35 @@ import { downloadWorkbook, safeFileName, todayISO, wait } from "./download";
  * (or has an opening balance in). E.g. SAR + YER → two files.
  */
 export async function exportPersonStatements(personId: string, personName: string) {
-  const [{ data: person }, { data: txs }, { data: currencies }, { data: company }, { data: openings }] =
-    await Promise.all([
-      supabase.from("people").select("id,name,phone").eq("id", personId).maybeSingle(),
-      supabase
-        .from("transactions")
-        .select("amount,direction,transaction_date,details,currency_id")
-        .eq("person_id", personId)
-        .order("transaction_date", { ascending: true }),
-      supabase.from("currencies").select("id,name,symbol,is_base"),
-      supabase.from("company_profile").select("name,address,phone,email,tax_number,notes").maybeSingle(),
-      supabase.from("opening_balances").select("currency_id,amount,direction").eq("person_id", personId),
-    ]);
+  const [
+    { data: person },
+    { data: txs },
+    { data: currencies },
+    { data: company },
+    { data: openings },
+  ] = await Promise.all([
+    supabase.from("people").select("id,name,phone").eq("id", personId).maybeSingle(),
+    supabase
+      .from("transactions")
+      .select("amount,direction,transaction_date,details,currency_id")
+      .eq("person_id", personId)
+      .order("transaction_date", { ascending: true }),
+    supabase.from("currencies").select("id,name,symbol,is_base"),
+    supabase
+      .from("company_profile")
+      .select("name,address,phone,email,tax_number,notes")
+      .maybeSingle(),
+    supabase
+      .from("opening_balances")
+      .select("currency_id,amount,direction")
+      .eq("person_id", personId),
+  ]);
 
-  const p: PersonRow = (person as PersonRow | null) ?? { id: personId, name: personName, phone: null };
+  const p: PersonRow = (person as PersonRow | null) ?? {
+    id: personId,
+    name: personName,
+    phone: null,
+  };
   const curList = (currencies as CurRow[]) ?? [];
   const cMap = new Map<string, CurRow>(curList.map((c) => [c.id, c]));
   const txList = (txs as TxRow[]) ?? [];
@@ -39,7 +54,13 @@ export async function exportPersonStatements(personId: string, personName: strin
     // Nothing to export — build an empty base-currency workbook so the user still gets a valid file.
     const base = curList.find((c) => c.is_base) ?? curList[0];
     if (!base) return;
-    const buf = await buildStatementWorkbookForCurrency({ person: p, currency: base, txs: [], opening: 0, company: comp });
+    const buf = await buildStatementWorkbookForCurrency({
+      person: p,
+      currency: base,
+      txs: [],
+      opening: 0,
+      company: comp,
+    });
     downloadWorkbook(buf, `كشف-حساب-${safe}-${base.name}-${today}.xlsx`);
     return;
   }
@@ -57,7 +78,13 @@ export async function exportPersonStatements(personId: string, personName: strin
       .filter((o) => o.currency_id === cur.id)
       .reduce((s, o) => s + Number(o.amount) * (o.direction === "credit" ? 1 : -1), 0);
 
-    const buf = await buildStatementWorkbookForCurrency({ person: p, currency: cur, txs: currencyTxs, opening, company: comp });
+    const buf = await buildStatementWorkbookForCurrency({
+      person: p,
+      currency: cur,
+      txs: currencyTxs,
+      opening,
+      company: comp,
+    });
     downloadWorkbook(buf, `كشف-حساب-${safe}-${cur.name}-${today}.xlsx`);
     if (i < ordered.length - 1) await wait(400); // give the browser time between downloads
   }

@@ -30,7 +30,7 @@ export async function buildStatementWorkbookForCurrency(opts: {
   });
 
   ws.columns = [
-    { width: 6 },  // #
+    { width: 6 }, // #
     { width: 14 }, // Date
     { width: 42 }, // Details
     { width: 16 }, // Debit

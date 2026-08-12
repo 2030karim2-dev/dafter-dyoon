@@ -1,8 +1,20 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -10,8 +22,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { AmountInput } from "@/components/AmountInput";
 import { evalExpr } from "@/lib/calc";
 
-interface Cur { id: string; name: string; is_base: boolean }
-interface Person { id: string; name: string }
+interface Cur {
+  id: string;
+  name: string;
+  is_base: boolean;
+}
+interface Person {
+  id: string;
+  name: string;
+}
 
 interface Props {
   open: boolean;
@@ -35,10 +54,14 @@ export function RecurringFormDialog({ open, onOpenChange, userId, curs, people, 
 
   useEffect(() => {
     if (!open) return;
-    setTitle(""); setAmount(""); setNote("");
-    setPersonId(""); setDirection("credit");
+    setTitle("");
+    setAmount("");
+    setNote("");
+    setPersonId("");
+    setDirection("credit");
     setFrequency("monthly");
-    const d = new Date(); d.setDate(d.getDate() + 1);
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
     setNextRun(d.toISOString().slice(0, 16));
     const base = curs.find((c) => c.is_base) ?? curs[0];
     setCurrencyId(base?.id ?? "");
@@ -52,13 +75,18 @@ export function RecurringFormDialog({ open, onOpenChange, userId, curs, people, 
     if (!personId) return toast.error("اختر العميل");
     setBusy(true);
     const { error } = await supabase.from("recurring_rules").insert({
-      user_id: userId, kind: "transaction", title: title.trim(), amount: amt,
+      user_id: userId,
+      kind: "transaction",
+      title: title.trim(),
+      amount: amt,
       currency_id: currencyId,
       category_id: null,
       person_id: personId,
       direction,
-      frequency, next_run: new Date(nextRun).toISOString(),
-      note: note.trim() || null, is_active: true,
+      frequency,
+      next_run: new Date(nextRun).toISOString(),
+      note: note.trim() || null,
+      is_active: true,
     });
     setBusy(false);
     if (error) return toast.error(error.message);
@@ -70,14 +98,23 @@ export function RecurringFormDialog({ open, onOpenChange, userId, curs, people, 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
-        <Button size="sm" className="bg-gradient-primary text-primary-foreground"><Plus className="size-4" /> جديد</Button>
+        <Button size="sm" className="bg-gradient-primary text-primary-foreground">
+          <Plus className="size-4" /> جديد
+        </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md max-h-[90dvh] overflow-y-auto">
-        <DialogHeader><DialogTitle className="text-right">دورية جديدة</DialogTitle></DialogHeader>
+        <DialogHeader>
+          <DialogTitle className="text-right">دورية جديدة</DialogTitle>
+        </DialogHeader>
         <div className="space-y-3">
           <div className="space-y-1.5">
             <Label>العنوان</Label>
-            <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="مثلاً: راتب، إيجار، اشتراك" maxLength={80} />
+            <Input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="مثلاً: راتب، إيجار، اشتراك"
+              maxLength={80}
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-2">
@@ -88,8 +125,16 @@ export function RecurringFormDialog({ open, onOpenChange, userId, curs, people, 
             <div className="space-y-1.5">
               <Label>العملة</Label>
               <Select value={currencyId} onValueChange={setCurrencyId}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{curs.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {curs.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             </div>
           </div>
@@ -97,20 +142,40 @@ export function RecurringFormDialog({ open, onOpenChange, userId, curs, people, 
           <div className="space-y-1.5">
             <Label>الشخص</Label>
             <Select value={personId} onValueChange={setPersonId}>
-              <SelectTrigger><SelectValue placeholder="اختر" /></SelectTrigger>
-              <SelectContent>{people.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
+              <SelectTrigger>
+                <SelectValue placeholder="اختر" />
+              </SelectTrigger>
+              <SelectContent>
+                {people.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
             </Select>
           </div>
           <div className="grid grid-cols-2 gap-2">
-            <button onClick={() => setDirection("credit")} className={`p-2 rounded-xl border-2 text-xs font-semibold ${direction === "credit" ? "border-success bg-success-soft text-success" : "border-border"}`}>له (دائن)</button>
-            <button onClick={() => setDirection("debit")} className={`p-2 rounded-xl border-2 text-xs font-semibold ${direction === "debit" ? "border-danger bg-danger-soft text-danger" : "border-border"}`}>عليه (مدين)</button>
+            <button
+              onClick={() => setDirection("credit")}
+              className={`p-2 rounded-xl border-2 text-xs font-semibold ${direction === "credit" ? "border-success bg-success-soft text-success" : "border-border"}`}
+            >
+              له (دائن)
+            </button>
+            <button
+              onClick={() => setDirection("debit")}
+              className={`p-2 rounded-xl border-2 text-xs font-semibold ${direction === "debit" ? "border-danger bg-danger-soft text-danger" : "border-border"}`}
+            >
+              عليه (مدين)
+            </button>
           </div>
 
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1.5">
               <Label>التكرار</Label>
               <Select value={frequency} onValueChange={(v) => setFrequency(v as never)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="daily">يومي</SelectItem>
                   <SelectItem value="weekly">أسبوعي</SelectItem>
@@ -121,7 +186,12 @@ export function RecurringFormDialog({ open, onOpenChange, userId, curs, people, 
             </div>
             <div className="space-y-1.5">
               <Label>أول تشغيل</Label>
-              <Input type="datetime-local" dir="ltr" value={nextRun} onChange={(e) => setNextRun(e.target.value)} />
+              <Input
+                type="datetime-local"
+                dir="ltr"
+                value={nextRun}
+                onChange={(e) => setNextRun(e.target.value)}
+              />
             </div>
           </div>
 
@@ -130,7 +200,13 @@ export function RecurringFormDialog({ open, onOpenChange, userId, curs, people, 
             <Input value={note} onChange={(e) => setNote(e.target.value)} maxLength={200} />
           </div>
 
-          <Button onClick={save} disabled={busy} className="w-full bg-gradient-primary text-primary-foreground">{busy ? "..." : "حفظ"}</Button>
+          <Button
+            onClick={save}
+            disabled={busy}
+            className="w-full bg-gradient-primary text-primary-foreground"
+          >
+            {busy ? "..." : "حفظ"}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

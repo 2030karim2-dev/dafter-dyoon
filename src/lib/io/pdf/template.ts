@@ -20,15 +20,18 @@ interface TemplateOpts {
 export function buildStatementHtml(o: TemplateOpts): string {
   const { company, logo, personName, phone, filteredTxs, sections } = o;
   const baseSym = o.base?.symbol ?? "";
-  const periodLabel = o.dateFrom || o.dateTo
-    ? `الفترة: ${o.dateFrom ? dmy(o.dateFrom) : "—"} ← ${o.dateTo ? dmy(o.dateTo) : "—"}`
-    : "";
+  const periodLabel =
+    o.dateFrom || o.dateTo
+      ? `الفترة: ${o.dateFrom ? dmy(o.dateFrom) : "—"} ← ${o.dateTo ? dmy(o.dateTo) : "—"}`
+      : "";
 
   const contact = [
     company?.phone && `هاتف: ${esc(company.phone)}`,
     company?.email && esc(company.email),
     company?.tax_number && `الرقم الضريبي: ${esc(company.tax_number)}`,
-  ].filter(Boolean).join("  •  ");
+  ]
+    .filter(Boolean)
+    .join("  •  ");
 
   return `
     <div id="__statement_root" dir="rtl" lang="ar" style="
@@ -57,10 +60,14 @@ export function buildStatementHtml(o: TemplateOpts): string {
           <div style="font-size:10.5px;color:${C.muted};">العميل</div>
           <div style="font-size:14px;font-weight:800;">${esc(personName)}</div>
         </div>
-        ${phone ? `<div style="text-align:left;">
+        ${
+          phone
+            ? `<div style="text-align:left;">
           <div style="font-size:10.5px;color:${C.muted};">رقم الهاتف</div>
           <div style="font-size:13px;font-weight:700;direction:ltr;">${esc(phone)}</div>
-        </div>` : ""}
+        </div>`
+            : ""
+        }
       </div>
 
       ${periodLabel ? `<div style="margin-top:8px;font-size:10.5px;color:${C.muted};font-style:italic;">${periodLabel}</div>` : ""}
@@ -82,11 +89,15 @@ export function buildStatementHtml(o: TemplateOpts): string {
 
       ${sections || `<div style="margin-top:20px;padding:24px;text-align:center;color:${C.muted};border:1px dashed ${C.border};border-radius:6px;">لا توجد معاملات ضمن الفترة المحددة</div>`}
 
-      ${company?.notes ? `
+      ${
+        company?.notes
+          ? `
         <div style="margin-top:14px;padding:10px 12px;border:1px solid ${C.border};border-radius:6px;background:${C.bgAlt};">
           <div style="font-size:10.5px;color:${C.muted};font-weight:700;margin-bottom:4px;">ملاحظات</div>
           <div style="font-size:11px;white-space:pre-wrap;">${esc(company.notes)}</div>
-        </div>` : ""}
+        </div>`
+          : ""
+      }
 
       <div style="margin-top:18px;border-top:1px solid ${C.border};padding-top:8px;display:flex;justify-content:space-between;color:${C.muted};font-size:10px;">
         <div>تم إنشاء هذا الكشف بواسطة دفترك  •  Daftarak</div>

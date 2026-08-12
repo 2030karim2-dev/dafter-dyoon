@@ -11,13 +11,18 @@ import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { EmptyState } from "@/components/EmptyState";
 import { SearchBar } from "@/components/common/SearchBar";
 import { smartMatch } from "@/lib/search/match";
-import { FabButton } from "@/components/common/FabButton";
 import { DebtsHeader } from "@/features/debts/DebtsHeader";
 import { PersonRow } from "@/features/debts/PersonRow";
 import { PersonTable } from "@/features/debts/PersonTable";
 import { BalanceCard } from "@/components/common/BalanceCard";
 import { CurrencyScope } from "@/components/common/CurrencyScope";
-import { getDebtsHomeFn, archivePersonFn, deletePersonFn, type PersonWithBalances, type DebtsHomePayload } from "@/lib/home.functions";
+import {
+  getDebtsHomeFn,
+  archivePersonFn,
+  deletePersonFn,
+  type PersonWithBalances,
+  type DebtsHomePayload,
+} from "@/lib/home.functions";
 import { processRecurringFn } from "@/lib/jobs.functions";
 import { toast } from "sonner";
 
@@ -31,7 +36,12 @@ const homeQO = queryOptions({
 });
 
 const EMPTY_HOME: DebtsHomePayload = {
-  people: [], currencies: [], base: null, totalsPerCurrency: [], peopleCount: 0, txCount: 0,
+  people: [],
+  currencies: [],
+  base: null,
+  totalsPerCurrency: [],
+  peopleCount: 0,
+  txCount: 0,
 };
 
 // Auth is client-side (see src/routes/app.tsx), so this protected data is
@@ -45,33 +55,54 @@ function DebtsHome() {
   const { data: home } = useQuery(homeQO);
   const data = home ?? EMPTY_HOME;
 
-  const invalidate = () => qc.invalidateQueries({ queryKey: ["debts-home"] });
-
+  const invalidate = () => {
+    void qc.invalidateQueries({ queryKey: ["debts-home"] });
+    // Keep the shared caches (global search + alerts badge) in sync too.
+    void qc.invalidateQueries({ queryKey: ["global-search"] });
+    void qc.invalidateQueries({ queryKey: ["pending-alerts"] });
+  };
 
   // Idle-time backend housekeeping (recurring generation).
   const runRecurring = useServerFn(processRecurringFn);
   useEffect(() => {
     const w = window as unknown as { requestIdleCallback?: (cb: () => void, o?: object) => number };
-    const h = w.requestIdleCallback?.(() => { runRecurring().catch(() => null); }, { timeout: 3000 })
-      ?? window.setTimeout(() => { runRecurring().catch(() => null); }, 1500);
-    return () => { (window as unknown as { cancelIdleCallback?: (h: number) => void }).cancelIdleCallback?.(h); };
+    const h =
+      w.requestIdleCallback?.(
+        () => {
+          runRecurring().catch(() => null);
+        },
+        { timeout: 3000 },
+      ) ??
+      window.setTimeout(() => {
+        runRecurring().catch(() => null);
+      }, 1500);
+    return () => {
+      (window as unknown as { cancelIdleCallback?: (h: number) => void }).cancelIdleCallback?.(h);
+    };
   }, [runRecurring]);
 
   const archive = useServerFn(archivePersonFn);
   const del = useServerFn(deletePersonFn);
   const archiveM = useMutation({
     mutationFn: (id: string) => archive({ data: { id } }),
-    onSuccess: () => { toast.success("تمت الأرشفة"); invalidate(); },
+    onSuccess: () => {
+      toast.success("تمت الأرشفة");
+      invalidate();
+    },
     onError: (e: Error) => toast.error(e.message),
   });
   const deleteM = useMutation({
     mutationFn: (id: string) => del({ data: { id } }),
-    onSuccess: () => { toast.success("تم الحذف"); invalidate(); },
+    onSuccess: () => {
+      toast.success("تم الحذف");
+      invalidate();
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
   const [q, setQ] = useState("");
   const [openAdd, setOpenAdd] = useState(false);
+  const [fabOpen, setFabOpen] = useState(false);
   const [openSmart, setOpenSmart] = useState(false);
   const [openPerson, setOpenPerson] = useState(false);
   const [editingPerson, setEditingPerson] = useState<PersonEditing | null>(null);
@@ -80,27 +111,48 @@ function DebtsHome() {
   const [prefill, setPrefill] = useState<ParsedDraft | null>(null);
   const [filter, setFilter] = useState<Filter>("all");
   const [sort, setSort] = useState<Sort>("active");
-  const [view, setView] = useState<ViewMode>(() => (typeof localStorage !== "undefined" && (localStorage.getItem("people_view") as ViewMode)) || "cards");
-  useEffect(() => { try { localStorage.setItem("people_view", view); } catch { /* ignore */ } }, [view]);
+  const [view, setView] = useState<ViewMode>(
+    () =>
+      (typeof localStorage !== "undefined" && (localStorage.getItem("people_view") as ViewMode)) ||
+      "cards",
+  );
+  useEffect(() => {
+    try {
+      localStorage.setItem("people_view", view);
+    } catch {
+      /* ignore */
+    }
+  }, [view]);
 
   // Selected currency = the only ledger displayed (currencies never mix).
   const [curId, setCurId] = useState<string>("");
   useEffect(() => {
     if (data.currencies.length === 0) return;
     if (curId && data.currencies.some((c) => c.id === curId)) return;
-    const saved = (() => { try { return localStorage.getItem("scope_currency"); } catch { return null; } })();
+    const saved = (() => {
+      try {
+        return localStorage.getItem("scope_currency");
+      } catch {
+        return null;
+      }
+    })();
     const next = data.currencies.find((c) => c.id === saved) ?? data.base ?? data.currencies[0];
     if (next) setCurId(next.id);
   }, [data.currencies, data.base, curId]);
-  useEffect(() => { if (curId) { try { localStorage.setItem("scope_currency", curId); } catch { /* ignore */ } } }, [curId]);
+  useEffect(() => {
+    if (curId) {
+      try {
+        localStorage.setItem("scope_currency", curId);
+      } catch {
+        /* ignore */
+      }
+    }
+  }, [curId]);
 
   const activeCurrency = data.currencies.find((c) => c.id === curId) ?? data.base ?? null;
 
   /** Row data for the selected currency only. */
-  const curMap = useMemo(
-    () => new Map(data.currencies.map((c) => [c.id, c])),
-    [data.currencies],
-  );
+  const curMap = useMemo(() => new Map(data.currencies.map((c) => [c.id, c])), [data.currencies]);
 
   const rowsForCurrency = useMemo(() => {
     return data.people.map((p) => {
@@ -138,7 +190,15 @@ function DebtsHome() {
 
   const filtered = useMemo(() => {
     const list = rowsForCurrency.filter((r) => {
-      if (q && !smartMatch(q, { text: [r.person.name], phones: [r.person.phone], numbers: [Math.round(r.net)] })) return false;
+      if (
+        q &&
+        !smartMatch(q, {
+          text: [r.person.name],
+          phones: [r.person.phone],
+          numbers: [Math.round(r.net)],
+        })
+      )
+        return false;
       if (filter === "credit") return r.net > 0.001;
       if (filter === "debit") return r.net < -0.001;
       return true;
@@ -170,8 +230,12 @@ function DebtsHome() {
       {data.totalsPerCurrency.length > 0 && (
         <div className="space-y-1.5">
           <div className="flex items-center justify-between px-1">
-            <div className="text-[10px] font-bold text-muted-foreground tracking-wide">مسارات العملات (منفصلة تماماً)</div>
-            <div className="text-[9px] text-muted-foreground tabular-nums">{data.totalsPerCurrency.length} عملة</div>
+            <div className="text-[10px] font-bold text-muted-foreground tracking-wide">
+              مسارات العملات (منفصلة تماماً)
+            </div>
+            <div className="text-[9px] text-muted-foreground tabular-nums">
+              {data.totalsPerCurrency.length} عملة
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-1.5">
             {data.totalsPerCurrency.map((r) => (
@@ -185,9 +249,10 @@ function DebtsHome() {
         </div>
       )}
 
-
       <div className="flex items-center gap-1.5">
-        <div className="flex-1"><SearchBar value={q} onChange={setQ} placeholder="ابحث باسم متقطع أو رقم هاتف..." /></div>
+        <div className="flex-1">
+          <SearchBar value={q} onChange={setQ} placeholder="ابحث باسم متقطع أو رقم هاتف..." />
+        </div>
         <select
           value={sort}
           onChange={(e) => setSort(e.target.value as Sort)}
@@ -198,11 +263,25 @@ function DebtsHome() {
           <option value="recent">الأحدث</option>
           <option value="name">أبجدي</option>
         </select>
-        <div className="inline-flex h-9 rounded-lg border bg-card overflow-hidden" role="group" aria-label="طريقة العرض">
-          <button onClick={() => setView("cards")} className={`px-2 flex items-center justify-center transition-colors ${view === "cards" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`} aria-label="بطاقات" aria-pressed={view === "cards"}>
+        <div
+          className="inline-flex h-9 rounded-lg border bg-card overflow-hidden"
+          role="group"
+          aria-label="طريقة العرض"
+        >
+          <button
+            onClick={() => setView("cards")}
+            className={`px-2 flex items-center justify-center transition-colors ${view === "cards" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            aria-label="بطاقات"
+            aria-pressed={view === "cards"}
+          >
             <LayoutGrid className="size-3.5" />
           </button>
-          <button onClick={() => setView("table")} className={`px-2 flex items-center justify-center transition-colors border-r ${view === "table" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`} aria-label="جدول" aria-pressed={view === "table"}>
+          <button
+            onClick={() => setView("table")}
+            className={`px-2 flex items-center justify-center transition-colors border-r ${view === "table" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            aria-label="جدول"
+            aria-pressed={view === "table"}
+          >
             <TableIcon className="size-3.5" />
           </button>
         </div>
@@ -210,8 +289,12 @@ function DebtsHome() {
 
       {filter !== "all" && (
         <div className="flex items-center justify-between text-xs px-1 animate-in slide-in-from-top-2 duration-200">
-          <span className="text-muted-foreground">تصفية: {filter === "credit" ? "له فقط" : "عليه فقط"}</span>
-          <button onClick={() => setFilter("all")} className="text-primary font-semibold">إلغاء التصفية</button>
+          <span className="text-muted-foreground">
+            تصفية: {filter === "credit" ? "له فقط" : "عليه فقط"}
+          </span>
+          <button onClick={() => setFilter("all")} className="text-primary font-semibold">
+            إلغاء التصفية
+          </button>
         </div>
       )}
 
@@ -222,22 +305,50 @@ function DebtsHome() {
             title="ابدأ بإضافة أول معاملة"
             description="سجّل ما لك وما عليك بسهولة، وسنحتفظ لك بكل التفاصيل."
             action={
-              <Button onClick={() => setOpenAdd(true)} size="lg" className="bg-gradient-primary text-primary-foreground shadow-glow">
+              <Button
+                onClick={() => setOpenAdd(true)}
+                size="lg"
+                className="bg-gradient-primary text-primary-foreground shadow-glow"
+              >
                 <Plus className="size-4" /> إضافة أول معاملة
               </Button>
             }
           />
         ) : (
-          <EmptyState icon={Users} title="لا توجد نتائج" description="جرّب كلمة بحث أخرى أو ألغِ التصفية." variant="compact" />
+          <EmptyState
+            icon={Users}
+            title="لا توجد نتائج"
+            description="جرّب كلمة بحث أخرى أو ألغِ التصفية."
+            variant="compact"
+          />
         )
       ) : view === "table" ? (
         <PersonTable
           rows={filtered.map((p) => ({
             person: p.person,
-            balance: { net: p.net, count: p.count, lastDate: p.lastDate, totalCredit: p.credit, totalDebit: p.debit, symbol: activeCurrency?.symbol, others: p.others },
+            balance: {
+              net: p.net,
+              count: p.count,
+              lastDate: p.lastDate,
+              totalCredit: p.credit,
+              totalDebit: p.debit,
+              symbol: activeCurrency?.symbol,
+              others: p.others,
+            },
           }))}
-
-          onEdit={(p) => { const full = legacyPeople.find((x) => x.id === p.id)!; setEditingPerson({ id: full.id, name: full.name, phone: full.phone, type: full.type, notes: full.notes ?? null, avatar_color: full.avatar_color, credit_limit: full.credit_limit ?? null }); setOpenPerson(true); }}
+          onEdit={(p) => {
+            const full = legacyPeople.find((x) => x.id === p.id)!;
+            setEditingPerson({
+              id: full.id,
+              name: full.name,
+              phone: full.phone,
+              type: full.type,
+              notes: full.notes ?? null,
+              avatar_color: full.avatar_color,
+              credit_limit: full.credit_limit ?? null,
+            });
+            setOpenPerson(true);
+          }}
           onArchive={(p) => setArchivePerson(legacyPeople.find((x) => x.id === p.id) ?? null)}
           onDelete={(p) => setDelPerson(legacyPeople.find((x) => x.id === p.id) ?? null)}
         />
@@ -247,9 +358,30 @@ function DebtsHome() {
             <PersonRow
               key={p.person.id}
               person={p.person}
-              balance={{ net: p.net, count: p.count, lastDate: p.lastDate, lastAmount: p.lastAmount, lastDirection: p.lastDirection, totalCredit: p.credit, totalDebit: p.debit, symbol: activeCurrency?.symbol, others: p.others }}
+              balance={{
+                net: p.net,
+                count: p.count,
+                lastDate: p.lastDate,
+                lastAmount: p.lastAmount,
+                lastDirection: p.lastDirection,
+                totalCredit: p.credit,
+                totalDebit: p.debit,
+                symbol: activeCurrency?.symbol,
+                others: p.others,
+              }}
               index={i}
-              onEdit={() => { setEditingPerson({ id: p.person.id, name: p.person.name, phone: p.person.phone, type: p.person.type, notes: p.person.notes ?? null, avatar_color: p.person.avatar_color, credit_limit: p.person.credit_limit ?? null }); setOpenPerson(true); }}
+              onEdit={() => {
+                setEditingPerson({
+                  id: p.person.id,
+                  name: p.person.name,
+                  phone: p.person.phone,
+                  type: p.person.type,
+                  notes: p.person.notes ?? null,
+                  avatar_color: p.person.avatar_color,
+                  credit_limit: p.person.credit_limit ?? null,
+                });
+                setOpenPerson(true);
+              }}
               onArchive={() => setArchivePerson(p.person)}
               onDelete={() => setDelPerson(p.person)}
             />
@@ -257,33 +389,71 @@ function DebtsHome() {
         </div>
       )}
 
-      <button
-        onClick={() => { setEditingPerson(null); setOpenPerson(true); }}
-        aria-label="إضافة عميل جديد"
-        className="fixed bottom-52 left-4 z-20 size-11 rounded-full bg-card border-2 border-success text-success shadow-elevated flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
-      >
-        <UserPlus className="size-4" />
-      </button>
-
-      <button
-        onClick={() => setOpenSmart(true)}
-        aria-label="إضافة ذكية"
-        className="fixed bottom-36 left-4 z-20 size-11 rounded-full bg-card border-2 border-primary text-primary shadow-elevated flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
-      >
-        <Sparkles className="size-4" />
-      </button>
-
-      <FabButton onClick={() => { setPrefill(null); setOpenAdd(true); }} label="إضافة معاملة" />
+      {/* Speed-dial FAB: one entry point, expands upward with all quick actions */}
+      <div className="fixed bottom-16 ltr:right-3 rtl:left-3 z-20 flex flex-col items-center gap-2.5">
+        {fabOpen && (
+          <>
+            <button
+              onClick={() => {
+                setFabOpen(false);
+                setEditingPerson(null);
+                setOpenPerson(true);
+              }}
+              aria-label="إضافة عميل جديد"
+              className="size-11 rounded-full bg-card border-2 border-success text-success shadow-elevated flex items-center justify-center hover:scale-105 active:scale-95 transition-transform animate-in fade-in zoom-in-95 duration-150"
+            >
+              <UserPlus className="size-4" />
+            </button>
+            <button
+              onClick={() => {
+                setFabOpen(false);
+                setOpenSmart(true);
+              }}
+              aria-label="إضافة ذكية بالنص"
+              className="size-11 rounded-full bg-card border-2 border-primary text-primary shadow-elevated flex items-center justify-center hover:scale-105 active:scale-95 transition-transform animate-in fade-in zoom-in-95 duration-150"
+            >
+              <Sparkles className="size-4" />
+            </button>
+            <button
+              onClick={() => {
+                setFabOpen(false);
+                setPrefill(null);
+                setOpenAdd(true);
+              }}
+              aria-label="إضافة معاملة"
+              className="size-11 rounded-full bg-card border-2 border-primary text-primary shadow-elevated flex items-center justify-center hover:scale-105 active:scale-95 transition-transform animate-in fade-in zoom-in-95 duration-150"
+            >
+              <Plus className="size-4" />
+            </button>
+          </>
+        )}
+        <button
+          onClick={() => setFabOpen((v) => !v)}
+          aria-label={fabOpen ? "إغلاق قائمة الإضافة" : "إضافة"}
+          aria-expanded={fabOpen}
+          className="size-11 rounded-full bg-gradient-primary text-primary-foreground shadow-glow flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
+        >
+          <Plus
+            className={`size-[18px] transition-transform duration-200 ${fabOpen ? "rotate-45" : ""}`}
+          />
+        </button>
+      </div>
 
       <SmartAddDialog
         open={openSmart}
         onOpenChange={setOpenSmart}
-        onParsed={(d) => { setPrefill(d); setOpenAdd(true); }}
+        onParsed={(d) => {
+          setPrefill(d);
+          setOpenAdd(true);
+        }}
       />
 
       <AddTransactionDialog
         open={openAdd}
-        onOpenChange={(v) => { setOpenAdd(v); if (!v) setPrefill(null); }}
+        onOpenChange={(v) => {
+          setOpenAdd(v);
+          if (!v) setPrefill(null);
+        }}
         people={legacyPeople}
         currencies={data.currencies}
         onSuccess={invalidate}
@@ -292,7 +462,10 @@ function DebtsHome() {
 
       <PersonFormDialog
         open={openPerson}
-        onOpenChange={(v) => { setOpenPerson(v); if (!v) setEditingPerson(null); }}
+        onOpenChange={(v) => {
+          setOpenPerson(v);
+          if (!v) setEditingPerson(null);
+        }}
         editing={editingPerson}
         onSuccess={invalidate}
       />
@@ -303,7 +476,9 @@ function DebtsHome() {
         title={`أرشفة ${archivePerson?.name ?? ""}؟`}
         description="يمكن استعادته لاحقاً من صفحة الأرشيف."
         confirmLabel="أرشفة"
-        onConfirm={async () => { if (archivePerson) await archiveM.mutateAsync(archivePerson.id); }}
+        onConfirm={async () => {
+          if (archivePerson) await archiveM.mutateAsync(archivePerson.id);
+        }}
       />
 
       <ConfirmDialog
@@ -313,7 +488,9 @@ function DebtsHome() {
         description="لا يمكن الحذف إذا كانت لديه معاملات. استخدم الأرشفة بدلاً من ذلك."
         destructive
         confirmLabel="حذف"
-        onConfirm={async () => { if (delPerson) await deleteM.mutateAsync(delPerson.id); }}
+        onConfirm={async () => {
+          if (delPerson) await deleteM.mutateAsync(delPerson.id);
+        }}
       />
     </div>
   );

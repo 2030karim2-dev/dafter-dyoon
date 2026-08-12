@@ -4,7 +4,10 @@
  */
 export type AlertSound = "reminder" | "overdue" | "promise" | "success";
 
-const PATTERNS: Record<AlertSound, { freq: number; dur: number; gap: number; type: OscillatorType }[]> = {
+const PATTERNS: Record<
+  AlertSound,
+  { freq: number; dur: number; gap: number; type: OscillatorType }[]
+> = {
   // Soft two-note chime
   reminder: [
     { freq: 880, dur: 0.16, gap: 0.04, type: "sine" },

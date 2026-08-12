@@ -13,11 +13,20 @@ const TONE: Record<string, string> = {
   cancelled: "bg-secondary text-muted-foreground ring-border",
 };
 const LABEL: Record<string, string> = {
-  open: "قائم", kept: "تم الوفاء", broken: "لم يُوفَ", cancelled: "ملغى",
+  open: "قائم",
+  kept: "تم الوفاء",
+  broken: "لم يُوفَ",
+  cancelled: "ملغى",
 };
 
 /** Promise-to-pay log for one customer; statuses are resolved on the server. */
-export function PersonPromises({ personId, currencyId }: { personId: string; currencyId: string | null }) {
+export function PersonPromises({
+  personId,
+  currencyId,
+}: {
+  personId: string;
+  currencyId: string | null;
+}) {
   const qc = useQueryClient();
   const getPromises = useServerFn(getPromisesFn);
   const resolve = useServerFn(resolvePromiseFn);
@@ -40,11 +49,17 @@ export function PersonPromises({ personId, currencyId }: { personId: string; cur
   });
 
   if (isLoading) {
-    return <div className="flex justify-center py-6"><Loader2 className="size-4 animate-spin text-primary" /></div>;
+    return (
+      <div className="flex justify-center py-6">
+        <Loader2 className="size-4 animate-spin text-primary" />
+      </div>
+    );
   }
   const rows = (data ?? []).filter((p) => !currencyId || p.currency_id === currencyId);
   if (rows.length === 0) {
-    return <p className="text-center text-[11px] text-muted-foreground py-6">لا توجد وعود سداد مسجلة</p>;
+    return (
+      <p className="text-center text-[11px] text-muted-foreground py-6">لا توجد وعود سداد مسجلة</p>
+    );
   }
 
   return (
@@ -56,8 +71,12 @@ export function PersonPromises({ personId, currencyId }: { personId: string; cur
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5">
-              <span className="font-extrabold text-[12px] tabular-nums">{fmtMoney(Number(p.amount))}</span>
-              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ring-1 ${TONE[p.status] ?? TONE.cancelled}`}>
+              <span className="font-extrabold text-[12px] tabular-nums">
+                {fmtMoney(Number(p.amount))}
+              </span>
+              <span
+                className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ring-1 ${TONE[p.status] ?? TONE.cancelled}`}
+              >
                 {LABEL[p.status] ?? p.status}
               </span>
             </div>
@@ -68,12 +87,22 @@ export function PersonPromises({ personId, currencyId }: { personId: string; cur
           </div>
           {p.status === "open" && (
             <div className="flex gap-1 shrink-0">
-              <Button size="icon" variant="outline" className="size-6"
-                onClick={() => act.mutate({ id: p.id, status: "kept" })} title="تم الوفاء">
+              <Button
+                size="icon"
+                variant="outline"
+                className="size-6"
+                onClick={() => act.mutate({ id: p.id, status: "kept" })}
+                title="تم الوفاء"
+              >
                 <Check className="size-3 text-success" />
               </Button>
-              <Button size="icon" variant="outline" className="size-6"
-                onClick={() => act.mutate({ id: p.id, status: "cancelled" })} title="إلغاء">
+              <Button
+                size="icon"
+                variant="outline"
+                className="size-6"
+                onClick={() => act.mutate({ id: p.id, status: "cancelled" })}
+                title="إلغاء"
+              >
                 <X className="size-3 text-muted-foreground" />
               </Button>
             </div>

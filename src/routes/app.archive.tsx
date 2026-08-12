@@ -9,7 +9,10 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/archive")({ component: ArchivePage });
 
-interface Person { id: string; name: string }
+interface Person {
+  id: string;
+  name: string;
+}
 
 function ArchivePage() {
   const { user } = useAuth();
@@ -17,14 +20,21 @@ function ArchivePage() {
 
   const load = async () => {
     if (!user) return;
-    const { data } = await supabase.from("people").select("id,name").eq("is_archived", true).order("name");
+    const { data } = await supabase
+      .from("people")
+      .select("id,name")
+      .eq("is_archived", true)
+      .order("name");
     setItems((data ?? []) as Person[]);
   };
-  useEffect(() => { load(); }, [user]);
+  useEffect(() => {
+    load();
+  }, [user]);
 
   const restore = async (id: string) => {
     await supabase.from("people").update({ is_archived: false }).eq("id", id);
-    toast.success("تمت الاستعادة"); load();
+    toast.success("تمت الاستعادة");
+    load();
   };
   const del = async (id: string, name: string) => {
     if (!confirm(`حذف ${name} نهائياً؟ سيتم حذف كل معاملاته.`)) return;
@@ -32,12 +42,16 @@ function ArchivePage() {
     await supabase.from("transactions").delete().eq("person_id", id);
     const { error } = await supabase.from("people").delete().eq("id", id);
     if (error) return toast.error(error.message);
-    toast.success("تم الحذف"); load();
+    toast.success("تم الحذف");
+    load();
   };
 
   return (
     <div className="space-y-4">
-      <Link to="/app/settings" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+      <Link
+        to="/app/settings"
+        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+      >
         <ArrowRight className="size-4" /> رجوع
       </Link>
       <div className="flex items-center gap-2">
@@ -51,19 +65,34 @@ function ArchivePage() {
       </div>
 
       {items.length === 0 ? (
-        <EmptyState icon={Archive} title="الأرشيف فارغ" description="عند أرشفة شخص ستجده هنا للاستعادة." />
+        <EmptyState
+          icon={Archive}
+          title="الأرشيف فارغ"
+          description="عند أرشفة شخص ستجده هنا للاستعادة."
+        />
       ) : (
         <Card className="p-2">
           {items.map((p) => (
-            <div key={p.id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-secondary transition-colors">
+            <div
+              key={p.id}
+              className="flex items-center gap-3 p-3 rounded-xl hover:bg-secondary transition-colors"
+            >
               <div className="size-10 rounded-xl bg-secondary text-muted-foreground flex items-center justify-center font-bold">
                 {p.name.charAt(0)}
               </div>
               <div className="flex-1 font-semibold text-sm">{p.name}</div>
-              <button onClick={() => restore(p.id)} className="p-2 text-muted-foreground hover:text-success" title="استعادة">
+              <button
+                onClick={() => restore(p.id)}
+                className="p-2 text-muted-foreground hover:text-success"
+                title="استعادة"
+              >
                 <ArchiveRestore className="size-4" />
               </button>
-              <button onClick={() => del(p.id, p.name)} className="p-2 text-muted-foreground hover:text-danger" title="حذف نهائي">
+              <button
+                onClick={() => del(p.id, p.name)}
+                className="p-2 text-muted-foreground hover:text-danger"
+                title="حذف نهائي"
+              >
                 <Trash2 className="size-4" />
               </button>
             </div>

@@ -1,3 +1,8 @@
+/* Self-hosted Tajawal (via @fontsource) — no external Google Fonts request. */
+@import "@fontsource/tajawal/400.css";
+@import "@fontsource/tajawal/500.css";
+@import "@fontsource/tajawal/700.css";
+@import "@fontsource/tajawal/900.css";
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
@@ -40,7 +45,8 @@
 
   --font-sans: "Tajawal", "Cairo", system-ui, sans-serif;
 
-  --shadow-card: 0 1px 3px 0 oklch(0.55 0.13 240 / 0.08), 0 1px 2px -1px oklch(0.55 0.13 240 / 0.08);
+  --shadow-card:
+    0 1px 3px 0 oklch(0.55 0.13 240 / 0.08), 0 1px 2px -1px oklch(0.55 0.13 240 / 0.08);
   --shadow-elevated: 0 10px 30px -12px oklch(0.55 0.13 240 / 0.18);
   --shadow-glow: 0 8px 24px -8px var(--primary-glow);
 }
@@ -121,7 +127,9 @@
 }
 
 @layer base {
-  * { border-color: var(--color-border); }
+  * {
+    border-color: var(--color-border);
+  }
   html {
     direction: rtl;
     /* Micro-scale v2: tighter base so rem-based spacing/sizing compresses
@@ -129,7 +137,9 @@
     font-size: 12.5px;
   }
   @media (min-width: 768px) {
-    html { font-size: 14px; }
+    html {
+      font-size: 14px;
+    }
   }
   body {
     background-color: var(--color-background);
@@ -137,16 +147,37 @@
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
   }
-  input, select, textarea, button { font-size: inherit; }
+  input,
+  select,
+  textarea,
+  button {
+    font-size: inherit;
+  }
 }
 
 @layer utilities {
-  .bg-gradient-hero { background-image: var(--gradient-hero); }
-  .bg-gradient-primary { background-image: var(--gradient-primary); }
-  .bg-gradient-success { background-image: var(--gradient-success); }
-  .bg-gradient-danger { background-image: var(--gradient-danger); }
-  .bg-gradient-card { background-image: var(--gradient-card); }
-  .shadow-card { box-shadow: var(--shadow-card); }
-  .shadow-elevated { box-shadow: var(--shadow-elevated); }
-  .shadow-glow { box-shadow: var(--shadow-glow); }
+  .bg-gradient-hero {
+    background-image: var(--gradient-hero);
+  }
+  .bg-gradient-primary {
+    background-image: var(--gradient-primary);
+  }
+  .bg-gradient-success {
+    background-image: var(--gradient-success);
+  }
+  .bg-gradient-danger {
+    background-image: var(--gradient-danger);
+  }
+  .bg-gradient-card {
+    background-image: var(--gradient-card);
+  }
+  .shadow-card {
+    box-shadow: var(--shadow-card);
+  }
+  .shadow-elevated {
+    box-shadow: var(--shadow-elevated);
+  }
+  .shadow-glow {
+    box-shadow: var(--shadow-glow);
+  }
 }

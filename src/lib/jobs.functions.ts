@@ -33,7 +33,9 @@ export const syncRemindersFn = createServerFn({ method: "POST" })
 
     const ids = txns.map((t) => t.id);
     const { data: existing } = await supabase
-      .from("reminders").select("transaction_id").in("transaction_id", ids);
+      .from("reminders")
+      .select("transaction_id")
+      .in("transaction_id", ids);
     const have = new Set((existing ?? []).map((e) => e.transaction_id));
 
     const personIds = Array.from(new Set(txns.map((t) => t.person_id).filter(Boolean))) as string[];
@@ -97,10 +99,13 @@ export const processRecurringFn = createServerFn({ method: "POST" })
           next = advance(next, r.frequency as Freq);
           safety++;
         }
-        await supabase.from("recurring_rules").update({
-          next_run: next.toISOString(),
-          last_run: now.toISOString(),
-        }).eq("id", r.id);
+        await supabase
+          .from("recurring_rules")
+          .update({
+            next_run: next.toISOString(),
+            last_run: now.toISOString(),
+          })
+          .eq("id", r.id);
       } catch {
         // continue to next rule
       }
@@ -134,21 +139,33 @@ export const createBackupFn = createServerFn({ method: "POST" })
     const blob = new Blob([json], { type: "application/json" });
     const path = `${userId}/auto-${Date.now()}.json`;
     const { error } = await supabase.storage.from("backups").upload(path, blob, {
-      contentType: "application/json", upsert: false,
+      contentType: "application/json",
+      upsert: false,
     });
     if (error) return { ok: false as const, error: error.message };
     await supabase.from("backup_meta").insert({
-      user_id: userId, path, size_bytes: blob.size, kind: "auto",
+      user_id: userId,
+      path,
+      size_bytes: blob.size,
+      kind: "auto",
     });
 
     // Retention: keep last 10
-    const { data: list } = await supabase.from("backup_meta")
-      .select("id, path").eq("user_id", userId)
+    const { data: list } = await supabase
+      .from("backup_meta")
+      .select("id, path")
+      .eq("user_id", userId)
       .order("created_at", { ascending: false });
     if (list && list.length > 10) {
       const old = list.slice(10);
       await supabase.storage.from("backups").remove(old.map((x) => x.path));
-      await supabase.from("backup_meta").delete().in("id", old.map((x) => x.id));
+      await supabase
+        .from("backup_meta")
+        .delete()
+        .in(
+          "id",
+          old.map((x) => x.id),
+        );
     }
     return { ok: true as const, path, size: blob.size };
   });
@@ -158,12 +175,24 @@ export const getDashboardSummaryFn = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
-    const [{ count: peopleCount }, { count: txCount }, { count: pendingReminders }] = await Promise.all([
-      supabase.from("people").select("*", { count: "exact", head: true }).eq("user_id", userId).eq("is_archived", false),
-      supabase.from("transactions").select("*", { count: "exact", head: true }).eq("user_id", userId),
-      supabase.from("reminders").select("*", { count: "exact", head: true })
-        .eq("user_id", userId).eq("is_done", false).lte("due_date", new Date().toISOString()),
-    ]);
+    const [{ count: peopleCount }, { count: txCount }, { count: pendingReminders }] =
+      await Promise.all([
+        supabase
+          .from("people")
+          .select("*", { count: "exact", head: true })
+          .eq("user_id", userId)
+          .eq("is_archived", false),
+        supabase
+          .from("transactions")
+          .select("*", { count: "exact", head: true })
+          .eq("user_id", userId),
+        supabase
+          .from("reminders")
+          .select("*", { count: "exact", head: true })
+          .eq("user_id", userId)
+          .eq("is_done", false)
+          .lte("due_date", new Date().toISOString()),
+      ]);
     return {
       people: peopleCount ?? 0,
       transactions: txCount ?? 0,

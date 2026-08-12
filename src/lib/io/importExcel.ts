@@ -61,15 +61,28 @@ function num(v: unknown): number {
   return Number(typeof v === "string" ? v.replace(/[, ]/g, "") : v);
 }
 
-export function mapRows(rows: Row[], m: ColumnMapping): { ok: MappedTx[]; errors: { row: number; reason: string }[] } {
+export function mapRows(
+  rows: Row[],
+  m: ColumnMapping,
+): { ok: MappedTx[]; errors: { row: number; reason: string }[] } {
   const ok: MappedTx[] = [];
   const errors: { row: number; reason: string }[] = [];
   rows.forEach((r, i) => {
     const name = String(r[m.name] ?? "").trim();
     const amt = num(r[m.amount]);
-    if (!name) { errors.push({ row: i + 2, reason: "اسم فارغ" }); return; }
-    if (!isFinite(amt) || amt === 0) { errors.push({ row: i + 2, reason: "مبلغ غير صالح" }); return; }
-    const direction = m.direction ? parseDirection(r[m.direction], amt) : (amt >= 0 ? "credit" : "debit");
+    if (!name) {
+      errors.push({ row: i + 2, reason: "اسم فارغ" });
+      return;
+    }
+    if (!isFinite(amt) || amt === 0) {
+      errors.push({ row: i + 2, reason: "مبلغ غير صالح" });
+      return;
+    }
+    const direction = m.direction
+      ? parseDirection(r[m.direction], amt)
+      : amt >= 0
+        ? "credit"
+        : "debit";
     const opening = m.opening_balance ? num(r[m.opening_balance]) : NaN;
     ok.push({
       name,

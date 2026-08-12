@@ -21,7 +21,14 @@ interface Props {
 
 /** Record a full or partial payment. Allocation to oldest debts happens on the server. */
 export function PaymentDialog({
-  open, onOpenChange, personId, personName, currencyId, currencyLabel, suggested, onDone,
+  open,
+  onOpenChange,
+  personId,
+  personName,
+  currencyId,
+  currencyLabel,
+  suggested,
+  onDone,
 }: Props) {
   const [amount, setAmount] = useState(suggested ? String(suggested) : "");
   const [note, setNote] = useState("");
@@ -31,11 +38,20 @@ export function PaymentDialog({
 
   const submit = async () => {
     const v = parseFloat(amount);
-    if (!v || v <= 0) { toast.error("أدخل مبلغ الدفعة"); return; }
+    if (!v || v <= 0) {
+      toast.error("أدخل مبلغ الدفعة");
+      return;
+    }
     setBusy(true);
     try {
       const res = await record({
-        data: { person_id: personId, currency_id: currencyId, amount: v, paid_at: new Date(date).toISOString(), note: note || null },
+        data: {
+          person_id: personId,
+          currency_id: currencyId,
+          amount: v,
+          paid_at: new Date(date).toISOString(),
+          note: note || null,
+        },
       });
       toast.success(
         res.unallocated > 0.005
@@ -43,7 +59,8 @@ export function PaymentDialog({
           : `تم تسجيل الدفعة وتسوية ${res.settled_tx_ids.length} مستحق`,
       );
       onOpenChange(false);
-      setAmount(""); setNote("");
+      setAmount("");
+      setNote("");
       onDone();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "فشل تسجيل الدفعة");
@@ -55,14 +72,23 @@ export function PaymentDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm">
-        <DialogHeader><DialogTitle className="text-sm">تسجيل دفعة — {personName}</DialogTitle></DialogHeader>
+        <DialogHeader>
+          <DialogTitle className="text-sm">تسجيل دفعة — {personName}</DialogTitle>
+        </DialogHeader>
         <div className="space-y-3">
           <div className="text-[10px] text-muted-foreground bg-secondary rounded-lg p-2">
-            تُخصم الدفعة تلقائياً من أقدم المستحقات بعملة <span className="font-bold">{currencyLabel}</span> فقط.
+            تُخصم الدفعة تلقائياً من أقدم المستحقات بعملة{" "}
+            <span className="font-bold">{currencyLabel}</span> فقط.
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs">المبلغ</Label>
-            <Input type="number" inputMode="decimal" dir="ltr" value={amount} onChange={(e) => setAmount(e.target.value)} />
+            <Input
+              type="number"
+              inputMode="decimal"
+              dir="ltr"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+            />
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs">تاريخ الدفعة</Label>
@@ -70,9 +96,17 @@ export function PaymentDialog({
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs">ملاحظة (اختياري)</Label>
-            <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="نقداً / تحويل بنكي" />
+            <Input
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="نقداً / تحويل بنكي"
+            />
           </div>
-          <Button onClick={submit} disabled={busy} className="w-full bg-gradient-primary text-primary-foreground">
+          <Button
+            onClick={submit}
+            disabled={busy}
+            className="w-full bg-gradient-primary text-primary-foreground"
+          >
             حفظ الدفعة
           </Button>
         </div>

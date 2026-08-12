@@ -15,7 +15,10 @@ export function PageHeader({ icon: Icon, title, subtitle, back, actions }: Props
   return (
     <div className="space-y-1.5">
       {back && (
-        <Link to={back} className="inline-flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground">
+        <Link
+          to={back}
+          className="inline-flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground"
+        >
           <ArrowRight className="size-3" /> رجوع
         </Link>
       )}
@@ -25,7 +28,9 @@ export function PageHeader({ icon: Icon, title, subtitle, back, actions }: Props
             <Icon className="size-3.5" />
           </div>
           <div className="min-w-0">
-            <h1 className="font-black text-[14px] leading-tight tracking-tight truncate">{title}</h1>
+            <h1 className="font-black text-[14px] leading-tight tracking-tight truncate">
+              {title}
+            </h1>
             {subtitle && <p className="text-[10px] text-muted-foreground truncate">{subtitle}</p>}
           </div>
         </div>
