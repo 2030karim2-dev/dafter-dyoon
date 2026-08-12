@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Sparkles, Loader2, Copy, MessageCircle } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { generateReminderMessage } from "@/lib/ai.functions";
+import { waPhone } from "@/lib/phone";
 import { toast } from "sonner";
 
 interface Props {
@@ -48,7 +49,7 @@ export function AiReminderDialog({
 
   const sendWa = () => {
     const text = encodeURIComponent(msg);
-    const p = phone ? phone.replace(/\D/g, "") : "";
+    const p = waPhone(phone);
     window.open(p ? `https://wa.me/${p}?text=${text}` : `https://wa.me/?text=${text}`, "_blank");
   };
 

@@ -10,6 +10,39 @@ export interface PendingItem {
   amount?: number;
 }
 
+// Snoozed overdue-transaction alerts, stored locally per user. Snoozing must
+// never rewrite the transaction's real due_date (that corrupts the ledger),
+// so we keep a local map of txId -> until-ISO and filter alerts client-side.
+const snoozedKey = (userId: string) => `daftarak.snoozedTx.${userId}`;
+
+function readSnoozed(userId: string): Record<string, string> {
+  try {
+    return JSON.parse(localStorage.getItem(snoozedKey(userId)) ?? "{}") as Record<string, string>;
+  } catch {
+    return {};
+  }
+}
+
+export function snoozeOverdueTx(userId: string, txId: string, untilIso: string) {
+  try {
+    const map = readSnoozed(userId);
+    map[txId] = untilIso;
+    localStorage.setItem(snoozedKey(userId), JSON.stringify(map));
+  } catch {
+    /* ignore */
+  }
+}
+
+export function clearSnoozedTx(userId: string, txId: string) {
+  try {
+    const map = readSnoozed(userId);
+    delete map[txId];
+    localStorage.setItem(snoozedKey(userId), JSON.stringify(map));
+  } catch {
+    /* ignore */
+  }
+}
+
 /** Fetch unseen reminders + overdue unpaid transactions. */
 export async function fetchPending(userId: string): Promise<PendingItem[]> {
   const today = new Date();
@@ -36,6 +69,8 @@ export async function fetchPending(userId: string): Promise<PendingItem[]> {
 
   const items: PendingItem[] = [];
   const linked = new Set<string>();
+  const snoozed = readSnoozed(userId);
+  const nowMs = Date.now();
   for (const r of reminders ?? []) {
     items.push({
       id: r.id,
@@ -56,6 +91,8 @@ export async function fetchPending(userId: string): Promise<PendingItem[]> {
     people: { name: string } | null;
   }>) {
     if (linked.has(t.id)) continue;
+    const snoozedUntil = snoozed[t.id];
+    if (snoozedUntil && Date.parse(snoozedUntil) > nowMs) continue;
     const personName = t.people?.name ?? "";
     items.push({
       id: `txn:${t.id}`,

@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ArrowRight, Wallet, Plus, Trash2, Loader2, Sparkles } from "lucide-react";
+import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { toast } from "sonner";
 import { fmtMoney } from "@/lib/format";
 import { OpeningBalanceImportDialog } from "@/components/import/OpeningBalanceImportDialog";
@@ -48,6 +49,7 @@ function OpeningBalancesPage() {
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<string | null>(null);
 
   const load = async () => {
     if (!user) return;
@@ -115,9 +117,9 @@ function OpeningBalancesPage() {
     load();
   };
 
-  const del = async (id: string) => {
-    if (!confirm("حذف الرصيد الافتتاحي؟")) return;
-    const { error } = await supabase.from("opening_balances").delete().eq("id", id);
+  const del = async () => {
+    if (!pendingDelete) return;
+    const { error } = await supabase.from("opening_balances").delete().eq("id", pendingDelete);
     if (error) {
       toast.error(error.message);
       return;
@@ -278,7 +280,7 @@ function OpeningBalancesPage() {
                   {fmtMoney(o.amount)} <span className="text-[10px]">{c?.symbol}</span>
                 </div>
                 <button
-                  onClick={() => del(o.id)}
+                  onClick={() => setPendingDelete(o.id)}
                   className="p-1.5 text-muted-foreground hover:text-danger"
                 >
                   <Trash2 className="size-3.5" />
@@ -288,6 +290,16 @@ function OpeningBalancesPage() {
           })
         )}
       </div>
+
+      <ConfirmDialog
+        open={!!pendingDelete}
+        onOpenChange={(v) => !v && setPendingDelete(null)}
+        title="حذف الرصيد الافتتاحي؟"
+        description="سيُحذف هذا الرصيد من حساب العميل."
+        confirmLabel="حذف"
+        destructive
+        onConfirm={del}
+      />
     </div>
   );
 }

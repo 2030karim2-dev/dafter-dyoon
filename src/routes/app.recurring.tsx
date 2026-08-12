@@ -6,6 +6,7 @@ import { processDueRecurring } from "@/lib/recurring";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Repeat, RotateCw } from "lucide-react";
 import { EmptyState } from "@/components/EmptyState";
+import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { toast } from "sonner";
 import { RecurringRuleCard, type Rule } from "@/features/recurring/RecurringRuleCard";
 import { RecurringFormDialog } from "@/features/recurring/RecurringFormDialog";
@@ -28,13 +29,18 @@ function RecurringPage() {
   const [curs, setCurs] = useState<Cur[]>([]);
   const [people, setPeople] = useState<Person[]>([]);
   const [open, setOpen] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<string | null>(null);
 
   const load = async () => {
     if (!user) return;
     const [{ data: r }, { data: c }, { data: p }] = await Promise.all([
-      supabase.from("recurring_rules").select("*").order("next_run"),
-      supabase.from("currencies").select("id,name,is_base").order("is_base", { ascending: false }),
-      supabase.from("people").select("id,name").eq("is_archived", false),
+      supabase.from("recurring_rules").select("*").eq("user_id", user.id).order("next_run"),
+      supabase
+        .from("currencies")
+        .select("id,name,is_base")
+        .eq("user_id", user.id)
+        .order("is_base", { ascending: false }),
+      supabase.from("people").select("id,name").eq("user_id", user.id).eq("is_archived", false),
     ]);
     setItems((r ?? []) as Rule[]);
     setCurs((c ?? []) as Cur[]);
@@ -49,9 +55,9 @@ function RecurringPage() {
     load();
   };
 
-  const del = async (id: string) => {
-    if (!confirm("حذف هذه الدورية؟")) return;
-    await supabase.from("recurring_rules").delete().eq("id", id);
+  const del = async () => {
+    if (!pendingDelete) return;
+    await supabase.from("recurring_rules").delete().eq("id", pendingDelete);
     toast.success("تم الحذف");
     load();
   };
@@ -113,11 +119,21 @@ function RecurringPage() {
               r={r}
               currencyName={curs.find((c) => c.id === r.currency_id)?.name ?? ""}
               onToggle={() => toggleActive(r)}
-              onDelete={() => del(r.id)}
+              onDelete={() => setPendingDelete(r.id)}
             />
           ))}
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!pendingDelete}
+        onOpenChange={(v) => !v && setPendingDelete(null)}
+        title="حذف هذه الدورية؟"
+        description="لن تُولَّد معاملات جديدة من هذه القاعدة. المعاملات السابقة تبقى كما هي."
+        confirmLabel="حذف"
+        destructive
+        onConfirm={del}
+      />
     </div>
   );
 }

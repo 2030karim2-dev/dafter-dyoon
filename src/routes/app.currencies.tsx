@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Plus, Trash2, Star, StarOff, Loader2, Coins } from "lucide-react";
+import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/currencies")({ component: CurrenciesPage });
@@ -25,12 +26,15 @@ function CurrenciesPage() {
   const [name, setName] = useState("");
   const [symbol, setSymbol] = useState("");
   const [busy, setBusy] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<Currency | null>(null);
 
   const load = async () => {
+    if (!user) return;
     setLoading(true);
     const { data } = await supabase
       .from("currencies")
       .select("*")
+      .eq("user_id", user.id)
       .order("is_base", { ascending: false })
       .order("created_at");
     setItems(data ?? []);
@@ -64,13 +68,9 @@ function CurrenciesPage() {
     load();
   };
 
-  const del = async (id: string, isBase: boolean) => {
-    if (isBase) {
-      toast.error("لا يمكن حذف العملة الأساسية");
-      return;
-    }
-    if (!confirm("حذف العملة؟ لن يتم الحذف إذا كانت مستخدمة في معاملات.")) return;
-    const { error } = await supabase.from("currencies").delete().eq("id", id);
+  const del = async () => {
+    if (!pendingDelete) return;
+    const { error } = await supabase.from("currencies").delete().eq("id", pendingDelete.id);
     if (error) {
       toast.error(error.message);
       return;
@@ -157,7 +157,7 @@ function CurrenciesPage() {
               </div>
               {!c.is_base && (
                 <button
-                  onClick={() => del(c.id, c.is_base)}
+                  onClick={() => setPendingDelete(c)}
                   className="text-muted-foreground hover:text-danger p-2"
                 >
                   <Trash2 className="size-4" />
@@ -167,6 +167,16 @@ function CurrenciesPage() {
           ))}
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!pendingDelete}
+        onOpenChange={(v) => !v && setPendingDelete(null)}
+        title={`حذف عملة ${pendingDelete?.name ?? ""}؟`}
+        description="لن يتم الحذف إذا كانت العملة مستخدمة في معاملات."
+        confirmLabel="حذف"
+        destructive
+        onConfirm={del}
+      />
     </div>
   );
 }

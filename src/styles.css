@@ -37,6 +37,12 @@
   --color-danger: var(--danger);
   --color-danger-foreground: var(--danger-foreground);
   --color-danger-soft: var(--danger-soft);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning-soft: var(--warning-soft);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-info-soft: var(--info-soft);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
@@ -87,6 +93,16 @@
   --danger-foreground: oklch(0.99 0 0);
   --danger-soft: oklch(0.94 0.06 25);
 
+  /* Amber (due soon / pending / تحذير) */
+  --warning: oklch(0.62 0.17 75);
+  --warning-foreground: oklch(0.99 0 0);
+  --warning-soft: oklch(0.95 0.07 90);
+
+  /* Sky blue (informational / رسائل) */
+  --info: oklch(0.55 0.16 230);
+  --info-foreground: oklch(0.99 0 0);
+  --info-soft: oklch(0.94 0.05 230);
+
   --destructive: oklch(0.5 0.22 25);
   --destructive-foreground: oklch(0.99 0 0);
 
@@ -121,6 +137,12 @@
   --success-soft: oklch(0.32 0.1 160);
   --danger: oklch(0.68 0.22 25);
   --danger-soft: oklch(0.32 0.12 25);
+  --warning: oklch(0.78 0.16 80);
+  --warning-foreground: oklch(0.2 0.05 80);
+  --warning-soft: oklch(0.32 0.08 80);
+  --info: oklch(0.75 0.14 230);
+  --info-foreground: oklch(0.16 0.03 255);
+  --info-soft: oklch(0.3 0.08 230);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 12%);
   --ring: oklch(0.72 0.2 255);

@@ -87,11 +87,15 @@ function DataPage() {
       return;
     }
     const headers = Object.keys(data[0]);
+    // Neutralize spreadsheet formula injection: a cell starting with
+    // =, +, -, @ (or tab/CR) would execute as a formula when opened in Excel.
+    const safeCell = (v: unknown) => {
+      const s = String(v ?? "");
+      return JSON.stringify(/^[=+\-@\t\r]/.test(s) ? `'${s}` : s);
+    };
     const csv = [
       headers.join(","),
-      ...data.map((r: Record<string, unknown>) =>
-        headers.map((h) => JSON.stringify(r[h] ?? "")).join(","),
-      ),
+      ...data.map((r: Record<string, unknown>) => headers.map((h) => safeCell(r[h])).join(",")),
     ].join("\n");
     download(
       new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" }),

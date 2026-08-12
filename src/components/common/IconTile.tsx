@@ -10,8 +10,7 @@ const TONES = {
   primary: "bg-primary/15 text-primary ring-1 ring-primary/20",
   success: "bg-success-soft text-success ring-1 ring-success/25",
   danger: "bg-danger-soft text-danger ring-1 ring-danger/25",
-  warning:
-    "bg-amber-100 text-amber-800 ring-1 ring-amber-500/25 dark:bg-amber-500/15 dark:text-amber-300",
+  warning: "bg-warning-soft text-warning ring-1 ring-warning/25",
   muted: "bg-secondary text-foreground/70 ring-1 ring-border",
   accent: "bg-accent text-accent-foreground ring-1 ring-accent-foreground/15",
 };

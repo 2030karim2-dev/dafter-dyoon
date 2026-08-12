@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/auth";
 import { ArrowRight, ArchiveRestore, Trash2, Archive } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/EmptyState";
+import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/archive")({ component: ArchivePage });
@@ -17,12 +18,14 @@ interface Person {
 function ArchivePage() {
   const { user } = useAuth();
   const [items, setItems] = useState<Person[]>([]);
+  const [pendingDelete, setPendingDelete] = useState<Person | null>(null);
 
   const load = async () => {
     if (!user) return;
     const { data } = await supabase
       .from("people")
       .select("id,name")
+      .eq("user_id", user.id)
       .eq("is_archived", true)
       .order("name");
     setItems((data ?? []) as Person[]);
@@ -36,12 +39,14 @@ function ArchivePage() {
     toast.success("تمت الاستعادة");
     load();
   };
-  const del = async (id: string, name: string) => {
-    if (!confirm(`حذف ${name} نهائياً؟ سيتم حذف كل معاملاته.`)) return;
-    if (!confirm(`تأكيد نهائي: حذف ${name} وكل بياناته؟`)) return;
-    await supabase.from("transactions").delete().eq("person_id", id);
-    const { error } = await supabase.from("people").delete().eq("id", id);
-    if (error) return toast.error(error.message);
+  const del = async () => {
+    if (!pendingDelete) return;
+    await supabase.from("transactions").delete().eq("person_id", pendingDelete.id);
+    const { error } = await supabase.from("people").delete().eq("id", pendingDelete.id);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     toast.success("تم الحذف");
     load();
   };
@@ -89,7 +94,7 @@ function ArchivePage() {
                 <ArchiveRestore className="size-4" />
               </button>
               <button
-                onClick={() => del(p.id, p.name)}
+                onClick={() => setPendingDelete(p)}
                 className="p-2 text-muted-foreground hover:text-danger"
                 title="حذف نهائي"
               >
@@ -99,6 +104,16 @@ function ArchivePage() {
           ))}
         </Card>
       )}
+
+      <ConfirmDialog
+        open={!!pendingDelete}
+        onOpenChange={(v) => !v && setPendingDelete(null)}
+        title={`حذف ${pendingDelete?.name ?? ""} نهائياً؟`}
+        description="سيتم حذف هذا الشخص وكل معاملاته ومرفقاته. هذا الإجراء لا يمكن التراجع عنه."
+        confirmLabel="حذف نهائي"
+        destructive
+        onConfirm={del}
+      />
     </div>
   );
 }

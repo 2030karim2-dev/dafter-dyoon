@@ -68,7 +68,7 @@ function AppLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-16">
+    <div className="min-h-screen bg-background pb-[calc(4rem+env(safe-area-inset-bottom))]">
       <header className="bg-gradient-hero text-white sticky top-0 z-30 shadow-elevated">
         <div className="max-w-3xl mx-auto px-2.5 h-10 flex items-center justify-between">
           <Link to="/app" className="flex items-center gap-1.5 font-black text-[13px]">

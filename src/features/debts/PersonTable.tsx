@@ -35,7 +35,7 @@ export function PersonTable({ rows, onEdit, onArchive, onDelete }: Props) {
               <th className="text-left">عليه</th>
               <th className="text-left">الصافي</th>
               <th className="text-center">عملات أخرى</th>
-              <th className="text-center hidden xs:table-cell">آخر دفعة</th>
+              <th className="text-center hidden sm:table-cell">آخر دفعة</th>
               {hasActions && <th className="text-center w-10">إجراء</th>}
             </tr>
           </thead>
@@ -110,7 +110,7 @@ export function PersonTable({ rows, onEdit, onArchive, onDelete }: Props) {
                       <span className="text-muted-foreground text-[9px]">—</span>
                     )}
                   </td>
-                  <td className="px-2 py-1.5 text-center hidden xs:table-cell text-muted-foreground tabular-nums">
+                  <td className="px-2 py-1.5 text-center hidden sm:table-cell text-muted-foreground tabular-nums">
                     {balance.lastDate ? fmtDate(new Date(balance.lastDate).toISOString()) : "—"}
                   </td>
                   {hasActions && (

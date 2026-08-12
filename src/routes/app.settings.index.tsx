@@ -152,13 +152,6 @@ function SettingsPage() {
           tone="primary"
         />
         <SettingsRow
-          to="/app/exchange-rates"
-          icon={Coins}
-          label="أسعار الصرف"
-          desc="تحديث يومي + سجل"
-          tone="accent"
-        />
-        <SettingsRow
           to="/app/opening-balances"
           icon={Wallet}
           label="الأرصدة الافتتاحية"

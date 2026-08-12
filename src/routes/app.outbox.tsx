@@ -15,6 +15,7 @@ import {
   sendOutboxFn,
   type OutboxRow,
 } from "@/lib/messaging.functions";
+import { waPhone } from "@/lib/phone";
 
 export const Route = createFileRoute("/app/outbox")({
   component: OutboxPage,
@@ -101,8 +102,9 @@ function OutboxPage() {
   });
 
   const openWhatsApp = (r: OutboxRow) => {
-    if (!r.destination) return toast.error("لا يوجد رقم للعميل");
-    window.open(`https://wa.me/${r.destination}?text=${encodeURIComponent(r.body)}`, "_blank");
+    const p = waPhone(r.destination);
+    if (!p) return toast.error("لا يوجد رقم للعميل");
+    window.open(`https://wa.me/${p}?text=${encodeURIComponent(r.body)}`, "_blank");
     doMark.mutate(r.id);
   };
 

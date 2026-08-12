@@ -82,7 +82,7 @@ function TodayPage() {
   const invalidate = () => {
     void qc.invalidateQueries({ queryKey: ["today-board"] });
     void qc.invalidateQueries({ queryKey: ["followup-board"] });
-    void qc.invalidateQueries({ queryKey: ["home"] });
+    void qc.invalidateQueries({ queryKey: ["debts-home"] });
   };
 
   const build = useMutation({

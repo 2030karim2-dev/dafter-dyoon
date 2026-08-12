@@ -36,6 +36,7 @@ import {
   Activity,
 } from "lucide-react";
 import { CurrencyScope } from "@/components/common/CurrencyScope";
+import { waPhone } from "@/lib/phone";
 import { PersonFeed } from "@/features/person/PersonFeed";
 import { PersonPromises } from "@/features/person/PersonPromises";
 import { PersonActivity } from "@/features/person/PersonActivity";
@@ -142,7 +143,9 @@ function PersonPage() {
     if (curId && currencies.some((c) => c.id === curId)) return;
     const saved = (() => {
       try {
-        return localStorage.getItem("scope_currency");
+        return (
+          localStorage.getItem("daftarak.scope_currency") ?? localStorage.getItem("scope_currency")
+        );
       } catch {
         return null;
       }
@@ -154,7 +157,7 @@ function PersonPage() {
   useEffect(() => {
     if (curId) {
       try {
-        localStorage.setItem("scope_currency", curId);
+        localStorage.setItem("daftarak.scope_currency", curId);
       } catch {
         /* ignore */
       }
@@ -310,7 +313,7 @@ function PersonPage() {
 
   const shareWhatsApp = () => {
     const text = encodeURIComponent(buildShareText());
-    const p = phone ? phone.replace(/\D/g, "") : "";
+    const p = waPhone(phone);
     window.open(p ? `https://wa.me/${p}?text=${text}` : `https://wa.me/?text=${text}`, "_blank");
   };
 

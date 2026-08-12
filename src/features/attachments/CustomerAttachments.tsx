@@ -29,7 +29,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { EmptyState } from "@/components/EmptyState";
+import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { fmtDate, fmtMoney } from "@/lib/format";
+import { waPhone } from "@/lib/phone";
 
 export const ATTACHMENT_CATEGORIES = [
   {
@@ -97,6 +99,7 @@ export function CustomerAttachments({ personId, personPhone }: Props) {
   const [filter, setFilter] = useState<CatVal | "all">("all");
   const [busy, setBusy] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<Attachment | null>(null);
   const [preview, setPreview] = useState<{ url: string; name: string; isImg: boolean } | null>(
     null,
   );
@@ -223,12 +226,13 @@ export function CustomerAttachments({ personId, personPhone }: Props) {
     if (!data?.signedUrl) return;
     const cat = ATTACHMENT_CATEGORIES.find((c) => c.value === (a.category ?? "other"))?.label ?? "";
     const text = encodeURIComponent(`${cat}: ${a.file_name}\n${data.signedUrl}`);
-    const p = personPhone ? personPhone.replace(/\D/g, "") : "";
+    const p = waPhone(personPhone);
     window.open(p ? `https://wa.me/${p}?text=${text}` : `https://wa.me/?text=${text}`, "_blank");
   };
 
-  const remove = async (a: Attachment) => {
-    if (!confirm("حذف المرفق نهائياً؟")) return;
+  const remove = async () => {
+    const a = pendingDelete;
+    if (!a) return;
     await supabase.storage.from("receipts").remove([a.storage_path]);
     const { error } = await supabase.from("attachments").delete().eq("id", a.id);
     if (error) {
@@ -360,7 +364,7 @@ export function CustomerAttachments({ personId, personPhone }: Props) {
                       <Share2 className="size-3.5" />
                     </button>
                     <button
-                      onClick={() => remove(a)}
+                      onClick={() => setPendingDelete(a)}
                       title="حذف"
                       className="text-rose-600 hover:text-rose-700"
                     >
@@ -473,6 +477,16 @@ export function CustomerAttachments({ personId, personPhone }: Props) {
             ))}
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={!!pendingDelete}
+        onOpenChange={(v) => !v && setPendingDelete(null)}
+        title="حذف المرفق نهائياً؟"
+        description={pendingDelete ? `سيُحذف "${pendingDelete.file_name}" نهائياً.` : undefined}
+        confirmLabel="حذف"
+        destructive
+        onConfirm={remove}
+      />
     </div>
   );
 }

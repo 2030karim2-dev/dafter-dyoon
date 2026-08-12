@@ -19,7 +19,7 @@ import { toast } from "sonner";
 
 const AUTOLOCK_KEY = "daftarak.autolock.minutes";
 const LAST_ACTIVE_KEY = "daftarak.lastActive";
-const ATTEMPTS_KEY = "daftarak.pin.attempts";
+const attemptsKey = (uid: string) => `daftarak.pin.attempts.${uid}`;
 
 export function PinLockGate({ children }: { children: React.ReactNode }) {
   const { user, signOut } = useAuth();
@@ -30,7 +30,7 @@ export function PinLockGate({ children }: { children: React.ReactNode }) {
   const [pin, setPin] = useState("");
   const [attempts, setAttempts] = useState(() => {
     if (typeof localStorage === "undefined") return 0;
-    return Number(localStorage.getItem(ATTEMPTS_KEY) ?? "0") || 0;
+    return Number(localStorage.getItem(attemptsKey(user?.id ?? "anon")) ?? "0") || 0;
   });
   const [waitMs, setWaitMs] = useState(0);
   const [checking, setChecking] = useState(true);
@@ -49,7 +49,7 @@ export function PinLockGate({ children }: { children: React.ReactNode }) {
         .maybeSingle();
       const h = data?.pin_hash ?? null;
       setPinHash(h);
-      if (h && !isUnlocked()) setUnlocked(false);
+      if (h && !isUnlocked(user.id)) setUnlocked(false);
       setChecking(false);
     })();
     try {
@@ -78,7 +78,7 @@ export function PinLockGate({ children }: { children: React.ReactNode }) {
       const last = Number(sessionStorage.getItem(LAST_ACTIVE_KEY) ?? Date.now());
       const limit = autolockMin.current * 60_000;
       if (Date.now() - last >= limit) {
-        markLocked();
+        markLocked(user?.id);
         setUnlocked(false);
       }
     };
@@ -100,14 +100,14 @@ export function PinLockGate({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (unlocked) return;
-    const t = setInterval(() => setWaitMs(getLockRemaining()), 500);
+    const t = setInterval(() => setWaitMs(user ? getLockRemaining(user.id) : 0), 500);
     return () => clearInterval(t);
   }, [unlocked]);
 
   // Auto-prompt biometric on lock screen show
   useEffect(() => {
     if (checking || unlocked || !pinHash) return;
-    if (!biometricEnabled()) return;
+    if (!user || !biometricEnabled(user.id)) return;
     const id = setTimeout(() => {
       void tryBiometric();
     }, 300);
@@ -129,11 +129,11 @@ export function PinLockGate({ children }: { children: React.ReactNode }) {
   const verify = async (val: string) => {
     const h = await hashPin(val, user.id);
     if (h === pinHash) {
-      markUnlocked();
-      clearLockTimer();
+      markUnlocked(user.id);
+      clearLockTimer(user.id);
       try {
         sessionStorage.setItem(LAST_ACTIVE_KEY, String(Date.now()));
-        localStorage.removeItem(ATTEMPTS_KEY);
+        localStorage.removeItem(attemptsKey(user.id));
       } catch {
         /* ignore */
       }
@@ -144,17 +144,17 @@ export function PinLockGate({ children }: { children: React.ReactNode }) {
       const a = attempts + 1;
       setAttempts(a);
       try {
-        localStorage.setItem(ATTEMPTS_KEY, String(a));
+        localStorage.setItem(attemptsKey(user.id), String(a));
       } catch {
         /* ignore */
       }
       setPin("");
       if (a >= 3) {
-        setLockedUntil(30_000);
+        setLockedUntil(user.id, 30_000);
         setWaitMs(30_000);
         setAttempts(0);
         try {
-          localStorage.removeItem(ATTEMPTS_KEY);
+          localStorage.removeItem(attemptsKey(user.id));
         } catch {
           /* ignore */
         }
@@ -177,10 +177,10 @@ export function PinLockGate({ children }: { children: React.ReactNode }) {
 
   const tryBiometric = async () => {
     if (waitMs > 0) return;
-    const ok = await verifyBiometric();
+    const ok = await verifyBiometric(user.id);
     if (ok) {
-      markUnlocked();
-      clearLockTimer();
+      markUnlocked(user.id);
+      clearLockTimer(user.id);
       try {
         sessionStorage.setItem(LAST_ACTIVE_KEY, String(Date.now()));
       } catch {
@@ -192,7 +192,7 @@ export function PinLockGate({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const bioOn = biometricEnabled();
+  const bioOn = biometricEnabled(user.id);
 
   return (
     <div className="fixed inset-0 z-[100] bg-gradient-hero flex flex-col items-center justify-center text-white p-6">

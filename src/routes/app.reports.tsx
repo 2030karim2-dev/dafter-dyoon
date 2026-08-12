@@ -52,9 +52,19 @@ function ReportsPage() {
     if (!user) return;
     (async () => {
       const [{ data: c }, { data: p }, { data: t }] = await Promise.all([
-        supabase.from("currencies").select("*").order("is_base", { ascending: false }),
-        supabase.from("people").select("id,name"),
-        supabase.from("transactions").select("*"),
+        supabase
+          .from("currencies")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("is_base", { ascending: false }),
+        supabase.from("people").select("id,name").eq("user_id", user.id),
+        // Bounded to the most recent 5000 rows to avoid unbounded memory use.
+        supabase
+          .from("transactions")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("transaction_date", { ascending: false })
+          .limit(5000),
       ]);
       setCurs((c ?? []) as Cur[]);
       setPeople((p ?? []) as Person[]);
@@ -68,7 +78,9 @@ function ReportsPage() {
     if (curs.length === 0 || curId) return;
     const saved = (() => {
       try {
-        return localStorage.getItem("scope_currency");
+        return (
+          localStorage.getItem("daftarak.scope_currency") ?? localStorage.getItem("scope_currency")
+        );
       } catch {
         return null;
       }
@@ -142,9 +154,13 @@ function ReportsPage() {
         person,
       ]);
     }
-    const csv =
-      "\uFEFF" +
-      rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+    // Neutralize spreadsheet formula injection (=, +, -, @ prefixes).
+    const safeCell = (c: unknown) => {
+      const s = String(c);
+      const v = /^[=+\-@\t\r]/.test(s) ? `'${s}` : s;
+      return `"${v.replace(/"/g, '""')}"`;
+    };
+    const csv = "\uFEFF" + rows.map((r) => r.map(safeCell).join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");

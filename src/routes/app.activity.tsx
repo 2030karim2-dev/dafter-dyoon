@@ -41,6 +41,7 @@ function ActivityPage() {
       const { data } = await supabase
         .from("audit_log")
         .select("*")
+        .eq("user_id", user.id)
         .order("created_at", { ascending: false })
         .limit(100);
       setRows((data ?? []) as Row[]);

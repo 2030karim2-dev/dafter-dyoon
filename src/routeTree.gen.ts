@@ -15,7 +15,6 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppTodayRouteImport } from './routes/app.today'
 import { Route as AppSettingsRouteImport } from './routes/app.settings'
-import { Route as AppSearchRouteImport } from './routes/app.search'
 import { Route as AppReportsRouteImport } from './routes/app.reports'
 import { Route as AppRemindersRouteImport } from './routes/app.reminders'
 import { Route as AppRecurringRouteImport } from './routes/app.recurring'
@@ -67,11 +66,6 @@ const AppTodayRoute = AppTodayRouteImport.update({
 const AppSettingsRoute = AppSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppSearchRoute = AppSearchRouteImport.update({
-  id: '/search',
-  path: '/search',
   getParentRoute: () => AppRoute,
 } as any)
 const AppReportsRoute = AppReportsRouteImport.update({
@@ -201,7 +195,6 @@ export interface FileRoutesByFullPath {
   '/app/recurring': typeof AppRecurringRoute
   '/app/reminders': typeof AppRemindersRoute
   '/app/reports': typeof AppReportsRoute
-  '/app/search': typeof AppSearchRoute
   '/app/settings': typeof AppSettingsRouteWithChildren
   '/app/today': typeof AppTodayRoute
   '/app/': typeof AppIndexRoute
@@ -231,7 +224,6 @@ export interface FileRoutesByTo {
   '/app/recurring': typeof AppRecurringRoute
   '/app/reminders': typeof AppRemindersRoute
   '/app/reports': typeof AppReportsRoute
-  '/app/search': typeof AppSearchRoute
   '/app/today': typeof AppTodayRoute
   '/app': typeof AppIndexRoute
   '/app/person/$id': typeof AppPersonIdRoute
@@ -262,7 +254,6 @@ export interface FileRoutesById {
   '/app/recurring': typeof AppRecurringRoute
   '/app/reminders': typeof AppRemindersRoute
   '/app/reports': typeof AppReportsRoute
-  '/app/search': typeof AppSearchRoute
   '/app/settings': typeof AppSettingsRouteWithChildren
   '/app/today': typeof AppTodayRoute
   '/app/': typeof AppIndexRoute
@@ -295,7 +286,6 @@ export interface FileRouteTypes {
     | '/app/recurring'
     | '/app/reminders'
     | '/app/reports'
-    | '/app/search'
     | '/app/settings'
     | '/app/today'
     | '/app/'
@@ -325,7 +315,6 @@ export interface FileRouteTypes {
     | '/app/recurring'
     | '/app/reminders'
     | '/app/reports'
-    | '/app/search'
     | '/app/today'
     | '/app'
     | '/app/person/$id'
@@ -355,7 +344,6 @@ export interface FileRouteTypes {
     | '/app/recurring'
     | '/app/reminders'
     | '/app/reports'
-    | '/app/search'
     | '/app/settings'
     | '/app/today'
     | '/app/'
@@ -423,13 +411,6 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/app/settings'
       preLoaderRoute: typeof AppSettingsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/search': {
-      id: '/app/search'
-      path: '/search'
-      fullPath: '/app/search'
-      preLoaderRoute: typeof AppSearchRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/reports': {
@@ -628,7 +609,6 @@ interface AppRouteChildren {
   AppRecurringRoute: typeof AppRecurringRoute
   AppRemindersRoute: typeof AppRemindersRoute
   AppReportsRoute: typeof AppReportsRoute
-  AppSearchRoute: typeof AppSearchRoute
   AppSettingsRoute: typeof AppSettingsRouteWithChildren
   AppTodayRoute: typeof AppTodayRoute
   AppIndexRoute: typeof AppIndexRoute
@@ -646,7 +626,6 @@ const AppRouteChildren: AppRouteChildren = {
   AppRecurringRoute: AppRecurringRoute,
   AppRemindersRoute: AppRemindersRoute,
   AppReportsRoute: AppReportsRoute,
-  AppSearchRoute: AppSearchRoute,
   AppSettingsRoute: AppSettingsRouteWithChildren,
   AppTodayRoute: AppTodayRoute,
   AppIndexRoute: AppIndexRoute,

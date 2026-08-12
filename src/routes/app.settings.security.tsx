@@ -48,7 +48,7 @@ function SecurityPage() {
     try {
       const v = Number(localStorage.getItem(AUTOLOCK_KEY) ?? "5");
       setAutolock(isNaN(v) ? 5 : v);
-      setBiometric(biometricEnabled());
+      setBiometric(biometricEnabled(user.id));
     } catch {
       /* ignore */
     }
@@ -99,7 +99,7 @@ function SecurityPage() {
   const toggleBio = async (v: boolean) => {
     if (!user) return;
     if (!v) {
-      disableBiometric();
+      disableBiometric(user.id);
       setBiometric(false);
       toast.success("تم تعطيل البصمة");
       return;
@@ -117,7 +117,8 @@ function SecurityPage() {
   };
 
   const testBio = async () => {
-    const ok = await verifyBiometric();
+    if (!user) return;
+    const ok = await verifyBiometric(user.id);
     toast[ok ? "success" : "error"](ok ? "تم التحقق بنجاح" : "فشل التحقق");
   };
 

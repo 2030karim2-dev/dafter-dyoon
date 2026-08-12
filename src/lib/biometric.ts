@@ -3,8 +3,10 @@
 // successfully passed a local platform authenticator challenge (Touch ID,
 // Face ID, Windows Hello, Android biometric).
 
-const CRED_KEY = "daftarak.biometric.credId";
-const ENABLED_KEY = "daftarak.biometric";
+// Keys are scoped per user id: a biometric credential registered for one
+// account must never unlock the PIN gate of another account on this device.
+const credKey = (uid: string) => `daftarak.biometric.credId.${uid}`;
+const enabledKey = (uid: string) => `daftarak.biometric.${uid}`;
 
 function b64encode(buf: ArrayBuffer): string {
   const bytes = new Uint8Array(buf);
@@ -19,9 +21,9 @@ function b64decode(s: string): Uint8Array {
   return out;
 }
 
-export function biometricEnabled(): boolean {
+export function biometricEnabled(uid: string): boolean {
   try {
-    return localStorage.getItem(ENABLED_KEY) === "1" && !!localStorage.getItem(CRED_KEY);
+    return localStorage.getItem(enabledKey(uid)) === "1" && !!localStorage.getItem(credKey(uid));
   } catch {
     return false;
   }
@@ -58,21 +60,21 @@ export async function registerBiometric(userId: string, userName: string): Promi
     },
   })) as PublicKeyCredential | null;
   if (!cred) throw new Error("لم يتم تسجيل البصمة");
-  localStorage.setItem(CRED_KEY, b64encode(cred.rawId));
-  localStorage.setItem(ENABLED_KEY, "1");
+  localStorage.setItem(credKey(userId), b64encode(cred.rawId));
+  localStorage.setItem(enabledKey(userId), "1");
 }
 
-export function disableBiometric() {
+export function disableBiometric(uid: string) {
   try {
-    localStorage.removeItem(CRED_KEY);
-    localStorage.setItem(ENABLED_KEY, "0");
+    localStorage.removeItem(credKey(uid));
+    localStorage.setItem(enabledKey(uid), "0");
   } catch {
     /* ignore */
   }
 }
 
-export async function verifyBiometric(): Promise<boolean> {
-  const idB64 = localStorage.getItem(CRED_KEY);
+export async function verifyBiometric(uid: string): Promise<boolean> {
+  const idB64 = localStorage.getItem(credKey(uid));
   if (!idB64) return false;
   const challenge = crypto.getRandomValues(new Uint8Array(32));
   try {

@@ -5,7 +5,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { PageHeader } from "@/components/common/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
-import { fetchPending, markAllSeen, type PendingItem } from "@/lib/notifications";
+import {
+  fetchPending,
+  markAllSeen,
+  snoozeOverdueTx,
+  clearSnoozedTx,
+  type PendingItem,
+} from "@/lib/notifications";
 import { fmtDate } from "@/lib/format";
 import { Bell, AlarmClock, ArrowLeft, Check, Clock } from "lucide-react";
 import { toast } from "sonner";
@@ -35,6 +41,7 @@ function NotificationsCenter() {
   const markDone = async (it: PendingItem) => {
     if (it.kind === "overdue" && it.transaction_id) {
       await supabase.from("transactions").update({ is_paid: true }).eq("id", it.transaction_id);
+      if (user) clearSnoozedTx(user.id, it.transaction_id);
       toast.success("تم تعليم الدين كمسدّد");
     } else {
       await supabase.from("reminders").update({ is_done: true }).eq("id", it.id);
@@ -47,15 +54,10 @@ function NotificationsCenter() {
     const d = new Date();
     d.setDate(d.getDate() + days);
     if (it.kind === "overdue" && it.transaction_id) {
-      await supabase
-        .from("transactions")
-        .update({ due_date: d.toISOString().slice(0, 10) })
-        .eq("id", it.transaction_id);
+      // Never rewrite the real due_date — snooze is a local alert preference.
+      if (user) snoozeOverdueTx(user.id, it.transaction_id, d.toISOString());
     } else {
-      await supabase
-        .from("reminders")
-        .update({ due_date: d.toISOString(), snoozed_until: d.toISOString() })
-        .eq("id", it.id);
+      await supabase.from("reminders").update({ snoozed_until: d.toISOString() }).eq("id", it.id);
     }
     setItems((xs) => xs.filter((x) => x.id !== it.id));
     toast.success(`مؤجل ${days} يوم`);

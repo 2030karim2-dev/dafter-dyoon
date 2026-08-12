@@ -7,6 +7,7 @@ import { Bell, AlarmClock, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/common/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
+import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import {
   completeReminder,
   snoozeReminder,
@@ -32,15 +33,19 @@ function RemindersPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Reminder | null>(null);
   const [syncing, setSyncing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [pendingDelete, setPendingDelete] = useState<string | null>(null);
 
   const load = useCallback(async () => {
+    if (!user) return;
     const [{ data: r }, { data: p }] = await Promise.all([
-      supabase.from("reminders").select("*").order("due_date"),
-      supabase.from("people").select("id,name").eq("is_archived", false),
+      supabase.from("reminders").select("*").eq("user_id", user.id).order("due_date"),
+      supabase.from("people").select("id,name").eq("user_id", user.id).eq("is_archived", false),
     ]);
     setItems((r ?? []) as Reminder[]);
     setPeople((p ?? []) as Person[]);
-  }, []);
+    setLoading(false);
+  }, [user]);
 
   useEffect(() => {
     if (!user) return;
@@ -75,9 +80,9 @@ function RemindersPage() {
     load();
   };
 
-  const del = async (id: string) => {
-    if (!confirm("حذف التذكير؟")) return;
-    await supabase.from("reminders").delete().eq("id", id);
+  const del = async () => {
+    if (!pendingDelete) return;
+    await supabase.from("reminders").delete().eq("id", pendingDelete);
     toast.success("تم الحذف");
     load();
   };
@@ -178,7 +183,13 @@ function RemindersPage() {
         ))}
       </div>
 
-      {filtered.length === 0 ? (
+      {loading ? (
+        <div className="space-y-1.5">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="h-16 rounded-xl bg-secondary animate-pulse" />
+          ))}
+        </div>
+      ) : filtered.length === 0 ? (
         <EmptyState
           icon={AlarmClock}
           title="لا توجد تذكيرات"
@@ -197,11 +208,21 @@ function RemindersPage() {
                 setEditing(r);
                 setOpen(true);
               }}
-              onDelete={() => del(r.id)}
+              onDelete={() => setPendingDelete(r.id)}
             />
           ))}
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!pendingDelete}
+        onOpenChange={(v) => !v && setPendingDelete(null)}
+        title="حذف التذكير؟"
+        description="سيُحذف هذا التذكير نهائياً."
+        confirmLabel="حذف"
+        destructive
+        onConfirm={del}
+      />
     </div>
   );
 }

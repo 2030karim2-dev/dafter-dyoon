@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Loader2, Send, MessageCircle, Inbox } from "lucide-react";
 import { toast } from "sonner";
+import { waPhone } from "@/lib/phone";
 
 interface Props {
   name: string;
@@ -30,8 +31,9 @@ export function MessageSheet({
   const [busy, setBusy] = useState(false);
 
   const openWhatsApp = () => {
-    if (!phone) return toast.error("لا يوجد رقم جوال لهذا العميل");
-    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(body)}`, "_blank");
+    const p = waPhone(phone);
+    if (!p) return toast.error("لا يوجد رقم جوال لهذا العميل");
+    window.open(`https://wa.me/${p}?text=${encodeURIComponent(body)}`, "_blank");
     onQueue();
   };
 

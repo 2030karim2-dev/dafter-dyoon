@@ -126,6 +126,7 @@ function AuthPage() {
                   id="newpw"
                   type="password"
                   dir="ltr"
+                  autoComplete="new-password"
                   value={newPw}
                   onChange={(e) => setNewPw(e.target.value)}
                   placeholder="••••••••"
@@ -172,6 +173,7 @@ function AuthPage() {
                       id="email"
                       type="email"
                       dir="ltr"
+                      autoComplete="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="you@example.com"
@@ -183,6 +185,7 @@ function AuthPage() {
                       id="pw"
                       type="password"
                       dir="ltr"
+                      autoComplete="current-password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"

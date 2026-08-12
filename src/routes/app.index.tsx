@@ -131,7 +131,9 @@ function DebtsHome() {
     if (curId && data.currencies.some((c) => c.id === curId)) return;
     const saved = (() => {
       try {
-        return localStorage.getItem("scope_currency");
+        return (
+          localStorage.getItem("daftarak.scope_currency") ?? localStorage.getItem("scope_currency")
+        );
       } catch {
         return null;
       }
@@ -142,7 +144,7 @@ function DebtsHome() {
   useEffect(() => {
     if (curId) {
       try {
-        localStorage.setItem("scope_currency", curId);
+        localStorage.setItem("daftarak.scope_currency", curId);
       } catch {
         /* ignore */
       }

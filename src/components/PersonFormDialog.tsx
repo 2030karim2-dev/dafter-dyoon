@@ -89,7 +89,8 @@ export function PersonFormDialog({ open, onOpenChange, editing, onSuccess }: Pro
         type,
         notes: notes.trim() || null,
         avatar_color: color,
-        credit_limit: creditLimit ? Number(creditLimit) : null,
+        credit_limit:
+          creditLimit && Number.isFinite(Number(creditLimit)) ? Number(creditLimit) : null,
       };
       const { data, error } = editing
         ? await supabase.from("people").update(payload).eq("id", editing.id).select("id").single()
@@ -188,7 +189,14 @@ export function PersonFormDialog({ open, onOpenChange, editing, onSuccess }: Pro
             <Label className="text-[12px]">سقف الائتمان (اختياري)</Label>
             <Input
               value={creditLimit}
-              onChange={(e) => setCreditLimit(e.target.value.replace(/[^0-9.]/g, ""))}
+              onChange={(e) => {
+                // Digits + at most one decimal point.
+                const v = e.target.value.replace(/[^0-9.]/g, "");
+                const dot = v.indexOf(".");
+                setCreditLimit(
+                  dot === -1 ? v : v.slice(0, dot + 1) + v.slice(dot + 1).replace(/\./g, ""),
+                );
+              }}
               placeholder="0"
               inputMode="decimal"
               dir="ltr"
