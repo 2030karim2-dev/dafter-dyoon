@@ -1,4 +1,12 @@
-import { TrendingUp, TrendingDown, Pencil, Trash2, CheckCircle2, Clock } from "lucide-react";
+import {
+  TrendingUp,
+  TrendingDown,
+  Pencil,
+  Trash2,
+  CheckCircle2,
+  Clock,
+  ReceiptText,
+} from "lucide-react";
 import { fmtMoney, fmtDate, fmtTime } from "@/lib/format";
 
 interface Tx {
@@ -23,6 +31,7 @@ interface Props {
   onEdit: () => void;
   onDelete: () => void;
   onTogglePaid?: () => void;
+  onReceipt?: () => void;
 }
 
 function dueState(
@@ -46,9 +55,12 @@ export function TransactionRow({
   onEdit,
   onDelete,
   onTogglePaid,
+  onReceipt,
 }: Props) {
   const credit = tx.direction === "credit";
   const state = dueState(tx.due_date, tx.is_paid);
+  // سند القبض متاح للدفعات (debit) وللمعاملات المسدّدة للتوثيق
+  const canReceipt = !!onReceipt && (!credit || tx.is_paid);
   return (
     <div
       className={`bg-card border rounded-xl p-2 shadow-card animate-in fade-in slide-in-from-bottom-1 ${state === "overdue" ? "border-danger/40" : ""}`}
@@ -115,6 +127,16 @@ export function TransactionRow({
                   className={`p-1 ${tx.is_paid ? "text-success" : "text-muted-foreground hover:text-success"}`}
                 >
                   <CheckCircle2 className="size-3" />
+                </button>
+              )}
+              {canReceipt && (
+                <button
+                  onClick={onReceipt}
+                  aria-label="توليد سند قبض"
+                  title="توليد سند قبض لهذه الدفعة"
+                  className="p-1 text-muted-foreground hover:text-primary"
+                >
+                  <ReceiptText className="size-3" />
                 </button>
               )}
               <button

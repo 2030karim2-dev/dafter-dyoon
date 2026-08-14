@@ -27,6 +27,7 @@ interface Props {
   onEdit: (t: Tx) => void;
   onDelete: (id: string) => void;
   onTogglePaid: (t: Tx) => void;
+  onReceipt?: (t: Tx) => void;
 }
 
 export function PersonTimeline({
@@ -36,6 +37,7 @@ export function PersonTimeline({
   onEdit,
   onDelete,
   onTogglePaid,
+  onReceipt,
 }: Props) {
   const grouped = useMemo(() => {
     const g = new Map<string, Tx[]>();
@@ -70,6 +72,7 @@ export function PersonTimeline({
             onEdit={onEdit}
             onDelete={onDelete}
             onTogglePaid={onTogglePaid}
+            onReceipt={onReceipt}
           />
         </div>
       ))}

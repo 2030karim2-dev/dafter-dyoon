@@ -43,6 +43,8 @@ export async function recordPayment(
   if (!(amount > 0)) throw new Error("مبلغ الدفعة غير صحيح");
 
   // 1) the payment itself is a debit movement in that currency
+  // (credit = debt on the customer, debit = payment received — matching the
+  // collection model, the activity feed and the imported-opening flow)
   const { data: payment, error: payErr } = await supabase
     .from("transactions")
     .insert({
@@ -50,7 +52,7 @@ export async function recordPayment(
       person_id: input.person_id,
       currency_id: input.currency_id,
       amount,
-      direction: "credit",
+      direction: "debit",
       details: input.note?.trim() ? input.note.trim() : "دفعة من العميل",
       transaction_date: input.paid_at,
       is_paid: true,
@@ -59,14 +61,14 @@ export async function recordPayment(
     .single();
   if (payErr || !payment) throw new Error(payErr?.message ?? "فشل تسجيل الدفعة");
 
-  // 2) oldest-first outstanding debts in the SAME currency
+  // 2) oldest-first outstanding debts in the SAME currency (credit = receivable)
   const { data: debtsRaw } = await supabase
     .from("transactions")
     .select("id,amount,transaction_date,due_date")
     .eq("user_id", userId)
     .eq("person_id", input.person_id)
     .eq("currency_id", input.currency_id)
-    .eq("direction", "debit")
+    .eq("direction", "credit")
     .eq("is_paid", false);
 
   const debts = ((debtsRaw ?? []) as DebtRow[]).sort((a, b) => {

@@ -1,4 +1,12 @@
-import { TrendingUp, TrendingDown, Pencil, Trash2, CheckCircle2, Clock } from "lucide-react";
+import {
+  TrendingUp,
+  TrendingDown,
+  Pencil,
+  Trash2,
+  CheckCircle2,
+  Clock,
+  ReceiptText,
+} from "lucide-react";
 import { fmtMoney, fmtDate } from "@/lib/format";
 
 interface Tx {
@@ -24,6 +32,7 @@ interface Props<T extends Tx = Tx> {
   onEdit: (t: T) => void;
   onDelete: (id: string) => void;
   onTogglePaid?: (t: T) => void;
+  onReceipt?: (t: T) => void;
 }
 
 function dueState(
@@ -47,6 +56,7 @@ export function TransactionTable<T extends Tx>({
   onEdit,
   onDelete,
   onTogglePaid,
+  onReceipt,
 }: Props<T>) {
   return (
     <div className="rounded-xl border-2 border-border bg-card shadow-card overflow-hidden">
@@ -166,6 +176,16 @@ export function TransactionTable<T extends Tx>({
                           className={`p-1 rounded hover:bg-success/10 ${t.is_paid ? "text-success" : "text-muted-foreground"}`}
                         >
                           <CheckCircle2 className="size-3" />
+                        </button>
+                      )}
+                      {(!credit || t.is_paid) && onReceipt && (
+                        <button
+                          onClick={() => onReceipt(t)}
+                          aria-label="توليد سند قبض"
+                          title="توليد سند قبض لهذه الدفعة"
+                          className="p-1 rounded text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                        >
+                          <ReceiptText className="size-3" />
                         </button>
                       )}
                       <button

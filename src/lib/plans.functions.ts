@@ -89,7 +89,11 @@ export const createPlanFn = createServerFn({ method: "POST" })
       note: data.note ? `قسط من: ${data.note}` : null,
     }));
     const { error: insErr } = await supabase.from("payment_promises").insert(promises);
-    if (insErr) throw new Error(insErr.message);
+    if (insErr) {
+      // تراجع يدوي: عدم ترك خطة يتيمة في حال فشل إدراج الأقساط
+      await supabase.from("payment_plans").delete().eq("id", plan.id).eq("user_id", userId);
+      throw new Error(insErr.message);
+    }
 
     return { plan_id: plan.id, installments: installments.length };
   });

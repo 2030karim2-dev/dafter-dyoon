@@ -10,6 +10,13 @@ import { buildInstallments } from "@/lib/plans";
 import { fmtMoney, fmtDate } from "@/lib/format";
 import { CalendarRange, Loader2 } from "lucide-react";
 
+/** التاريخ المحلي لليوم (YYYY-MM-DD) — يتجنب انزياح المنطقة الزمنية لـ toISOString. */
+const todayLocal = () => {
+  const d = new Date();
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+};
+
 interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -35,7 +42,7 @@ export function PlanDialog({
   const [total, setTotal] = useState(suggested ? String(Math.abs(suggested)) : "");
   const [count, setCount] = useState("5");
   const [freq, setFreq] = useState<"weekly" | "monthly">("monthly");
-  const [start, setStart] = useState(() => new Date().toISOString().slice(0, 10));
+  const [start, setStart] = useState(todayLocal);
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const create = useServerFn(createPlanFn);

@@ -45,7 +45,7 @@ export const BUCKET_ORDER: AgingBucket[] = [
 ];
 
 export const BUCKET_LABEL: Record<AgingBucket, string> = {
-  current: "حديثة (غير مستحقة)",
+  current: "حديثة (غير متأخرة)",
   late_30: "متأخرة 1-30 يوم",
   late_60: "متأخرة 31-60 يوم",
   late_90: "متأخرة 61-90 يوم",

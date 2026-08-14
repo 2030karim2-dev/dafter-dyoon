@@ -26,6 +26,7 @@ export const getAgingReportFn = createServerFn({ method: "GET" })
   .handler(async ({ data, context }): Promise<AgingReport> => {
     const { supabase, userId } = context;
 
+    // 1) ديون المعاملات (credit = مستحق على العميل)
     const { data: debts } = await (data.currency_id
       ? supabase
           .from("transactions")
@@ -43,17 +44,49 @@ export const getAgingReportFn = createServerFn({ method: "GET" })
           .eq("is_paid", false)
           .limit(5000));
 
-    const rows = (debts ?? []) as DebtRow[];
-    const ids = rows.map((d) => d.id);
+    // 2) الأرصدة الافتتاحية (credit) — تُعَدّ ديوناً أعمارها من تاريخ الافتتاح
+    const { data: openings } = await (data.currency_id
+      ? supabase
+          .from("opening_balances")
+          .select("id,person_id,amount,opening_date")
+          .eq("user_id", userId)
+          .eq("direction", "credit")
+          .eq("currency_id", data.currency_id)
+      : supabase
+          .from("opening_balances")
+          .select("id,person_id,amount,opening_date")
+          .eq("user_id", userId)
+          .eq("direction", "credit"));
+
+    const txRows = (debts ?? []) as DebtRow[];
+    const openRows: DebtRow[] = (
+      (openings ?? []) as {
+        id: string;
+        person_id: string;
+        amount: number | string;
+        opening_date: string;
+      }[]
+    ).map((o) => ({
+      id: `open:${o.id}`,
+      person_id: o.person_id,
+      amount: o.amount,
+      transaction_date: o.opening_date,
+      due_date: null,
+      details: "رصيد افتتاحي",
+    }));
+
+    const rows = [...txRows, ...openRows];
+    // التخصيصات تُسأل على معرّفات المعاملات الحقيقية فقط (ليست uuid لأرصدة الافتتاح)
+    const txIds = txRows.map((d) => d.id);
     const personIds = Array.from(new Set(rows.map((d) => d.person_id)));
 
     const [allocRes, peopleRes] = await Promise.all([
-      ids.length
+      txIds.length
         ? supabase
             .from("payment_allocations")
             .select("debt_tx_id,amount")
             .eq("user_id", userId)
-            .in("debt_tx_id", ids)
+            .in("debt_tx_id", txIds)
         : Promise.resolve({
             data: [] as { debt_tx_id: string; amount: number }[],
           }),

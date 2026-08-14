@@ -14,7 +14,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { toast } from "sonner";
 import { AddTransactionDialog } from "@/components/AddTransactionDialog";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
-import { exportPersonStatementPDF } from "@/lib/io/exportPdf";
+import { exportPersonStatementPDF, exportReceiptPDF } from "@/lib/io/exportPdf";
+import { createReceiptVoucherFn } from "@/lib/receipts.functions";
 import { exportPersonToExcel } from "@/lib/io/exportExcel";
 import { PersonActionsBar } from "@/features/debts/person/PersonActionsBar";
 import { PersonBalancesByCurrency } from "@/features/debts/person/PersonBalancesByCurrency";
@@ -208,6 +209,7 @@ function PersonPage() {
 
   const delTxFn = useServerFn(deleteTransactionFn);
   const undoTxFn = useServerFn(undoTransactionFn);
+  const createReceipt = useServerFn(createReceiptVoucherFn);
   const delTx = async () => {
     if (!delTxId) return;
     const tx = txs.find((t) => t.id === delTxId);
@@ -261,6 +263,34 @@ function PersonPage() {
     }
     toast.success(tx.is_paid ? "تم إلغاء السداد" : "تم تأكيد السداد");
     load();
+  };
+
+  /** إصدار سند قبض لدفعة سابقة (من صفوف الجدول الزمني). */
+  const genReceiptForTx = async (tx: Tx) => {
+    try {
+      const r = await createReceipt({
+        data: {
+          person_id: tx.person_id ?? id,
+          payment_tx_id: tx.id,
+          currency_id: tx.currency_id,
+          amount: tx.amount,
+          note: tx.details ?? null,
+        },
+      });
+      await exportReceiptPDF({
+        serialNumber: r.serial_number,
+        personName: name,
+        phone,
+        currencyName: primaryBalance?.currency.name ?? "",
+        amount: r.amount,
+        amountWords: r.amount_words,
+        note: r.note,
+        issuedAt: r.issued_at,
+      });
+      toast.success("تم توليد سند القبض");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "فشل توليد سند القبض");
+    }
   };
 
   const archivePerson = async () => {
@@ -425,7 +455,7 @@ function PersonPage() {
           size="sm"
           variant="outline"
           className="h-9 text-xs"
-          disabled={!curId || balanceForActions >= -0.001}
+          disabled={!curId || balanceForActions <= 0.001}
           onClick={() => setOpenPay(true)}
         >
           <HandCoins className="size-4" /> تسجيل دفعة
@@ -508,6 +538,7 @@ function PersonPage() {
             }}
             onDelete={(id) => setDelTxId(id)}
             onTogglePaid={togglePaid}
+            onReceipt={genReceiptForTx}
           />
         ))}
 

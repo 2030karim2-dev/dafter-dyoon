@@ -70,11 +70,14 @@ function scaleKind(g: number): "single" | "dual" | "plural" | "acc" {
 }
 
 /** الأعداد من 1 إلى 999 كلمات (بدون فاصلة واصلة إضافية). */
-function three(n: number): string {
+function three(n: number, idafa = false): string {
   const h = Math.floor(n / 100);
   const rest = n % 100;
   const parts: string[] = [];
-  if (h > 0) parts.push(HUNDREDS[h]!);
+  if (h > 0) {
+    // 200 في الإضافة: "مائتا ألف" (بدون نون) بدل "مائتان ألف"
+    parts.push(h === 2 && rest === 0 && idafa ? "مائتا" : HUNDREDS[h]!);
+  }
   if (rest > 0) {
     if (rest < 20) parts.push(ONES[rest]!);
     else {
@@ -103,7 +106,7 @@ export function numberToArabicWords(n: number): string {
       else {
         const kind = scaleKind(g);
         const noun = kind === "plural" ? s.plural : kind === "acc" ? s.acc : s.singular;
-        groups.push(`${three(g)} ${noun}`);
+        groups.push(`${three(g, true)} ${noun}`);
       }
     }
   }
@@ -119,10 +122,15 @@ export function numberToArabicWords(n: number): string {
  */
 export function amountToArabicWords(amount: number, currency?: string): string {
   const abs = Math.abs(amount);
-  const intPart = Math.floor(abs);
-  const fracPart = Math.round((abs - intPart) * 100);
+  let intPart = Math.floor(abs);
+  let fracPart = Math.round((abs - intPart) * 100);
+  // تنظيم التقريب: مبلغ كـ 0.999 قد يرفع الجزء العشري إلى 100
+  if (fracPart >= 100) {
+    intPart += 1;
+    fracPart -= 100;
+  }
   let out = numberToArabicWords(intPart);
   if (currency) out += ` ${currency}`;
-  if (fracPart > 0) out += ` و${numberToArabicWords(fracPart)} من مئة`;
+  if (fracPart > 0) out += ` و${numberToArabicWords(fracPart)} جزءاً من مئة`;
   return `فقط ${out} لا غير`;
 }

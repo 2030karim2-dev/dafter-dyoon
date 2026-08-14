@@ -3,16 +3,17 @@
 -- =========================================================
 
 -- عداد تسلسلي لكل مستخدم: رقم السند يبدأ من 1 ويتزايد ذرياً.
+-- ملاحظة أمنية: لا يُمنح الوصول المباشر للمصادقين — العدّاد يُحرَّك حصرياً
+-- عبر دالة SECURITY DEFINER (next_receipt_serial) لمنع إعادة تعيين رقم السند.
 CREATE TABLE public.receipt_sequences (
   user_id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   next_value bigint NOT NULL DEFAULT 1
 );
 
-GRANT SELECT, INSERT, UPDATE, DELETE ON public.receipt_sequences TO authenticated;
 GRANT ALL ON public.receipt_sequences TO service_role;
 ALTER TABLE public.receipt_sequences ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "own receipt sequences" ON public.receipt_sequences
-  FOR ALL TO authenticated USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+-- لا سياسات للمصادقين: RLS يرفض وصولهم المباشر تلقائياً، بينما تعمل الدالة
+-- والدوال المرتبطة بدور المالك (postgres) وتتفادى RLS.
 
 CREATE OR REPLACE FUNCTION public.next_receipt_serial(_user_id uuid)
 RETURNS bigint
