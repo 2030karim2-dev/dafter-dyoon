@@ -35,14 +35,26 @@ function ArchivePage() {
   }, [user]);
 
   const restore = async (id: string) => {
-    await supabase.from("people").update({ is_archived: false }).eq("id", id);
+    await supabase
+      .from("people")
+      .update({ is_archived: false })
+      .eq("id", id)
+      .eq("user_id", user?.id ?? "");
     toast.success("تمت الاستعادة");
     load();
   };
   const del = async () => {
     if (!pendingDelete) return;
-    await supabase.from("transactions").delete().eq("person_id", pendingDelete.id);
-    const { error } = await supabase.from("people").delete().eq("id", pendingDelete.id);
+    await supabase
+      .from("transactions")
+      .delete()
+      .eq("person_id", pendingDelete.id)
+      .eq("user_id", user?.id ?? "");
+    const { error } = await supabase
+      .from("people")
+      .delete()
+      .eq("id", pendingDelete.id)
+      .eq("user_id", user?.id ?? "");
     if (error) {
       toast.error(error.message);
       return;

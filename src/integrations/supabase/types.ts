@@ -677,6 +677,69 @@ export type Database = {
           },
         ];
       };
+      payment_plans: {
+        Row: {
+          created_at: string;
+          currency_id: string;
+          frequency: string;
+          id: string;
+          installment_amount: number;
+          installments_count: number;
+          note: string | null;
+          person_id: string;
+          start_date: string;
+          status: string;
+          total_amount: number;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          currency_id: string;
+          frequency?: string;
+          id?: string;
+          installment_amount: number;
+          installments_count: number;
+          note?: string | null;
+          person_id: string;
+          start_date: string;
+          status?: string;
+          total_amount: number;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          currency_id?: string;
+          frequency?: string;
+          id?: string;
+          installment_amount?: number;
+          installments_count?: number;
+          note?: string | null;
+          person_id?: string;
+          start_date?: string;
+          status?: string;
+          total_amount?: number;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "payment_plans_currency_id_fkey";
+            columns: ["currency_id"];
+            isOneToOne: false;
+            referencedRelation: "currencies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "payment_plans_person_id_fkey";
+            columns: ["person_id"];
+            isOneToOne: false;
+            referencedRelation: "people";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       payment_promises: {
         Row: {
           amount: number;
@@ -686,6 +749,7 @@ export type Database = {
           kept_at: string | null;
           note: string | null;
           person_id: string;
+          plan_id: string | null;
           promised_date: string;
           status: string;
           updated_at: string;
@@ -699,6 +763,7 @@ export type Database = {
           kept_at?: string | null;
           note?: string | null;
           person_id: string;
+          plan_id?: string | null;
           promised_date: string;
           status?: string;
           updated_at?: string;
@@ -712,6 +777,7 @@ export type Database = {
           kept_at?: string | null;
           note?: string | null;
           person_id?: string;
+          plan_id?: string | null;
           promised_date?: string;
           status?: string;
           updated_at?: string;
@@ -732,7 +798,126 @@ export type Database = {
             referencedRelation: "people";
             referencedColumns: ["id"];
           },
+          {
+            foreignKeyName: "payment_promises_plan_id_fkey";
+            columns: ["plan_id"];
+            isOneToOne: false;
+            referencedRelation: "payment_plans";
+            referencedColumns: ["id"];
+          },
         ];
+      };
+      receipt_sequences: {
+        Row: {
+          next_value: number;
+          user_id: string;
+        };
+        Insert: {
+          next_value?: number;
+          user_id: string;
+        };
+        Update: {
+          next_value?: number;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      receipt_vouchers: {
+        Row: {
+          amount: number;
+          amount_words: string;
+          created_at: string;
+          currency_id: string;
+          id: string;
+          issued_at: string;
+          note: string | null;
+          payment_tx_id: string | null;
+          person_id: string;
+          serial_number: number;
+          user_id: string;
+        };
+        Insert: {
+          amount: number;
+          amount_words: string;
+          created_at?: string;
+          currency_id: string;
+          id?: string;
+          issued_at?: string;
+          note?: string | null;
+          payment_tx_id?: string | null;
+          person_id: string;
+          serial_number?: number;
+          user_id: string;
+        };
+        Update: {
+          amount?: number;
+          amount_words?: string;
+          created_at?: string;
+          currency_id?: string;
+          id?: string;
+          issued_at?: string;
+          note?: string | null;
+          payment_tx_id?: string | null;
+          person_id?: string;
+          serial_number?: number;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "receipt_vouchers_currency_id_fkey";
+            columns: ["currency_id"];
+            isOneToOne: false;
+            referencedRelation: "currencies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "receipt_vouchers_payment_tx_id_fkey";
+            columns: ["payment_tx_id"];
+            isOneToOne: false;
+            referencedRelation: "transactions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "receipt_vouchers_person_id_fkey";
+            columns: ["person_id"];
+            isOneToOne: false;
+            referencedRelation: "people";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      wallet_accounts: {
+        Row: {
+          account_number: string;
+          created_at: string;
+          holder_name: string | null;
+          id: string;
+          is_active: boolean;
+          provider: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          account_number: string;
+          created_at?: string;
+          holder_name?: string | null;
+          id?: string;
+          is_active?: boolean;
+          provider: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          account_number?: string;
+          created_at?: string;
+          holder_name?: string | null;
+          id?: string;
+          is_active?: boolean;
+          provider?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
       };
       people: {
         Row: {

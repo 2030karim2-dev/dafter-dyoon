@@ -25,7 +25,7 @@ interface Props {
  */
 export function BalanceCard({ data, defaultOpen = false }: Props) {
   const [open, setOpen] = useState(defaultOpen);
-  const net = data.owed - data.owe + (data.opening ?? 0);
+  const net = data.owed - data.owe;
   const isCredit = net > 0;
   const isDebit = net < 0;
 
@@ -107,10 +107,6 @@ export function BalanceCard({ data, defaultOpen = false }: Props) {
               tone={data.opening > 0 ? "success" : "danger"}
             />
           )}
-          <Row
-            label="إجمالي الحركة"
-            value={`${fmtMoney(data.owed + data.owe)} ${data.currency.symbol}`}
-          />
         </div>
       )}
     </button>

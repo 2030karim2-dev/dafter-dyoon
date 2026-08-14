@@ -1,5 +1,5 @@
 import { fmtMoney } from "@/lib/format";
-import type { PerCurrencyBalance, MoneyTx } from "@/lib/money/balances";
+import type { PerCurrencyBalance } from "@/lib/money/balances";
 import { BalanceCard, type BalanceCardData } from "@/components/common/BalanceCard";
 import { User, Phone } from "lucide-react";
 
@@ -8,7 +8,6 @@ interface Props {
   phone: string | null;
   balances: PerCurrencyBalance[];
   totalTxCount: number;
-  txs?: MoneyTx[];
 }
 
 /**
@@ -16,16 +15,7 @@ interface Props {
  * Each card expands to show owed / owe / opening / count.
  * Currencies stay strictly separate.
  */
-export function PersonBalancesByCurrency({ name, phone, balances, totalTxCount, txs = [] }: Props) {
-  // Split owed/owe per currency from raw txs (kept here so the card stays generic)
-  const breakdown = new Map<string, { owed: number; owe: number }>();
-  for (const t of txs) {
-    const slot = breakdown.get(t.currency_id) ?? { owed: 0, owe: 0 };
-    if (t.direction === "credit") slot.owed += Number(t.amount);
-    else slot.owe += Number(t.amount);
-    breakdown.set(t.currency_id, slot);
-  }
-
+export function PersonBalancesByCurrency({ name, phone, balances, totalTxCount }: Props) {
   if (balances.length === 0) {
     return (
       <div className="rounded-xl p-3 bg-secondary text-foreground shadow-sm border border-border">
@@ -59,11 +49,11 @@ export function PersonBalancesByCurrency({ name, phone, balances, totalTxCount, 
       {/* 2-per-row interactive balance cards */}
       <div className="grid grid-cols-2 gap-1.5">
         {balances.map((b) => {
-          const bd = breakdown.get(b.currency.id) ?? { owed: 0, owe: 0 };
+          const isCredit = b.balance > 0;
           const data: BalanceCardData = {
             currency: b.currency,
-            owed: bd.owed,
-            owe: bd.owe,
+            owed: isCredit ? b.balance : 0,
+            owe: !isCredit ? Math.abs(b.balance) : 0,
             opening: b.opening,
             txCount: b.txCount,
           };

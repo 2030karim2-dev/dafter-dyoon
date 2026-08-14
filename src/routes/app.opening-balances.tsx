@@ -119,7 +119,11 @@ function OpeningBalancesPage() {
 
   const del = async () => {
     if (!pendingDelete) return;
-    const { error } = await supabase.from("opening_balances").delete().eq("id", pendingDelete);
+    const { error } = await supabase
+      .from("opening_balances")
+      .delete()
+      .eq("id", pendingDelete)
+      .eq("user_id", user?.id ?? "");
     if (error) {
       toast.error(error.message);
       return;

@@ -154,13 +154,16 @@
   }
   html {
     direction: rtl;
-    /* Micro-scale v2: tighter base so rem-based spacing/sizing compresses
-       proportionally for a denser, smartphone-grade accounting UI. */
     font-size: 12.5px;
   }
   @media (min-width: 768px) {
     html {
-      font-size: 14px;
+      font-size: 15px;
+    }
+  }
+  @media (min-width: 1280px) {
+    html {
+      font-size: 16px;
     }
   }
   body {
@@ -168,12 +171,35 @@
     color: var(--color-foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+    line-height: 1.6;
   }
   input,
   select,
   textarea,
   button {
     font-size: inherit;
+  }
+
+  @media (min-width: 1024px) {
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--color-border);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--color-muted-foreground);
+    }
+  }
+
+  *:focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
   }
 }
 

@@ -50,7 +50,7 @@ export async function recordPayment(
       person_id: input.person_id,
       currency_id: input.currency_id,
       amount,
-      direction: "debit",
+      direction: "credit",
       details: input.note?.trim() ? input.note.trim() : "دفعة من العميل",
       transaction_date: input.paid_at,
       is_paid: true,
@@ -66,7 +66,7 @@ export async function recordPayment(
     .eq("user_id", userId)
     .eq("person_id", input.person_id)
     .eq("currency_id", input.currency_id)
-    .eq("direction", "credit")
+    .eq("direction", "debit")
     .eq("is_paid", false);
 
   const debts = ((debtsRaw ?? []) as DebtRow[]).sort((a, b) => {

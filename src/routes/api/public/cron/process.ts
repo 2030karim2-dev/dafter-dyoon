@@ -9,17 +9,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-type Freq = "daily" | "weekly" | "monthly" | "yearly";
-
-function advance(d: Date, freq: Freq): Date {
-  const n = new Date(d);
-  if (freq === "daily") n.setDate(n.getDate() + 1);
-  else if (freq === "weekly") n.setDate(n.getDate() + 7);
-  else if (freq === "monthly") n.setMonth(n.getMonth() + 1);
-  else if (freq === "yearly") n.setFullYear(n.getFullYear() + 1);
-  return n;
-}
-
 async function runForUser(supabaseAdmin: SupabaseClient, userId: string) {
   const stats: {
     reminders: number;
@@ -65,42 +54,11 @@ async function runForUser(supabaseAdmin: SupabaseClient, userId: string) {
     }
   }
 
-  // --- Recurring rules ---
-  const now = new Date();
-  const { data: rules } = await supabaseAdmin
-    .from("recurring_rules")
-    .select("*")
-    .eq("user_id", userId)
-    .eq("is_active", true)
-    .lte("next_run", now.toISOString());
-  for (const r of rules ?? []) {
-    let next = new Date(r.next_run);
-    let safety = 0;
-    while (next <= now && safety < 24) {
-      if (r.person_id && r.direction) {
-        const { error } = await supabaseAdmin.from("transactions").insert({
-          user_id: userId,
-          person_id: r.person_id,
-          amount: r.amount,
-          currency_id: r.currency_id,
-          direction: r.direction,
-          details: r.note ?? r.title,
-          transaction_date: next.toISOString(),
-        });
-        if (error) break;
-      }
-      stats.recurring++;
-      next = advance(next, r.frequency as Freq);
-      safety++;
-    }
-    await supabaseAdmin
-      .from("recurring_rules")
-      .update({
-        next_run: next.toISOString(),
-        last_run: now.toISOString(),
-      })
-      .eq("id", r.id);
-  }
+  // --- Recurring rules (shared processor; atomic per-rule claim prevents
+  // double generation when this cron overlaps the idle-time client call) ---
+  const { processRecurring } = await import("@/lib/jobs/recurring.server");
+  const res = await processRecurring(supabaseAdmin, userId);
+  stats.recurring = res.generated;
 
   // --- Auto backup based on profile.backup_frequency ---
   const { data: profile } = await supabaseAdmin

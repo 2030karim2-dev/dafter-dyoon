@@ -140,7 +140,7 @@ function TodayPage() {
   });
 
   return (
-    <div className="space-y-2.5">
+    <div className="space-y-3 lg:space-y-4">
       <PageHeader
         icon={Sun}
         title="مهام اليوم"
@@ -150,7 +150,7 @@ function TodayPage() {
           <Button
             size="sm"
             variant="outline"
-            className="h-7 text-[10px]"
+            className="h-8 text-xs"
             onClick={() => void refetch()}
           >
             <RefreshCw className={`size-3 ${isFetching ? "animate-spin" : ""}`} /> تحديث
@@ -173,7 +173,7 @@ function TodayPage() {
           description="لا يوجد مستحق أو متأخر أو وعد يحتاج متابعة الآن."
         />
       ) : (
-        <div className="space-y-1.5">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2 lg:gap-3">
           {rows.map((t) => (
             <TodayTaskCard
               key={t.id}

@@ -70,19 +70,25 @@ function DebtsHome() {
   // Idle-time backend housekeeping (recurring generation).
   const runRecurring = useServerFn(processRecurringFn);
   useEffect(() => {
-    const w = window as unknown as { requestIdleCallback?: (cb: () => void, o?: object) => number };
-    const h =
-      w.requestIdleCallback?.(
-        () => {
-          runRecurring().catch(() => null);
-        },
-        { timeout: 3000 },
-      ) ??
-      window.setTimeout(() => {
-        runRecurring().catch(() => null);
-      }, 1500);
+    const w = window as unknown as {
+      requestIdleCallback?: (cb: () => void, o?: object) => number;
+      cancelIdleCallback?: (h: number) => void;
+    };
+    let usingIdle = false;
+    let handle = 0;
+    const fire = () => {
+      runRecurring().catch(() => null);
+    };
+    if (w.requestIdleCallback) {
+      usingIdle = true;
+      handle = w.requestIdleCallback(fire, { timeout: 3000 }) ?? 0;
+    } else {
+      handle = window.setTimeout(fire, 1500);
+    }
     return () => {
-      (window as unknown as { cancelIdleCallback?: (h: number) => void }).cancelIdleCallback?.(h);
+      // Cancel with the right primitive: idle handles are NOT timeout handles.
+      if (usingIdle) w.cancelIdleCallback?.(handle);
+      else window.clearTimeout(handle);
     };
   }, [runRecurring]);
 
@@ -222,7 +228,7 @@ function DebtsHome() {
   const legacyPeople = useMemo(() => data.people.map((p) => p.person), [data.people]);
 
   return (
-    <div className="space-y-3 animate-in fade-in duration-300">
+    <div className="space-y-4 lg:space-y-6 animate-in fade-in duration-300">
       <CurrencyScope currencies={data.currencies} value={curId} onChange={setCurId} />
 
       <DebtsHeader
@@ -236,7 +242,7 @@ function DebtsHome() {
       />
 
       {data.totalsPerCurrency.length > 0 && (
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <div className="flex items-center justify-between px-1">
             <div className="text-[10px] font-bold text-muted-foreground tracking-wide">
               مسارات العملات (منفصلة تماماً)
@@ -245,7 +251,7 @@ function DebtsHome() {
               {data.totalsPerCurrency.length} عملة
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-1.5">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
             {data.totalsPerCurrency.map((r) => (
               <BalanceCard
                 key={r.currency.id}
@@ -257,7 +263,7 @@ function DebtsHome() {
         </div>
       )}
 
-      <div className="flex items-center gap-1.5">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
         <div className="flex-1">
           <SearchBar value={q} onChange={setQ} placeholder="ابحث باسم متقطع أو رقم هاتف..." />
         </div>
@@ -372,7 +378,7 @@ function DebtsHome() {
           onDelete={(p) => setDelPerson(legacyPeople.find((x) => x.id === p.id) ?? null)}
         />
       ) : (
-        <div className="space-y-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
           {filtered.map((p, i) => (
             <PersonRow
               key={p.person.id}

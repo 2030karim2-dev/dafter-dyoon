@@ -1,5 +1,5 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { Users, BarChart3, Settings, BellRing, Sun } from "lucide-react";
+import { Users, Sun, BarChart3, Settings, BellRing, Wallet } from "lucide-react";
 import { usePendingAlerts } from "@/hooks/usePendingAlerts";
 import { BadgeCount } from "@/components/common/BadgeCount";
 
@@ -37,18 +37,23 @@ const items: NavItem[] = [
   },
 ];
 
-export function BottomNav() {
+export function DesktopSidebar() {
   const loc = useLocation();
   const path = loc.pathname;
-  // Shared with the header bell via usePendingAlerts — one consistent count.
   const { count: pendingReminders } = usePendingAlerts();
 
   return (
-    <nav
-      className="lg:hidden fixed bottom-0 inset-x-0 bg-card/95 backdrop-blur border-t z-30 pb-[env(safe-area-inset-bottom)]"
-      aria-label="التنقل الرئيسي"
-    >
-      <div className="max-w-3xl mx-auto grid grid-cols-5 h-12">
+    <aside className="hidden lg:flex w-64 flex-col border-l bg-card/95 backdrop-blur sticky top-0 h-screen">
+      <div className="p-4 border-b">
+        <Link to="/app" className="flex items-center gap-2.5 font-black text-lg tracking-tight">
+          <div className="size-9 rounded-xl bg-gradient-primary text-primary-foreground flex items-center justify-center shadow-glow">
+            <Wallet className="size-5" />
+          </div>
+          دفترك
+        </Link>
+      </div>
+
+      <nav className="flex-1 p-3 space-y-1 overflow-y-auto" aria-label="التنقل الرئيسي">
         {items.map((it) => {
           const active = it.match(path);
           const Icon = it.icon;
@@ -58,24 +63,34 @@ export function BottomNav() {
               key={it.to}
               to={it.to}
               preload="viewport"
-              className={`flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition-colors active:scale-95 ${active ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                active
+                  ? "bg-primary/10 text-primary shadow-sm"
+                  : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+              }`}
               aria-current={active ? "page" : undefined}
             >
-              <div
-                className={`size-7 rounded-md flex items-center justify-center transition-all relative ${active ? "bg-gradient-primary text-primary-foreground shadow-glow" : ""}`}
-              >
-                <Icon className="size-[15px]" />
+              <div className={`size-9 rounded-lg flex items-center justify-center relative transition-all ${
+                active ? "bg-gradient-primary text-primary-foreground shadow-glow" : "bg-secondary text-muted-foreground"
+              }`}>
+                <Icon className="size-4" />
                 {showBadge && (
-                  <span className="absolute -top-1 -right-1">
+                  <span className="absolute -top-1 -left-1">
                     <BadgeCount count={pendingReminders} tone="danger" />
                   </span>
                 )}
               </div>
-              {it.label}
+              <span className="font-semibold">{it.label}</span>
             </Link>
           );
         })}
+      </nav>
+
+      <div className="p-3 border-t">
+        <div className="text-[10px] text-muted-foreground text-center">
+          دفترك © {new Date().getFullYear()}
+        </div>
       </div>
-    </nav>
+    </aside>
   );
 }

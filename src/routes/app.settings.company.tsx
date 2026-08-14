@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { Card } from "@/components/ui/card";
@@ -7,8 +8,23 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { ChevronRight, Building2, Upload, Trash2 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import {
+  ChevronRight,
+  Building2,
+  Upload,
+  Trash2,
+  Wallet as WalletIcon,
+  Loader2,
+} from "lucide-react";
 import { toast } from "sonner";
+import {
+  getWalletsFn,
+  saveWalletFn,
+  deleteWalletFn,
+  WALLET_PROVIDERS,
+} from "@/lib/wallets.functions";
+import type { WalletAccount, WalletProvider } from "@/lib/wallets.functions";
 
 export const Route = createFileRoute("/app/settings/company")({ component: CompanyPage });
 
@@ -32,6 +48,25 @@ const empty: Profile = {
   logo_path: null,
 };
 
+interface WalletDraft {
+  account_number: string;
+  holder_name: string;
+  is_active: boolean;
+}
+
+/** بناء مسودات التحرير من حسابات المحافظ المحمّلة. */
+function syncDrafts(list: WalletAccount[]): Partial<Record<WalletProvider, WalletDraft>> {
+  const out: Partial<Record<WalletProvider, WalletDraft>> = {};
+  for (const w of list) {
+    out[w.provider] = {
+      account_number: w.account_number,
+      holder_name: w.holder_name ?? "",
+      is_active: w.is_active,
+    };
+  }
+  return out;
+}
+
 function CompanyPage() {
   const { user } = useAuth();
   const [p, setP] = useState<Profile>(empty);
@@ -39,14 +74,23 @@ function CompanyPage() {
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  // ===== المحافظ الإلكترونية =====
+  const [wallets, setWallets] = useState<WalletAccount[]>([]);
+  const [drafts, setDrafts] = useState<Partial<Record<WalletProvider, WalletDraft>>>({});
+  const [walletsBusy, setWalletsBusy] = useState(false);
+  const getWallets = useServerFn(getWalletsFn);
+  const saveWallet = useServerFn(saveWalletFn);
+  const deleteWallet = useServerFn(deleteWalletFn);
+
   useEffect(() => {
     if (!user) return;
+    let cancel = false;
     (async () => {
-      const { data } = await supabase
-        .from("company_profile")
-        .select("*")
-        .eq("user_id", user.id)
-        .maybeSingle();
+      const [{ data }, walletList] = await Promise.all([
+        supabase.from("company_profile").select("*").eq("user_id", user.id).maybeSingle(),
+        getWallets(),
+      ]);
+      if (cancel) return;
       if (data)
         setP({
           name: data.name ?? "",
@@ -57,9 +101,14 @@ function CompanyPage() {
           notes: data.notes ?? "",
           logo_path: data.logo_path ?? null,
         });
+      setWallets(walletList);
+      setDrafts(syncDrafts(walletList));
       setLoading(false);
     })();
-  }, [user]);
+    return () => {
+      cancel = true;
+    };
+  }, [user, getWallets]);
 
   useEffect(() => {
     if (!p.logo_path) {
@@ -123,6 +172,48 @@ function CompanyPage() {
   };
 
   const removeLogo = () => set("logo_path", null);
+
+  const patchDraft = (provider: WalletProvider, patch: Partial<WalletDraft>) =>
+    setDrafts((s) => ({
+      ...s,
+      [provider]: {
+        account_number: "",
+        holder_name: "",
+        is_active: false,
+        ...s[provider],
+        ...patch,
+      },
+    }));
+
+  const saveWallets = async () => {
+    setWalletsBusy(true);
+    try {
+      for (const prov of WALLET_PROVIDERS) {
+        const d = drafts[prov.id];
+        const existing = wallets.find((w) => w.provider === prov.id);
+        if (d && d.account_number.trim()) {
+          await saveWallet({
+            data: {
+              provider: prov.id,
+              account_number: d.account_number.trim(),
+              holder_name: d.holder_name.trim() || null,
+              is_active: d.is_active,
+            },
+          });
+        } else if (existing) {
+          await deleteWallet({ data: { id: existing.id } });
+        }
+      }
+      const list = await getWallets();
+      setWallets(list);
+      setDrafts(syncDrafts(list));
+      toast.success("تم حفظ المحافظ");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "فشل حفظ المحافظ");
+    } finally {
+      setWalletsBusy(false);
+    }
+  };
 
   if (loading)
     return <div className="p-6 text-center text-sm text-muted-foreground">جارٍ التحميل…</div>;
@@ -230,6 +321,78 @@ function CompanyPage() {
           className="w-full bg-gradient-primary text-primary-foreground"
         >
           {busy ? "جارٍ الحفظ…" : "حفظ"}
+        </Button>
+      </Card>
+
+      <Card className="p-3 space-y-3">
+        <div className="flex items-center gap-2">
+          <div className="size-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+            <WalletIcon className="size-4" />
+          </div>
+          <div>
+            <div className="font-bold text-sm">المحافظ الإلكترونية اليمنية</div>
+            <div className="text-[11px] text-muted-foreground">
+              أرقام حساباتك في المحافظ لتظهر للعملاء عند «طلب سداد»
+            </div>
+          </div>
+        </div>
+
+        <p className="text-[10px] text-muted-foreground bg-secondary rounded-lg p-2 leading-relaxed">
+          أدخل رقم المحفظة (الجوال المسجل) واسم الحامل. تُظهر رسالة السداد ورمز QR المحافظ{" "}
+          <span className="font-bold">المفعّلة</span> فقط.
+        </p>
+
+        <div className="space-y-2">
+          {WALLET_PROVIDERS.map((prov) => {
+            const d = drafts[prov.id];
+            const active = !!d?.is_active && !!d?.account_number.trim();
+            return (
+              <div key={prov.id} className="rounded-lg border border-border p-2 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-xs">{prov.label}</span>
+                    {active ? (
+                      <span className="text-[9px] font-bold text-success bg-success/10 rounded-full px-1.5 py-0.5">
+                        مفعلة
+                      </span>
+                    ) : null}
+                  </div>
+                  <Switch
+                    checked={!!d?.is_active}
+                    onCheckedChange={(v) => patchDraft(prov.id, { is_active: v })}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-1.5">
+                  <Input
+                    dir="ltr"
+                    placeholder="رقم المحفظة"
+                    maxLength={40}
+                    value={d?.account_number ?? ""}
+                    onChange={(e) => patchDraft(prov.id, { account_number: e.target.value })}
+                  />
+                  <Input
+                    placeholder="اسم الحامل"
+                    maxLength={80}
+                    value={d?.holder_name ?? ""}
+                    onChange={(e) => patchDraft(prov.id, { holder_name: e.target.value })}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <Button
+          onClick={saveWallets}
+          disabled={walletsBusy}
+          className="w-full bg-gradient-primary text-primary-foreground"
+        >
+          {walletsBusy ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : (
+            <WalletIcon className="size-4" />
+          )}
+          حفظ المحافظ
         </Button>
       </Card>
     </div>

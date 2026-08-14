@@ -190,7 +190,7 @@ function FollowupPage() {
   };
 
   return (
-    <div className="space-y-2.5">
+    <div className="space-y-3 lg:space-y-4">
       <PageHeader
         icon={Target}
         title="متابعة العملاء"
@@ -198,11 +198,11 @@ function FollowupPage() {
         back="/app"
       />
 
-      <div className="flex items-center gap-1.5">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
         <Button
           size="sm"
           variant="outline"
-          className="h-7 text-[11px] flex-1"
+          className="h-9 text-xs flex-1"
           onClick={() => cycle.mutate()}
           disabled={cycle.isPending}
         >
@@ -213,7 +213,7 @@ function FollowupPage() {
           )}
           فحص وتجهيز التذكيرات
         </Button>
-        <Button asChild size="sm" variant="outline" className="h-7 text-[11px]">
+        <Button asChild size="sm" variant="outline" className="h-9 text-xs">
           <Link to="/app/outbox">
             <Inbox className="size-3" /> الصادر
           </Link>
@@ -228,7 +228,7 @@ function FollowupPage() {
         <div className="flex items-center justify-between px-1">
           <button
             onClick={toggleAll}
-            className="inline-flex items-center gap-1 text-[10.5px] font-bold text-primary"
+            className="inline-flex items-center gap-1 text-[10.5px] lg:text-xs font-bold text-primary"
           >
             <ListChecks className="size-3.5" />
             {allSelected ? "إلغاء تحديد الكل" : `تحديد الكل (${rows.length})`}
@@ -236,7 +236,7 @@ function FollowupPage() {
           {selected.size > 0 && (
             <button
               onClick={() => setSelected(new Set())}
-              className="inline-flex items-center gap-0.5 text-[10.5px] text-muted-foreground"
+              className="inline-flex items-center gap-0.5 text-[10.5px] lg:text-xs text-muted-foreground"
             >
               <X className="size-3" /> مسح التحديد
             </button>
@@ -245,12 +245,12 @@ function FollowupPage() {
       )}
 
       {selected.size > 0 && (
-        <div className="sticky top-11 z-20 rounded-lg border-2 border-primary/40 bg-card/95 backdrop-blur p-2 space-y-1.5 shadow-elevated animate-in slide-in-from-top-1">
-          <div className="text-[11px] font-black">الإرسال الجماعي — {selected.size} عميل</div>
-          <div className="grid grid-cols-3 gap-1">
+        <div className="sticky top-16 lg:top-20 z-20 rounded-lg border-2 border-primary/40 bg-card/95 backdrop-blur p-2 lg:p-3 space-y-1.5 lg:space-y-2 shadow-elevated animate-in slide-in-from-top-1">
+          <div className="text-xs lg:text-sm font-black">الإرسال الجماعي — {selected.size} عميل</div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5 lg:gap-2">
             <Button
               size="sm"
-              className="h-7 text-[10.5px] bg-success text-success-foreground hover:bg-success/90"
+              className="h-9 text-xs bg-success text-success-foreground hover:bg-success/90"
               onClick={() => bulkSend.mutate("send")}
               disabled={bulkSend.isPending || !board.availability.whatsapp_auto}
               title={
@@ -269,7 +269,7 @@ function FollowupPage() {
             <Button
               size="sm"
               variant="outline"
-              className="h-7 text-[10.5px]"
+              className="h-9 text-xs"
               onClick={() => bulk.mutate()}
               disabled={bulk.isPending}
             >
@@ -283,7 +283,7 @@ function FollowupPage() {
             <Button
               size="sm"
               variant="outline"
-              className="h-7 text-[10.5px]"
+              className="h-9 text-xs"
               onClick={() => bulkSend.mutate("manual")}
               disabled={bulkSend.isPending}
             >
@@ -291,7 +291,7 @@ function FollowupPage() {
             </Button>
           </div>
           {!board.availability.whatsapp_auto && (
-            <p className="text-[9px] text-muted-foreground">
+            <p className="text-[9px] lg:text-[10px] text-muted-foreground">
               لتفعيل الإرسال الفوري: فعّل واتساب/تليجرام من الإعدادات ← القنوات.
             </p>
           )}
@@ -309,7 +309,7 @@ function FollowupPage() {
           description="كل الأرصدة منتظمة حالياً."
         />
       ) : (
-        <div className="space-y-1.5">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2 lg:gap-3">
           {rows.map((b) => (
             <FollowupCard
               key={keyOf(b)}

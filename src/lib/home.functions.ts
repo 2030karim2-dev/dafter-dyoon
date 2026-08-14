@@ -124,9 +124,10 @@ export const getDebtsHomeFn = createServerFn({ method: "GET" })
       const s = slotOf(o.person_id, o.currency_id);
       const amt = Number(o.amount);
       const v = o.direction === "credit" ? amt : -amt;
+      // Opening balances shape the current running balance ONLY — they are
+      // intentionally excluded from credit/debit turnover totals so reports
+      // reflect real transactions instead of inflated starting positions.
       s.balance += v;
-      if (v >= 0) s.credit += Math.abs(v);
-      else s.debit += Math.abs(v);
     }
 
     for (const t of txs) {
@@ -153,8 +154,8 @@ export const getDebtsHomeFn = createServerFn({ method: "GET" })
         return {
           currency_id: c.id,
           balance: s.balance,
-          credit: s.credit,
-          debit: s.debit,
+          credit: s.balance > 0 ? s.balance : 0,
+          debit: s.balance < 0 ? Math.abs(s.balance) : 0,
           count: s.count,
           lastDate: s.lastDate,
           lastAmount: s.lastAmount,

@@ -2,7 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
-import { processDueRecurring } from "@/lib/recurring";
+import { useServerFn } from "@tanstack/react-start";
+import { processRecurringFn } from "@/lib/jobs.functions";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Repeat, RotateCw } from "lucide-react";
 import { EmptyState } from "@/components/EmptyState";
@@ -51,21 +52,29 @@ function RecurringPage() {
   }, [user]);
 
   const toggleActive = async (r: Rule) => {
-    await supabase.from("recurring_rules").update({ is_active: !r.is_active }).eq("id", r.id);
+    await supabase
+      .from("recurring_rules")
+      .update({ is_active: !r.is_active })
+      .eq("id", r.id)
+      .eq("user_id", user?.id ?? "");
     load();
   };
 
   const del = async () => {
     if (!pendingDelete) return;
-    await supabase.from("recurring_rules").delete().eq("id", pendingDelete);
+    await supabase
+      .from("recurring_rules")
+      .delete()
+      .eq("id", pendingDelete)
+      .eq("user_id", user?.id ?? "");
     toast.success("تم الحذف");
     load();
   };
 
+  const processRecurring = useServerFn(processRecurringFn);
   const runNow = async () => {
-    if (!user) return;
-    const n = await processDueRecurring(user.id);
-    toast.success(n > 0 ? `تم توليد ${n} عملية` : "لا توجد عمليات مستحقة");
+    const { generated } = await processRecurring();
+    toast.success(generated > 0 ? `تم توليد ${generated} عملية` : "لا توجد عمليات مستحقة");
     load();
   };
 

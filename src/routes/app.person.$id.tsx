@@ -1,6 +1,8 @@
 import { createFileRoute, useNavigate, useParams } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useServerFn } from "@tanstack/react-start";
+import { deleteTransactionFn, undoTransactionFn } from "@/lib/transactions.functions";
 import { useAuth } from "@/lib/auth";
 import { Plus } from "lucide-react";
 import { ListSkeleton } from "@/components/Skeleton";
@@ -32,9 +34,11 @@ import {
   BarChart3,
   History,
   CalendarClock,
+  CalendarRange,
   HandCoins,
   Activity,
   UserX,
+  QrCode,
 } from "lucide-react";
 import { CurrencyScope } from "@/components/common/CurrencyScope";
 import { waPhone } from "@/lib/phone";
@@ -43,6 +47,9 @@ import { PersonPromises } from "@/features/person/PersonPromises";
 import { PersonActivity } from "@/features/person/PersonActivity";
 import { PaymentDialog } from "@/features/today/PaymentDialog";
 import { PromiseDialog } from "@/features/today/PromiseDialog";
+import { PaymentRequestSheet } from "@/features/payments/PaymentRequestSheet";
+import { PlanDialog } from "@/features/plans/PlanDialog";
+import { PersonPlans } from "@/features/plans/PersonPlans";
 
 export const Route = createFileRoute("/app/person/$id")({ component: PersonPage });
 
@@ -95,6 +102,8 @@ function PersonPage() {
   >("timeline");
   const [openPay, setOpenPay] = useState(false);
   const [openPromise, setOpenPromise] = useState(false);
+  const [openRequest, setOpenRequest] = useState(false);
+  const [openPlan, setOpenPlan] = useState(false);
 
   const load = async () => {
     if (!user) return;
@@ -197,12 +206,15 @@ function PersonPage() {
     [scopedTxs, scopedOpenings],
   );
 
+  const delTxFn = useServerFn(deleteTransactionFn);
+  const undoTxFn = useServerFn(undoTransactionFn);
   const delTx = async () => {
     if (!delTxId) return;
     const tx = txs.find((t) => t.id === delTxId);
-    const { error } = await supabase.from("transactions").delete().eq("id", delTxId);
-    if (error) {
-      toast.error(error.message);
+    try {
+      await delTxFn({ data: { id: delTxId } });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "تعذر الحذف");
       return;
     }
     setDelTxId(null);
@@ -211,11 +223,23 @@ function PersonPage() {
         ? {
             label: "تراجع",
             onClick: async () => {
-              const { id: _id, ...rest } = tx;
-              await supabase
-                .from("transactions")
-                .insert({ ...rest, user_id: user?.id ?? "" } as never);
-              toast.success("تم الاسترجاع");
+              try {
+                await undoTxFn({
+                  data: {
+                    person_id: tx.person_id,
+                    amount: tx.amount,
+                    direction: tx.direction as "credit" | "debit",
+                    currency_id: tx.currency_id,
+                    transaction_date: tx.transaction_date,
+                    details: tx.details,
+                    due_date: tx.due_date,
+                    is_paid: tx.is_paid,
+                  },
+                });
+                toast.success("تم الاسترجاع");
+              } catch (e2) {
+                toast.error(e2 instanceof Error ? e2.message : "تعذر الاسترجاع");
+              }
               load();
             },
           }
@@ -365,7 +389,7 @@ function PersonPage() {
   }
 
   return (
-    <div className="space-y-3 animate-in fade-in duration-300">
+    <div className="space-y-4 lg:space-y-6 animate-in fade-in duration-300">
       <PersonActionsBar
         onPdf={() =>
           exportPersonStatementPDF({
@@ -393,33 +417,50 @@ function PersonPage() {
         phone={phone}
         balances={balancesByCurrency}
         totalTxCount={txs.length}
-        txs={txs}
       />
 
       {/* Quick collection actions on the active currency path */}
-      <div className="grid grid-cols-2 gap-1.5">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
         <Button
           size="sm"
           variant="outline"
-          className="h-7 text-[11px]"
-          disabled={!curId}
+          className="h-9 text-xs"
+          disabled={!curId || balanceForActions >= -0.001}
           onClick={() => setOpenPay(true)}
         >
-          <HandCoins className="size-3" /> تسجيل دفعة
+          <HandCoins className="size-4" /> تسجيل دفعة
         </Button>
         <Button
           size="sm"
           variant="outline"
-          className="h-7 text-[11px]"
+          className="h-9 text-xs"
           disabled={!curId}
           onClick={() => setOpenPromise(true)}
         >
-          <CalendarClock className="size-3" /> وعد بالسداد
+          <CalendarClock className="size-4" /> وعد بالسداد
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-9 text-xs"
+          disabled={!curId || Math.abs(balanceForActions) <= 0.005}
+          onClick={() => setOpenRequest(true)}
+        >
+          <QrCode className="size-4" /> طلب سداد
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-9 text-xs"
+          disabled={!curId || Math.abs(balanceForActions) <= 0.005}
+          onClick={() => setOpenPlan(true)}
+        >
+          <CalendarRange className="size-4" /> جدولة الدين
         </Button>
       </div>
 
       {/* Tabs */}
-      <div className="grid grid-cols-6 gap-1 rounded-xl bg-secondary/60 p-1 ring-1 ring-border">
+      <div className="grid grid-cols-3 sm:grid-cols-6 gap-1 rounded-xl bg-secondary/60 p-1 ring-1 ring-border">
         {[
           { v: "timeline" as const, label: "المعاملات", icon: ClipboardList },
           { v: "feed" as const, label: "السجل", icon: History },
@@ -434,13 +475,13 @@ function PersonPage() {
             <button
               key={t.v}
               onClick={() => setTab(t.v)}
-              className={`inline-flex flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1 text-[10.5px] font-semibold transition ${
+              className={`inline-flex flex-col sm:flex-row items-center justify-center gap-1 rounded-lg px-2 py-2 text-[10.5px] sm:text-xs font-semibold transition ${
                 active
                   ? "bg-card text-primary shadow-sm ring-1 ring-primary/30"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              <Icon className="size-3.5" /> {t.label}
+              <Icon className="size-3.5 sm:size-4" /> {t.label}
             </button>
           );
         })}
@@ -474,7 +515,12 @@ function PersonPage() {
 
       {tab === "activity" && <PersonActivity personId={id} />}
 
-      {tab === "promises" && <PersonPromises personId={id} currencyId={curId || null} />}
+      {tab === "promises" && (
+        <div className="space-y-3">
+          <PersonPlans personId={id} currencyId={curId || null} />
+          <PersonPromises personId={id} currencyId={curId || null} />
+        </div>
+      )}
 
       {tab === "attachments" && <CustomerAttachments personId={id} personPhone={phone} />}
 
@@ -497,9 +543,29 @@ function PersonPage() {
             suggested={Math.abs(balanceForActions) || undefined}
             onDone={load}
           />
+          <PaymentRequestSheet
+            open={openRequest}
+            onOpenChange={setOpenRequest}
+            personId={id}
+            personName={name}
+            currencyId={curId}
+            currencyLabel={primaryBalance?.currency.symbol || primaryBalance?.currency.name || ""}
+            amount={Math.abs(balanceForActions) || 0}
+            onConfirm={() => setOpenPay(true)}
+          />
           <PromiseDialog
             open={openPromise}
             onOpenChange={setOpenPromise}
+            personId={id}
+            personName={name}
+            currencyId={curId}
+            currencyLabel={primaryBalance?.currency.symbol || primaryBalance?.currency.name || ""}
+            suggested={Math.abs(balanceForActions) || undefined}
+            onDone={load}
+          />
+          <PlanDialog
+            open={openPlan}
+            onOpenChange={setOpenPlan}
             personId={id}
             personName={name}
             currencyId={curId}
