@@ -6,4 +6,6 @@ export { exportPersonStatementPDF } from "./pdf/statement";
 export type { StatementPdfOpts } from "./pdf/statement";
 export { exportReceiptPDF } from "./pdf/receipt";
 export type { ReceiptPdfOpts } from "./pdf/receipt";
+export { exportPlanSchedulePDF } from "./pdf/plan";
+export type { PlanSchedulePdfOpts } from "./pdf/plan";
 export type { CompanyInfo, Currency, OpeningBalance, Tx } from "./pdf/format";

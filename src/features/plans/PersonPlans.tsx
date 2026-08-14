@@ -6,7 +6,9 @@ import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { fmtMoney, fmtDate } from "@/lib/format";
 import { getPlansFn, cancelPlanFn, type PlanDTO } from "@/lib/plans.functions";
-import { CalendarRange, Loader2, X } from "lucide-react";
+import { exportPlanSchedulePDF } from "@/lib/io/exportPdf";
+import { waPhone } from "@/lib/phone";
+import { CalendarRange, Loader2, Printer, Send, X } from "lucide-react";
 
 const TONE: Record<string, string> = {
   open: "bg-warning/10 text-warning ring-warning/20",
@@ -18,15 +20,22 @@ const TONE: Record<string, string> = {
 /** خطط السداد (الأقساط) لعميل واحد — تُعرض أعلى تبويب الوعود. */
 export function PersonPlans({
   personId,
+  personName,
   currencyId,
+  personPhone,
+  currencyName,
 }: {
   personId: string;
+  personName: string;
   currencyId: string | null;
+  personPhone?: string | null;
+  currencyName: string;
 }) {
   const qc = useQueryClient();
   const getPlans = useServerFn(getPlansFn);
   const cancel = useServerFn(cancelPlanFn);
   const [pendingCancel, setPendingCancel] = useState<PlanDTO | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["person-plans", personId],
@@ -44,6 +53,47 @@ export function PersonPlans({
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  const printPlan = async (p: PlanDTO) => {
+    setBusyId(p.id);
+    try {
+      await exportPlanSchedulePDF({
+        personName,
+        personPhone,
+        currencyName,
+        totalAmount: p.total_amount,
+        installmentAmount: p.installment_amount,
+        frequency: p.frequency,
+        startDate: p.start_date,
+        status: p.status,
+        note: p.note,
+        installments: p.installments,
+        keptCount: p.kept_count,
+        paidTotal: p.paid_total,
+      });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "فشل طباعة الجدول");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const sharePlan = (p: PlanDTO) => {
+    const lines: string[] = [
+      `السلام عليكم ${personName}،`,
+      "",
+      `جدول سداد المبلغ ${fmtMoney(p.total_amount)} ${currencyName} (${p.frequency === "monthly" ? "شهري" : "أسبوعي"}):`,
+      "",
+      ...p.installments.map(
+        (ins, i) => `${i + 1}. ${fmtDate(ins.promised_date)} — ${fmtMoney(ins.amount)}`,
+      ),
+      "",
+      "نرجو الالتزام بمواعيد الأقساط، مع خالص الشكر والتقدير.",
+    ];
+    const text = encodeURIComponent(lines.join("\n"));
+    const ph = waPhone(personPhone);
+    window.open(ph ? `https://wa.me/${ph}?text=${text}` : `https://wa.me/?text=${text}`, "_blank");
+  };
 
   if (isLoading) {
     return (
@@ -102,8 +152,34 @@ export function PersonPlans({
               ))}
             </div>
 
-            {p.status === "active" && !completed && (
-              <div className="flex justify-end">
+            <div className="flex items-center justify-between gap-1 pt-0.5">
+              <div className="flex gap-1">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-6 text-[10px]"
+                  onClick={() => printPlan(p)}
+                  disabled={busyId === p.id}
+                  title="طباعة جدول السداد PDF"
+                >
+                  {busyId === p.id ? (
+                    <Loader2 className="size-3 animate-spin" />
+                  ) : (
+                    <Printer className="size-3" />
+                  )}
+                  طباعة
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-6 text-[10px]"
+                  onClick={() => sharePlan(p)}
+                  title="إرسال الجدول عبر واتساب"
+                >
+                  <Send className="size-3" /> واتساب
+                </Button>
+              </div>
+              {p.status === "active" && !completed && (
                 <Button
                   size="sm"
                   variant="outline"
@@ -112,8 +188,8 @@ export function PersonPlans({
                 >
                   <X className="size-3" /> إلغاء الخطة
                 </Button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         );
       })}

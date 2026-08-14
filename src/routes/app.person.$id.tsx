@@ -517,7 +517,13 @@ function PersonPage() {
 
       {tab === "promises" && (
         <div className="space-y-3">
-          <PersonPlans personId={id} currencyId={curId || null} />
+          <PersonPlans
+            personId={id}
+            personName={name}
+            currencyId={curId || null}
+            personPhone={phone}
+            currencyName={primaryBalance?.currency.name ?? ""}
+          />
           <PersonPromises personId={id} currencyId={curId || null} />
         </div>
       )}
